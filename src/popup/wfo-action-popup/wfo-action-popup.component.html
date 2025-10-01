@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>Exception Review</h2>
+
+<mat-dialog-content class="popup-content">
+  <div class="left">
+    <label>Please select an option to proceed*</label>
+    <mat-radio-group [(ngModel)]="selectedAction">
+      <mat-radio-button value="approved">Accept with requested days</mat-radio-button><br>
+      <mat-radio-button value="partial">Change in the requested days (Partial Approve)</mat-radio-button><br>
+      <mat-radio-button value="rejected">Reject</mat-radio-button>
+    </mat-radio-group>
+
+    <div class="remarks">
+      <label>Remarks</label>
+      <textarea matInput [(ngModel)]="managerRemarks" placeholder="Enter your comments"></textarea>
+    </div>
+  </div>
+
+  <div class="right">
+    <p><strong>Employee name:</strong> {{ request.employeeName }}</p>
+    <p><strong>Requested Exceptions:</strong> {{ request.exceptionRequestedDays }} day(s)</p>
+    <p><strong>Primary reason:</strong> {{ request.primaryReason }}</p>
+    <p><strong>Remarks:</strong> {{ request.managerRemarks }}</p>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="!selectedAction">Submit</button>
+</mat-dialog-actions>
