@@ -1,1 +1,21 @@
+    <app-header [header]="commonService.header"></app-header>
+
+<div class="tabs">
+  <button
+    [class.active]="isActive('')"
+    (click)="navigateTo('')"
+  >
+    Dashboard
+  </button>
+
+  <button
+    [class.active]="isActive('create-wfo-exception-request')"
+    (click)="navigateTo('create-wfo-exception-request')"
+  >
+    Create WFO Exception
+  </button>
+</div>
+
+<hr />
+
 <router-outlet></router-outlet>

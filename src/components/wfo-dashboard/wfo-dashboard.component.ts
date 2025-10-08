@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { WfoActionPopupComponent } from '../../popup/wfo-action-popup/wfo-action-popup.component';
-
+import { CommonService } from '../../service/common.service';
 interface ExceptionRequest {
   employeeId: string;
   employeeName: string;
@@ -26,7 +26,9 @@ interface ExceptionRequest {
 })
 export class WfoDashboardComponent {
 
-  constructor(private dialog: MatDialog) {}
+  constructor(private dialog: MatDialog,private commonService:CommonService){ 
+    // this.commonService.header="WFO Exception Dashboard";
+  }
 
   exceptionRequests: ExceptionRequest[] = [
     {

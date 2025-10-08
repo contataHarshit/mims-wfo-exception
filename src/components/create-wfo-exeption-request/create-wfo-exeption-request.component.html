@@ -1,0 +1,95 @@
+<div class="form-container">
+  <h2>WFO Exception Request</h2>
+
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-row">
+      <div class="form-field">
+        <label>Employee ID</label>
+        <input name="employeeId" [(ngModel)]="formData.employeeId" readonly />
+      </div>
+
+      <div class="form-field">
+        <label>Employee Name</label>
+        <input name="employeeName" [(ngModel)]="formData.employeeName" readonly />
+      </div>
+    </div>
+
+
+    <!-- Exceptions Loop -->
+    <div *ngFor="let exception of formData.exceptions; let i = index" class="exception-block">
+        <p style="color: blue; text-decoration: underline;">#{{i+1}}</p>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Project Name *</label>
+        <select name="projectName" [(ngModel)]="formData.projectName" required>
+          <option value="">Select Project</option>
+          <option value="Project A">Project A</option>
+          <option value="Project B">Project B</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label>Project Manager</label>
+        <input name="projectManager" [(ngModel)]="formData.projectManager" readonly />
+      </div>
+    </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Exception From *</label>
+          <input type="date" name="fromDate{{i}}" [(ngModel)]="exception.fromDate" required />
+        </div>
+
+        <div class="form-field">
+          <label>To *</label>
+          <input type="date" name="toDate{{i}}" [(ngModel)]="exception.toDate" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Exception requested (days)</label>
+          <input
+            type="text"
+            name="daysRequested{{i}}"
+            [value]="calculateDays(exception.fromDate, exception.toDate)"
+            readonly
+          />
+        </div>
+
+        <div class="form-field">
+          <label>Primary Reason *</label>
+          <select name="primaryReason{{i}}" [(ngModel)]="exception.primaryReason" required>
+            <option value="">Select Primary reason</option>
+            <option value="Health Issue">Health Issue</option>
+            <option value="Personal Work">Personal Work</option>
+            <option value="Travel">Travel</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field full">
+          <label>Remarks</label>
+          <textarea name="remarks{{i}}" [(ngModel)]="exception.remarks"></textarea>
+        </div>
+      </div>
+
+      <div class="addAndDel">
+        <div class="add-more" *ngIf="i === formData.exceptions.length - 1">
+          <button type="button" (click)="addMore()">+ Add more</button>
+        </div>
+
+        <div class="delete-icon" *ngIf="formData.exceptions.length > 1 && i!==0">
+          <i class="fa fa-trash" (click)="deleteIndex(i)"></i>
+        </div>
+      </div>
+
+      <hr />
+    </div>
+
+    <div class="actions">
+      <button type="button" (click)="resetForm()">Reset</button>
+      <button type="submit">Submit</button>
+    </div>
+  </form>
+</div>
