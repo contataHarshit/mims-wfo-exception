@@ -1,6 +1,5 @@
-
 <div class="container">
- 
+
 
   <div class="form-grid">
     <div class="form-group">
@@ -67,42 +66,45 @@
     <button class="btn btn-primary">Search</button>
     <button class="btn btn-secondary">Reset</button>
   </div>
-
+  <div class="export">
+    <button class="btn btn-primary" (click)="export()">Export to Excel</button>
+  </div>
   <div class="table-container">
-<table>
-  <thead>
-    <tr>
-      <th>Employee ID</th>
-      <th>Employee Name</th>
-      <th>Designation</th>
-      <th>Project Name</th>
-      <th>Exception Date</th>
-      <th>Primary Reason</th>
-      <th>Submission Date</th>
-      <th>Exception Requested (Days)</th>
-      <th>Exception Approved (Days)</th>
-      <th>Status</th>
-      <th>Manager Remarks</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let req of exceptionRequests">
-      <td>{{ req.employeeId }}</td>
-      <td>{{ req.employeeName }}</td>
-      <td>{{ req.designation }}</td>
-      <td>{{ req.projectName }}</td>
-      <td>{{ req.exceptionDate }}</td>
-      <td>{{ req.primaryReason }}</td>
-      <td>{{ req.submissionDate }}</td>
-      <td>{{ req.exceptionRequestedDays }}</td>
-      <td>{{ req.exceptionApprovedDays }}</td>
-      <td>{{ req.status }}</td>
-      <td>{{ req.managerRemarks }}</td>
-      <td><i class="fa fa-expand" aria-hidden="true" style=" cursor: pointer;" (click)="openActionDialog(req)"></i></td>
-    </tr>
-  </tbody>
-</table>
+    <table>
+      <thead>
+        <tr>
+          <th>Employee ID</th>
+          <th>Employee Name</th>
+          <th>Designation</th>
+          <th>Project Name</th>
+          <th>Exception Date</th>
+          <th>Primary Reason</th>
+          <th>Submission Date</th>
+          <th>Exception Requested (Days)</th>
+          <th>Exception Approved (Days)</th>
+          <th>Status</th>
+          <th>Manager Remarks</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let req of exceptionRequests">
+          <td>{{ req.employeeId }}</td>
+          <td>{{ req.employeeName }}</td>
+          <td>{{ req.designation }}</td>
+          <td>{{ req.projectName }}</td>
+          <td>{{ req.exceptionDate }}</td>
+          <td>{{ req.primaryReason }}</td>
+          <td>{{ req.submissionDate }}</td>
+          <td>{{ req.exceptionRequestedDays }}</td>
+          <td>{{ req.exceptionApprovedDays }}</td>
+          <td>{{ req.status }}</td>
+          <td>{{ req.managerRemarks }}</td>
+          <td><i class="fa fa-expand" aria-hidden="true" style=" cursor: pointer;" (click)="openActionDialog(req)"></i>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
   </div>
 </div>

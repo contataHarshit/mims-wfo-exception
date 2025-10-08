@@ -66,4 +66,8 @@ export class WfoDashboardComponent {
     });
     modalRef.componentInstance.data=request
   }
+  export() {
+    // Logic to export the table data to Excel
+    console.log('Exporting to Excel...');
+  }
 }

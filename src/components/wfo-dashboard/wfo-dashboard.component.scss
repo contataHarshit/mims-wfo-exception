@@ -82,7 +82,8 @@ thead {
   background-color: #f8f9fa;
 }
 
-th, td {
+th,
+td {
   padding: 10px;
   border: 1px solid #dee2e6;
   text-align: left;
@@ -90,4 +91,9 @@ th, td {
 
 tbody tr:nth-child(even) {
   background-color: #f2f2f2;
+}
+
+.export {
+  text-align: end;
+  margin: 0px 10px 10px 0px;
 }
