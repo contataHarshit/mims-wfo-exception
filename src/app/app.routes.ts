@@ -4,8 +4,13 @@ import { CreateWfoExeptionRequestComponent } from '../components/create-wfo-exep
 export const routes: Routes = [
   {
     path: '',
-    component: WfoDashboardComponent,
-    pathMatch: 'full' // ensures it matches the exact empty path
+    component: CreateWfoExeptionRequestComponent,
+    pathMatch: 'full' 
+  },
+  {
+    path:"dashboard",
+    component:WfoDashboardComponent,
+    pathMatch:'full'
   },
   {
     path: 'create-wfo-exception-request',

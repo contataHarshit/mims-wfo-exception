@@ -5,22 +5,24 @@
   margin: 16px 0;
 }
 
-button {
+.tabs button {
   background: none;
   border: 2px solid transparent;
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   font-size: 16px;
+  font-weight: 600;
+  color: #111;
   cursor: pointer;
-  transition: 0.3s ease;
+  transition: all 0.3s ease;
+}
 
-  &:hover {
-    border-color: #ccc;
-  }
+.tabs button:hover {
+  border-color: #f15a24;
+  color: #f15a24;
+}
 
-  &.active {
-    border-color: #007bff;
-    color: #007bff;
-    font-weight: bold;
-  }
+.tabs button.active {
+  border-color: #f15a24;
+  color: #f15a24;
 }
