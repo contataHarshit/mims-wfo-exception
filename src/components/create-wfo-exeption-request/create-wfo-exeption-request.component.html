@@ -5,7 +5,8 @@
 
   <div class="filter-section">
     <form (ngSubmit)="onSubmit()">
-      <!-- Employee Row -->
+
+      <!-- Static Employee Info -->
       <div class="row">
         <div class="field">
           <label>Employee ID</label>
@@ -18,86 +19,89 @@
         </div>
       </div>
 
-      <!-- Exception Blocks -->
-      <div *ngFor="let exception of formData.exceptions; let i = index" class="exception-block">
-        <p class="exception-index">#{{ i + 1 }}</p>
-
-        <div class="row">
-          <div class="field">
-            <label>Project Name *</label>
-            <select name="projectName" [(ngModel)]="formData.projectName" required>
-              <option value="">Select Project</option>
-              <option value="Project A">Project A</option>
-              <option value="Project B">Project B</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>Project Manager</label>
-            <input name="projectManager" [(ngModel)]="formData.projectManager" readonly />
-          </div>
+      <div class="row">
+        <div class="field">
+          <label>Project Name *</label>
+          <select name="projectName" [(ngModel)]="formData.projectName" required>
+            <option value="">Select Project</option>
+            <option value="Project A">Project A</option>
+            <option value="Project B">Project B</option>
+          </select>
         </div>
 
-        <div class="row">
-          <div class="field">
-            <label>Exception From *</label>
-            <input type="date" name="fromDate{{i}}" [(ngModel)]="exception.fromDate" required />
-          </div>
-
-          <div class="field">
-            <label>To *</label>
-            <input type="date" name="toDate{{i}}" [(ngModel)]="exception.toDate" required />
-          </div>
+        <div class="field">
+          <label>Project Manager</label>
+          <input name="projectManager" [(ngModel)]="formData.projectManager" readonly />
         </div>
-
-        <div class="row">
-          <div class="field">
-            <label>Days Requested</label>
-            <input
-              type="text"
-              name="daysRequested{{i}}"
-              [value]="calculateDays(exception.fromDate, exception.toDate)"
-              readonly
-            />
-          </div>
-
-          <div class="field">
-            <label>Primary Reason *</label>
-            <select name="primaryReason{{i}}" [(ngModel)]="exception.primaryReason" required>
-              <option value="">Select Primary Reason</option>
-              <option value="Health Issue">Health Issue</option>
-              <option value="Personal Work">Personal Work</option>
-              <option value="Travel">Travel</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field full">
-            <label>Remarks</label>
-            <textarea name="remarks{{i}}" [(ngModel)]="exception.remarks"></textarea>
-          </div>
-        </div>
-
-        <div class="row actions-inline">
-          <button type="button" class="add-more" (click)="addMore()" *ngIf="i === formData.exceptions.length - 1">
-            + Add More
-          </button>
-
-          <button
-            type="button"
-            class="delete"
-            (click)="deleteIndex(i)"
-            *ngIf="formData.exceptions.length > 1 && i !== 0"
-          >
-            <i class="fa fa-trash"></i> Delete
-          </button>
-        </div>
-
-        <hr />
       </div>
 
-      <!-- Footer Buttons -->
+      <!-- Tabular Exception Input -->
+      <div class="exception-table">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>From *</th>
+              <th>To *</th>
+              <th>Days</th>
+              <th>Primary Reason *</th>
+              <th>Remarks</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let exception of formData.exceptions; let i = index">
+              <td>{{ i + 1 }}</td>
+
+              <td>
+                <input type="date" name="fromDate{{i}}" [(ngModel)]="exception.fromDate" required />
+              </td>
+
+              <td>
+                <input type="date" name="toDate{{i}}" [(ngModel)]="exception.toDate" required />
+              </td>
+
+              <td>
+                <input type="text" [value]="calculateDays(exception.fromDate, exception.toDate)" readonly />
+              </td>
+
+              <td>
+                <select name="primaryReason{{i}}" [(ngModel)]="exception.primaryReason" required>
+                  <option value="">Select</option>
+                  <option value="Health Issue">Health Issue</option>
+                  <option value="Personal Work">Personal Work</option>
+                  <option value="Travel">Travel</option>
+                </select>
+              </td>
+
+              <td>
+                <textarea name="remarks{{i}}" [(ngModel)]="exception.remarks"></textarea>
+              </td>
+
+              <td class="actions-cell">
+                <button
+                  type="button"
+                  class="delete"
+                  (click)="deleteIndex(i)"
+                  *ngIf="formData.exceptions.length > 1"
+                >
+                  <i class="fa fa-trash"></i>
+                </button>
+
+                <button
+                  type="button"
+                  class="add-more"
+                  (click)="addMore()"
+                  *ngIf="i === formData.exceptions.length - 1"
+                >
+                  + Add
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="form-actions">
         <button type="button" class="btn btn-reset" (click)="resetForm()">Reset</button>
         <button type="submit" class="btn btn-submit">Submit</button>
