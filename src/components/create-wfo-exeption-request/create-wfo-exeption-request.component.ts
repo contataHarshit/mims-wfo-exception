@@ -1,7 +1,9 @@
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-
+import { CommonModule } from "@angular/common";
+import { Component, DoCheck, OnInit } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { CommonService } from "../../service/common.service";
+import { HttpService } from "../../service/http.service";
+import { ConstantService } from "../../service/constant.service";
 @Component({
   selector: 'app-create-wfo-exeption-request',
   templateUrl: './create-wfo-exeption-request.component.html',
@@ -10,20 +12,35 @@ import { FormsModule } from '@angular/forms';
   standalone: true
 })
 export class CreateWfoExeptionRequestComponent {
-  formData = {
-    employeeId: 'EMP123',
-    employeeName: 'Harshit Shrivastava',
-    projectName: '',
-    projectManager: 'John Doe',
-    exceptions: [
-      {
-        fromDate: '',
-        toDate: '',
-        primaryReason: '',
-        remarks: '',
-      },
-    ],
-  };
+ formData: any = {};
+  constructor(
+    public common: CommonService,
+    private http: HttpService,
+    private constants: ConstantService
+  ) {}
+  // ngDoCheck(): void {
+  //   this.initializeForm()
+  // }
+  ngOnInit(): void {
+    this.initializeForm();
+  }
+
+  initializeForm() {
+    this.formData = {
+      employeeId: this.common.employeeId || "N/A",
+      employeeName: this.common.employeeName || "N/A",
+      projectName: this.common.projectName || "N/A",
+      projectManager: this.common.projectManager || "N/A",
+      exceptions: [
+        {
+          fromDate: "",
+          toDate: "",
+          primaryReason: "",
+          remarks: "",
+        },
+      ],
+    };
+  }
 
   addMore() {
     this.formData.exceptions.push({
