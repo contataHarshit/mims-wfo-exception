@@ -1,238 +1,54 @@
 .page-container {
-  margin: auto;
-  padding: 20px;
-  font-family: 'Segoe UI', sans-serif;
+  padding: 1rem 2rem;
   background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  min-height: 100vh;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: 30px;
-
-  h1 {
-    font-size: 24px;
-    color: #333;
-  }
+.page-title {
+  color: #e65100;
+  font-weight: 600;
+  margin-bottom: 1rem;
 }
 
-.filter-section form {
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.form-row {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
 
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-
-  .field {
-    flex: 1 1 45%;
-    display: flex;
-    flex-direction: column;
-
-    label {
-      margin-bottom: 6px;
-      font-weight: 600;
-      color: #444;
-    }
-
-    input,
-    select,
-    textarea {
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      transition: border-color 0.3s ease;
-
-      &:focus {
-        border-color: #f15a24;
-        outline: none;
-      }
-    }
-
-    textarea {
-      min-height: 70px;
-      resize: vertical;
-    }
-  }
-}
-
-/* Table Section */
-.exception-table {
-  overflow-x: auto;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-
-  thead {
-    background-color: #f2f2f2;
-
-    th {
-      font-weight: 600;
-      color: #333;
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
-      text-align: left;
-    }
+  label {
+    font-weight: 500;
+    margin-bottom: 0.3rem;
   }
 
-  tbody {
-    tr {
-      border-bottom: 1px solid #eee;
-
-      &:hover {
-        background-color: #fdf6f3;
-      }
-    }
-
-    td {
-      padding: 10px;
-      vertical-align: top;
-
-      input,
-      select,
-      textarea {
-        width: 100%;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 6px 8px;
-        font-size: 13px;
-
-        &:focus {
-          border-color: #f15a24;
-          outline: none;
-        }
-      }
-
-      textarea {
-        resize: vertical;
-        min-height: 50px;
-      }
-    }
-
-    .actions-cell {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .add-more,
-    .delete {
-      background-color: transparent;
-      border: none;
-      color: #f15a24;
-      cursor: pointer;
-      font-weight: 600;
-      padding: 4px 8px;
-      transition: color 0.3s;
-
-      &:hover {
-        color: #d84315;
-        text-decoration: underline;
-      }
-
-      i {
-        margin-right: 4px;
-      }
-    }
-  }
-}
-
-/* Buttons Section */
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  margin-top: 20px;
-
-  .btn {
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-
-  .btn-reset {
-    background: #ccc;
-    color: #333;
-
-    &:hover {
-      background: #b3b3b3;
-    }
-  }
-
-  .btn-submit {
-    background: #f15a24;
-    color: white;
-
-    &:hover {
-      background: #d84315;
-    }
-  }
-}
-
-/* Responsive Layout */
-@media (max-width: 768px) {
-  .row {
-    flex-direction: column;
-
-    .field {
-      flex: 1 1 100%;
-    }
-  }
-
-  .form-actions {
-    flex-direction: column;
-    align-items: stretch;
-
-    .btn {
-      width: 100%;
-    }
-  }
-
-  table thead {
-    display: none;
-  }
-
-  table,
-  tbody,
-  tr,
-  td {
-    display: block;
+  input,
+  p-dropdown {
     width: 100%;
   }
+}
 
-  tbody tr {
-    margin-bottom: 20px;
-    padding: 10px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    background: #fff;
-  }
+.table-section {
+  margin-top: 1.5rem;
+}
 
-  td {
-    padding: 8px 0;
+.p-datatable .p-datatable-thead > tr > th {
+  background: #f1f1f1;
+  font-weight: 600;
+  text-align: center;
+}
 
-    &::before {
-      content: attr(data-label);
-      font-weight: bold;
-      display: block;
-      margin-bottom: 4px;
-      color: #555;
-    }
-  }
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.form-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 }

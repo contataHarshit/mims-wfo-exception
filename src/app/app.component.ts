@@ -34,14 +34,11 @@ export class AppComponent implements DoCheck, OnInit {
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    const sessionId = 'ABC123XYZ'; 
     const storedToken = localStorage.getItem('jwtToken');
 
     if (!storedToken) {
-      this.http.auth(this.constants.auth, { sessionid: "ABC123XYZ" }).subscribe({
+      this.http.auth(this.constants.auth, { sessionid: 'ABC123XYZ' }).subscribe({
         next: (response: any) => {
-          console.log('Auth Response:', response);
-
           const employee = response?.employee || {};
           this.jwtToken = response?.token || null;
 
@@ -49,6 +46,8 @@ export class AppComponent implements DoCheck, OnInit {
             localStorage.setItem(key, employee[key]);
           });
           if (this.jwtToken) localStorage.setItem('jwtToken', this.jwtToken);
+          console.log('Auth Response:', response);
+
         },
         error: (err) => {
           console.error('Auth API Error:', err);
@@ -56,7 +55,20 @@ export class AppComponent implements DoCheck, OnInit {
       });
     } else {
       this.jwtToken = storedToken;
+      this.commonService.userDataLoaded$.next();
     }
+        this.http.getData(this.constants.employeeData).subscribe({
+            next: (empResponse: any) => {
+              console.log('Employee Data Response:', empResponse);
+              
+              localStorage.setItem('projectManager', empResponse?.managerName?.name || '');
+
+              this.commonService.userDataLoaded$.next();
+            },
+            error: (err) => {
+              console.error('Employee Data API Error:', err);
+            }
+          });
   }
 
   ngDoCheck(): void {

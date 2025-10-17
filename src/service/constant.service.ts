@@ -7,6 +7,6 @@ export class ConstantService {
   baseUrl = Environment.baseUrl;
   auth=this.baseUrl+'api/auth';
   exceptionRequest=this.baseUrl+'api/exception-requests';
-  employeeData=this.baseUrl+'api/emplyee';
+  employeeData=this.baseUrl+'api/employee';
   constructor() { }
 }

@@ -1,78 +1,83 @@
-<div class="container">
+<div class="page-container">
+  <h2 class="page-title">WFO Exception Dashboard</h2>
 
+  <p-card>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Employee ID</label>
+        <input pInputText [(ngModel)]="filters.employeeId" placeholder="Enter Employee ID" />
+      </div>
 
-  <div class="form-grid">
-    <div class="form-group">
-      <label>Employee ID</label>
-      <input type="text" placeholder="Enter Employee ID">
+      <div class="form-row">
+        <label>Employee Name</label>
+        <input pInputText [(ngModel)]="filters.employeeName" placeholder="Enter Employee Name" />
+      </div>
+
+      <div class="form-row">
+        <label>Project Name</label>
+        <p-dropdown
+          [options]="projectList"
+          [(ngModel)]="filters.projectName"
+          placeholder="Select Project"
+        ></p-dropdown>
+      </div>
+
+      <div class="form-row">
+        <label>Exception Requested (Days)</label>
+        <p-dropdown
+          [options]="daysList"
+          [(ngModel)]="filters.exceptionRequestedDays"
+          placeholder="Select Days"
+        ></p-dropdown>
+      </div>
+
+      <div class="form-row">
+        <label>Exception Date From</label>
+        <p-calendar [(ngModel)]="filters.exceptionDateFrom" dateFormat="yy-mm-dd" showIcon appendTo="body"></p-calendar>
+      </div>
+
+      <div class="form-row">
+        <label>Exception Date To</label>
+        <p-calendar [(ngModel)]="filters.exceptionDateTo" dateFormat="yy-mm-dd" showIcon appendTo="body"></p-calendar>
+      </div>
+
+      <div class="form-row">
+        <label>Exception Approved (Days)</label>
+        <p-dropdown
+          [options]="daysList"
+          [(ngModel)]="filters.exceptionApprovedDays"
+          placeholder="Select Days"
+        ></p-dropdown>
+      </div>
+
+      <div class="form-row">
+        <label>Status</label>
+        <br>
+        <p-dropdown
+          [options]="statusList"
+          [(ngModel)]="filters.status"
+          placeholder="Select Status"
+        ></p-dropdown>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>Employee Name</label>
-      <input type="text" placeholder="Enter Employee Name">
+    <div class="form-actions" style="    width: 20%;
+    display: flex
+;
+    justify-content: space-between">
+      <button pButton label="Search" class="p-button-success"></button>
+      <button pButton label="Reset" class="p-button-danger" (click)="resetFilters()"></button>
+      <button pButton label="Export to Excel" icon="pi pi-file-excel" (click)="export()" class="p-button-info"></button>
     </div>
+  </p-card>
 
-    <div class="form-group">
-      <label>Project Name</label>
-      <select>
-        <option>Select Project</option>
-        <option>Project Alpha</option>
-        <option>Project Beta</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Exception Requested (Days)</label>
-      <select>
-        <option>Select Requested Days</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Exception Date From</label>
-      <input type="date">
-    </div>
-
-    <div class="form-group">
-      <label>Exception Date To</label>
-      <input type="date">
-    </div>
-
-    <div class="form-group">
-      <label>Exception Approved (Days)</label>
-      <select>
-        <option>Select Approved Days</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Status</label>
-      <select>
-        <option>Select Status</option>
-        <option>Approved</option>
-        <option>Partial Approved</option>
-        <option>Rejected</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="action-buttons">
-<button>Search</button>
-<button>Reset</button>
-
-  </div>
-  <div class="export">
-    <button class="btn btn-primary" (click)="export()">Export to Excel</button>
-  </div>
-  <div class="table-container">
-    <table>
-      <thead>
+  <p-card class="table-section">
+    <p-table
+      [value]="exceptionRequests"
+      class="p-datatable-gridlines"
+      [tableStyle]="{ 'min-width': '100%' }"
+    >
+      <ng-template pTemplate="header">
         <tr>
           <th>Employee ID</th>
           <th>Employee Name</th>
@@ -81,15 +86,16 @@
           <th>Exception Date</th>
           <th>Primary Reason</th>
           <th>Submission Date</th>
-          <th>Exception Requested (Days)</th>
-          <th>Exception Approved (Days)</th>
+          <th>Requested (Days)</th>
+          <th>Approved (Days)</th>
           <th>Status</th>
           <th>Manager Remarks</th>
           <th>Action</th>
         </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let req of exceptionRequests">
+      </ng-template>
+
+      <ng-template pTemplate="body" let-req>
+        <tr>
           <td>{{ req.employeeId }}</td>
           <td>{{ req.employeeName }}</td>
           <td>{{ req.designation }}</td>
@@ -101,11 +107,16 @@
           <td>{{ req.exceptionApprovedDays }}</td>
           <td>{{ req.status }}</td>
           <td>{{ req.managerRemarks }}</td>
-          <td><i class="fa fa-expand" aria-hidden="true" style=" cursor: pointer;" (click)="openActionDialog(req)"></i>
+          <td>
+            <button
+              pButton
+              icon="pi pi-external-link"
+              class="p-button-rounded p-button-text p-button-warning"
+              (click)="openActionDialog(req)"
+            ></button>
           </td>
         </tr>
-      </tbody>
-    </table>
-
-  </div>
+      </ng-template>
+    </p-table>
+  </p-card>
 </div>

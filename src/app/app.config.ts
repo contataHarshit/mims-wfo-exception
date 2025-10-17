@@ -1,11 +1,13 @@
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http'; // ✅ Add this
-
 import { routes } from './app.routes';
-import { provideClientHydration } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideHttpClient, withFetch } from '@angular/common/http'; // ✅ Import this
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideHttpClient(),provideRouter(routes), provideClientHydration(), provideAnimationsAsync()]
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(withFetch()), // ✅ Critical for HttpClient injection (and SSR support)
+    provideAnimationsAsync(),
+  ],
 };

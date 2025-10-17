@@ -1,5 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,7 @@ export class CommonService {
   employeeEmail: string = '';
   projectName: string = '';
   projectManager: string = '';
+   userDataLoaded$ = new Subject<void>();
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     if (isPlatformBrowser(this.platformId)) {
       this.employeeName = localStorage.getItem('name') || 'User';

@@ -1,4 +1,62 @@
-/* You can add global styles to this file, and also import other style files */
+/* =====================================================
+   🌈 Global Styles for Mims Exception WFO Application
+   ===================================================== */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+/* ✅ PrimeNG Theme (choose one) */
+@import "primeng/resources/themes/lara-light-blue/theme.css";
+
+/* ✅ PrimeNG Core Styles */
+@import "primeng/resources/primeng.css";
+
+/* ✅ PrimeIcons (for calendar, dropdown, buttons etc.) */
+@import "primeicons/primeicons.css";
+
+/* =====================================================
+   🧩 Global Overrides (optional)
+   Uncomment the below line if you add custom overrides file
+   ===================================================== */
+// @import "./styles/custom-overrides.scss";
+
+/* =====================================================
+   🧱 Base Styles
+   ===================================================== */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #f9f9f9;
+}
+
+/* =====================================================
+   📅 Fix Calendar & Dropdown Popup Visibility
+   ===================================================== */
+.p-datepicker {
+  z-index: 10000 !important;
+}
+
+.p-calendar,
+.p-dropdown {
+  overflow: visible !important;
+}
+
+/* =====================================================
+   🎨 Optional Brand Customization (Orange Accent)
+   ===================================================== */
+:root {
+  --primary-color: #e65100;
+}
+
+.p-button.p-button-success {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.p-dropdown:not(.p-disabled):hover {
+  border-color: var(--primary-color) !important;
+}
+
+.p-focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.2rem rgba(230, 81, 0, 0.2) !important;
+}
