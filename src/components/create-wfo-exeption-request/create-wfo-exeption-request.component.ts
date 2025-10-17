@@ -1,5 +1,11 @@
 import { CommonModule, isPlatformBrowser } from "@angular/common";
-import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from "@angular/core";
+import {
+  Component,
+  OnInit,
+  ChangeDetectorRef,
+  Inject,
+  PLATFORM_ID,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { HttpService } from "../../service/http.service";
 import { ConstantService } from "../../service/constant.service";
@@ -37,14 +43,15 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   formData: any = {
     employeeId: "",
     employeeName: "",
-    projectId: "101",
+    projectId: 1001,
     projectManager: "",
     exceptions: [
       {
         fromDate: "",
         toDate: "",
-        primaryReason: "",
+        primaryReason: "Health Issue",
         remarks: "",
+        exceptionRequestedDays: 1,
       },
     ],
   };
@@ -76,7 +83,10 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       }
     });
 
-    if (isPlatformBrowser(this.platformId) && localStorage.getItem("employeeId")) {
+    if (
+      isPlatformBrowser(this.platformId) &&
+      localStorage.getItem("employeeId")
+    ) {
       this.loadData();
     }
   }
@@ -86,15 +96,17 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
     this.formData.employeeId = localStorage.getItem("employeeId") || "N/A";
     this.formData.employeeName = localStorage.getItem("name") || "N/A";
-    this.formData.projectId = "101";
-    this.formData.projectManager = localStorage.getItem("projectManager") || "N/A";
+    this.formData.projectId = 1001;
+    this.formData.projectManager =
+      localStorage.getItem("projectManager") || "N/A";
   }
 
   addMore() {
     this.formData.exceptions.push({
       fromDate: "",
       toDate: "",
-      primaryReason: "",
+      primaryReason: "Health Issue",
+      exceptionRequestedDays: 1,
       remarks: "",
     });
   }
@@ -111,22 +123,25 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   calculateDays(fromDate: Date, toDate: Date): string {
     if (!fromDate || !toDate) return "";
     const diff = Math.floor(
-      (new Date(toDate).getTime() - new Date(fromDate).getTime()) / (1000 * 60 * 60 * 24)
+      (new Date(toDate).getTime() - new Date(fromDate).getTime()) /
+        (1000 * 60 * 60 * 24)
     );
     return diff >= 0 ? `${diff + 1} day(s)` : "Invalid range";
   }
 
   onSubmit() {
     console.log("Submitting form data:", this.formData);
-    this.http.postData(this.formData, this.constant.exceptionRequest).subscribe({
-      next: (response) => {
-        alert("Form submitted successfully!");
-        this.resetForm();
-      },
-      error: (error) => {
-        console.error("Error submitting form:", error);
-        alert("Error submitting form. Please try again.");
-      },
-    });
+    this.http
+      .postData(this.formData, this.constant.exceptionRequest)
+      .subscribe({
+        next: (response) => {
+          alert("Form submitted successfully!");
+          this.resetForm();
+        },
+        error: (error) => {
+          console.error("Error submitting form:", error);
+          alert("Error submitting form. Please try again.");
+        },
+      });
   }
 }
