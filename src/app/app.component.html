@@ -1,13 +1,17 @@
 <app-header [header]="commonService.header"></app-header>
 
-<div class="tabs">
-
-    <button *ngFor="let item of tabs;let i =index" [class.active]="item.isActive" (click)="navigateTo(item.path)">
-        {{item.label}}
+<div class="tabs-wrapper">
+  <div class="tabs">
+    <button
+      *ngFor="let item of tabs; let i = index"
+      [class.active]="item.isActive"
+      (click)="navigateTo(item.path)"
+    >
+      {{ item.label }}
     </button>
+  </div>
+
+  <div class="tab-content">
+    <router-outlet></router-outlet>
+  </div>
 </div>
-
-
-<hr />
-
-<router-outlet></router-outlet>

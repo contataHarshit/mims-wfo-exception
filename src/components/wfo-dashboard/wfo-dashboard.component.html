@@ -1,16 +1,24 @@
 <div class="page-container">
-  <h2 class="page-title">WFO Exception Dashboard</h2>
 
-  <p-card>
+  <!-- FILTER SECTION -->
+  <div class="filter-card">
     <div class="form-grid">
       <div class="form-row">
         <label>Employee ID</label>
-        <input pInputText [(ngModel)]="filters.employeeId" placeholder="Enter Employee ID" />
+        <input
+          pInputText
+          [(ngModel)]="filters.employeeId"
+          placeholder="Enter Employee ID"
+        />
       </div>
 
       <div class="form-row">
         <label>Employee Name</label>
-        <input pInputText [(ngModel)]="filters.employeeName" placeholder="Enter Employee Name" />
+        <input
+          pInputText
+          [(ngModel)]="filters.employeeName"
+          placeholder="Enter Employee Name"
+        />
       </div>
 
       <div class="form-row">
@@ -33,12 +41,22 @@
 
       <div class="form-row">
         <label>Exception Date From</label>
-        <p-calendar [(ngModel)]="filters.exceptionDateFrom" dateFormat="yy-mm-dd" showIcon appendTo="body"></p-calendar>
+        <p-calendar
+          [(ngModel)]="filters.exceptionDateFrom"
+          dateFormat="yy-mm-dd"
+          showIcon
+          appendTo="body"
+        ></p-calendar>
       </div>
 
       <div class="form-row">
         <label>Exception Date To</label>
-        <p-calendar [(ngModel)]="filters.exceptionDateTo" dateFormat="yy-mm-dd" showIcon appendTo="body"></p-calendar>
+        <p-calendar
+          [(ngModel)]="filters.exceptionDateTo"
+          dateFormat="yy-mm-dd"
+          showIcon
+          appendTo="body"
+        ></p-calendar>
       </div>
 
       <div class="form-row">
@@ -52,7 +70,6 @@
 
       <div class="form-row">
         <label>Status</label>
-        <br>
         <p-dropdown
           [options]="statusList"
           [(ngModel)]="filters.status"
@@ -61,17 +78,26 @@
       </div>
     </div>
 
-    <div class="form-actions" style="    width: 20%;
-    display: flex
-;
-    justify-content: space-between">
+    <div class="form-actions">
       <button pButton label="Search" class="p-button-success"></button>
-      <button pButton label="Reset" class="p-button-danger" (click)="resetFilters()"></button>
-      <button pButton label="Export to Excel" icon="pi pi-file-excel" (click)="export()" class="p-button-info"></button>
+      <button
+        pButton
+        label="Reset"
+        class="p-button-danger"
+        (click)="resetFilters()"
+      ></button>
+      <button
+        pButton
+        label="Export to Excel"
+        icon="pi pi-file-excel"
+        class="p-button-info"
+        (click)="export()"
+      ></button>
     </div>
-  </p-card>
+  </div>
 
-  <p-card class="table-section">
+  <!-- TABLE SECTION -->
+  <div class="table-card">
     <p-table
       [value]="exceptionRequests"
       class="p-datatable-gridlines"
@@ -118,5 +144,5 @@
         </tr>
       </ng-template>
     </p-table>
-  </p-card>
+  </div>
 </div>

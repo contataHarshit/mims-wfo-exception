@@ -1,10 +1,43 @@
 .page-container {
   padding: 1rem 2rem;
-  background: #f9f9f9;
   min-height: 100vh;
+  background-color: white;
 }
 
 .page-title {
+  color: #e65100;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* SPLIT VIEW */
+.content-split {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* COMMON CARD FIX */
+.no-card-bg ::ng-deep .p-card {
+  background-color: #f7f7f7 !important;
+  border: 1px solid #ddd;
+  box-shadow: none;
+}
+
+.no-card-bg ::ng-deep .p-card-body {
+  background-color: #f7f7f7 !important;
+  padding: 1.5rem;
+}
+
+/* LEFT SIDE (FORM) */
+.form-section {
+  flex: 1;
+  min-width: 350px;
+}
+
+.section-title {
   color: #e65100;
   font-weight: 600;
   margin-bottom: 1rem;
@@ -12,7 +45,7 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 
@@ -31,8 +64,17 @@
   }
 }
 
+.form-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* RIGHT SIDE (TABLE) */
 .table-section {
-  margin-top: 1.5rem;
+  flex: 2;
+  min-width: 500px;
 }
 
 .p-datatable .p-datatable-thead > tr > th {
@@ -46,9 +88,9 @@
   vertical-align: middle;
 }
 
-.form-actions {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+/* RESPONSIVE FIX */
+@media (max-width: 992px) {
+  .content-split {
+    flex-direction: column;
+  }
 }
