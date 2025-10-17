@@ -1,12 +1,12 @@
-import { Injectable } from '@angular/core';
-import { Environment } from '../../src/environments/environment';
+import { Injectable } from "@angular/core";
+import { Environment } from "../../src/environments/environment";
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class ConstantService {
   baseUrl = Environment.baseUrl;
-  auth=this.baseUrl+'api/auth';
-  exceptionRequest=this.baseUrl+'api/exception-requests';
-  employeeData=this.baseUrl+'api/employee';
-  constructor() { }
+  auth = this.baseUrl + "api/auth";
+  exceptionRequest = this.baseUrl + "api/exception-requests";
+  employeeData = this.baseUrl + "api/employee";
+  constructor() {}
 }
