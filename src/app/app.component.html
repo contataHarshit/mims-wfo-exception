@@ -2,11 +2,7 @@
 
 <div class="tabs-wrapper">
   <div class="tabs">
-    <button
-      *ngFor="let item of tabs; let i = index"
-      [class.active]="item.isActive"
-      (click)="navigateTo(item.path)"
-    >
+    <button *ngFor="let item of tabs; let i = index" [class.active]="item.isActive" (click)="navigateTo(item.path)">
       {{ item.label }}
     </button>
   </div>
@@ -15,3 +11,4 @@
     <router-outlet></router-outlet>
   </div>
 </div>
+<app-common-loader *ngIf="commonService.loading"></app-common-loader>

@@ -14,6 +14,7 @@ export class CommonService {
   projectName: string = "";
   projectManager: string = "";
   userDataLoaded$ = new Subject<void>();
+  loading = false;
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     if (isPlatformBrowser(this.platformId)) {
       this.employeeName = localStorage.getItem("name") || "User";

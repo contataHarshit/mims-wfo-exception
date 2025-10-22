@@ -6,11 +6,17 @@ import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { HttpService } from "../service/http.service";
 import { ConstantService } from "../service/constant.service";
 import { HttpClientModule } from "@angular/common/http";
-
+import { CommonLoaderComponent } from "../common/common-loader/common-loader.component";
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, CommonModule, HttpClientModule],
+  imports: [
+    RouterOutlet,
+    HeaderComponent,
+    CommonModule,
+    HttpClientModule,
+    CommonLoaderComponent,
+  ],
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.scss"],
 })

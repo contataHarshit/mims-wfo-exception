@@ -1,0 +1,24 @@
+import { Component, Input, Output, EventEmitter } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { NgSelectModule } from "@ng-select/ng-select";
+
+@Component({
+  selector: "app-common-select",
+  standalone: true,
+  imports: [CommonModule, FormsModule, NgSelectModule],
+  templateUrl: "./common-select.component.html",
+  styleUrls: ["./common-select.component.scss"],
+})
+export class CommonSelectComponent {
+  @Input() options: any[] = [];
+  @Input() placeholder: string = "Select";
+  @Input() searchKey: string = "label";
+  @Input() value: any = null; // Must be null for placeholder to show
+  @Output() valueChange = new EventEmitter<any>();
+
+  onChange(event: any) {
+    this.value = event;
+    this.valueChange.emit(event);
+  }
+}

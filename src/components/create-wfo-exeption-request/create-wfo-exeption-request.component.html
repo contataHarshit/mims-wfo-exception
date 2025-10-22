@@ -1,67 +1,41 @@
 <div class="page-container">
-  <!-- <h2 class="page-title">WFO Exception Request</h2> -->
+  <p-card class="main-form-card">
+    <h3 class="page-title">Work From Office Exception Request</h3>
 
-  <div class="content-split">
-    <!-- LEFT SIDE - FORM -->
-    <p-card class="form-section no-card-bg">
-      <h3 class="section-title">Employee Details</h3>
-      <div class="form-grid">
-        <div class="form-row">
-          <label>Employee ID</label>
-          <input pInputText [(ngModel)]="formData.employeeId" readonly />
-        </div>
-
-        <div class="form-row">
-          <label>Employee Name</label>
-          <input pInputText [(ngModel)]="formData.employeeName" readonly />
-        </div>
-
-        <div class="form-row">
-          <label>Project Name *</label>
-          <p-dropdown
-            [options]="projectList"
-            [(ngModel)]="formData.projectName"
-            placeholder="Select Project"
-          ></p-dropdown>
-        </div>
-
-        <div class="form-row">
-          <label>Project Manager</label>
-          <input pInputText [(ngModel)]="formData.projectManager" readonly />
-        </div>
+    <!-- EMPLOYEE DETAILS SECTION -->
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Employee ID</label>
+        <input pInputText [(ngModel)]="formData.employeeId" readonly />
       </div>
 
-      <div class="form-actions">
-        <button
-          pButton
-          label="Reset"
-          class="p-button-danger"
-          (click)="resetForm()"
-        ></button>
-        <button
-          pButton
-          label="Submit"
-          class="p-button-success"
-          (click)="onSubmit()"
-        ></button>
+      <div class="form-row">
+        <label>Employee Name</label>
+        <input pInputText [(ngModel)]="formData.employeeName" readonly />
       </div>
-    </p-card>
 
-    <!-- RIGHT SIDE - TABLE -->
-    <p-card class="table-section no-card-bg">
-      <h3 class="section-title">Exception Details</h3>
+      <div class="form-row">
+        <label>Project Name *</label>
+        <app-common-select [options]="projectList" [(value)]="formData.projectName" placeholder="Select Project"
+          [searchKey]="'label'"></app-common-select>
+      </div>
 
-      <p-table
-        [value]="formData.exceptions"
-        dataKey="index"
-        class="p-datatable-gridlines"
-        [tableStyle]="{ 'min-width': '100%' }"
-      >
+      <div class="form-row">
+        <label>Project Manager</label>
+        <input pInputText [(ngModel)]="formData.projectManager" readonly />
+      </div>
+    </div>
+
+    <!-- EXCEPTION DETAILS TABLE -->
+    <div class="exception-section">
+      <h4 class="section-title">Exception Details</h4>
+
+      <p-table [value]="formData.exceptions" dataKey="index" class="p-datatable-gridlines"
+        [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
             <th>#</th>
-            <th>From *</th>
-            <th>To *</th>
+            <th>Date Range *</th>
             <th>Days</th>
             <th>Primary Reason *</th>
             <th>Remarks</th>
@@ -72,33 +46,17 @@
         <ng-template pTemplate="body" let-e let-i="rowIndex">
           <tr>
             <td>{{ i + 1 }}</td>
-
             <td>
-              <p-calendar
-                [(ngModel)]="e.fromDate"
-                dateFormat="yy-mm-dd"
-                showIcon
-                appendTo="body"
-              ></p-calendar>
+              <app-date-range-picker [(range)]="e.dateRange" [disabledDates]="disabledDates"
+                (rangeChange)="onDateRangeSelect($event, i)"></app-date-range-picker>
+
             </td>
 
-            <td>
-              <p-calendar
-                [(ngModel)]="e.toDate"
-                dateFormat="yy-mm-dd"
-                showIcon
-                appendTo="body"
-              ></p-calendar>
-            </td>
-
-            <td>{{ calculateDays(e.fromDate, e.toDate) }}</td>
+            <td>{{ e.exceptionRequestedDays }}</td>
 
             <td>
-              <p-dropdown
-                [options]="reasonList"
-                [(ngModel)]="e.primaryReason"
-                placeholder="Select"
-              ></p-dropdown>
+              <app-common-select [options]="reasonList" [(value)]="e.primaryReason" placeholder="Select"
+                [searchKey]="'label'"></app-common-select>
             </td>
 
             <td>
@@ -106,24 +64,20 @@
             </td>
 
             <td>
-              <button
-                pButton
-                icon="pi pi-trash"
-                class="p-button-rounded p-button-danger p-button-sm"
-                (click)="deleteIndex(i)"
-                *ngIf="formData.exceptions.length > 1"
-              ></button>
-              <button
-                pButton
-                icon="pi pi-plus"
-                class="p-button-rounded p-button-success p-button-sm"
-                (click)="addMore()"
-                *ngIf="i === formData.exceptions.length - 1"
-              ></button>
+              <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
+                (click)="deleteIndex(i)" *ngIf="formData.exceptions.length > 1"></button>
+              <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"
+                (click)="addMore()" *ngIf="i === formData.exceptions.length - 1"></button>
             </td>
           </tr>
         </ng-template>
       </p-table>
-    </p-card>
-  </div>
+    </div>
+
+    <!-- FORM ACTIONS -->
+    <div class="form-actions">
+      <button pButton label="Reset" class="p-button-danger" (click)="resetForm()"></button>
+      <button pButton label="Submit" class="p-button-success" (click)="onSubmit()"></button>
+    </div>
+  </p-card>
 </div>

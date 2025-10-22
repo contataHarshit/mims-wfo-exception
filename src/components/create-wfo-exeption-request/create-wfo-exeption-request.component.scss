@@ -1,52 +1,40 @@
 .page-container {
-  padding: 1rem 2rem;
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+  background: #ffffff;
   min-height: 100vh;
-  background-color: white;
+}
+
+.main-form-card {
+  width: 100%;
+  padding: 1.5rem;
+  background-color: #f7f7f7 !important;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: none;
 }
 
 .page-title {
   color: #e65100;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   text-align: center;
-}
-
-/* SPLIT VIEW */
-.content-split {
-  display: flex;
-  gap: 2rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-/* COMMON CARD FIX */
-.no-card-bg ::ng-deep .p-card {
-  background-color: #f7f7f7 !important;
-  border: 1px solid #ddd;
-  box-shadow: none;
-}
-
-.no-card-bg ::ng-deep .p-card-body {
-  background-color: #f7f7f7 !important;
-  padding: 1.5rem;
-}
-
-/* LEFT SIDE (FORM) */
-.form-section {
-  flex: 1;
-  min-width: 350px;
 }
 
 .section-title {
   color: #e65100;
   font-weight: 600;
+  margin-top: 2rem;
   margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.3rem;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem 2rem;
 }
 
 .form-row {
@@ -64,33 +52,40 @@
   }
 }
 
-.form-actions {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+.exception-section {
+  margin-top: 1.5rem;
 }
 
-/* RIGHT SIDE (TABLE) */
-.table-section {
-  flex: 2;
-  min-width: 500px;
-}
-
-.p-datatable .p-datatable-thead > tr > th {
+.p-datatable .p-datatable-thead>tr>th {
   background: #f1f1f1;
   font-weight: 600;
   text-align: center;
 }
 
-.p-datatable .p-datatable-tbody > tr > td {
+.p-datatable .p-datatable-tbody>tr>td {
   text-align: center;
   vertical-align: middle;
 }
 
-/* RESPONSIVE FIX */
-@media (max-width: 992px) {
-  .content-split {
+textarea {
+  width: 100%;
+  resize: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .main-form-card {
+    padding: 1rem;
+  }
+
+  .form-actions {
     flex-direction: column;
+    align-items: stretch;
   }
 }
