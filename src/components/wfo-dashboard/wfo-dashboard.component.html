@@ -4,7 +4,7 @@
     <div class="form-grid">
       <div class="form-row">
         <label>Employee ID</label>
-        <app-common-select [options]="employeeList" [(value)]="filters.employeeId"
+        <app-common-select [options]="employeeIdList" [(value)]="filters.employeeId"
           placeholder="Select Employee ID"></app-common-select>
       </div>
 
@@ -20,13 +20,13 @@
           placeholder="Select Project"></app-common-select>
       </div>
 
-     
+
 
       <div class="form-row">
         <label>Exception Date Range</label>
         <app-date-range-picker (rangeChange)="onDateRangeChange($event)"></app-date-range-picker>
       </div>
-       <div class="form-row">
+      <div class="form-row">
         <label>Exception Requested (Days)</label>
         <app-common-select [options]="daysList" [(value)]="filters.exceptionRequestedDays"
           placeholder="Select Days"></app-common-select>

@@ -17,7 +17,8 @@
       <div class="form-row">
         <label>Project Name *</label>
         <app-common-select [options]="projectList" [(value)]="formData.projectName" placeholder="Select Project"
-          [searchKey]="'label'"></app-common-select>
+          [searchKey]="'label'">
+        </app-common-select>
       </div>
 
       <div class="form-row">
@@ -47,16 +48,20 @@
           <tr>
             <td>{{ i + 1 }}</td>
             <td>
-              <app-date-range-picker [(range)]="e.dateRange" [disabledDates]="disabledDates"
-                (rangeChange)="onDateRangeSelect($event, i)"></app-date-range-picker>
-
+              <app-date-range-picker [(range)]="e.dateRange" [restrictionKey]="'restrictWeekSelection'"
+                [disabledDates]="disabledDates" (rangeChange)="onDateRangeSelect($event, i)">
+              </app-date-range-picker>
             </td>
 
-            <td>{{ e.exceptionRequestedDays }}</td>
+            <td>
+              <input type="number" pInputText [(ngModel)]="e.exceptionRequestedDays" placeholder="Enter Days" min="1"
+                max="2" (input)="validateDays(e)" />
+            </td>
 
             <td>
               <app-common-select [options]="reasonList" [(value)]="e.primaryReason" placeholder="Select"
-                [searchKey]="'label'"></app-common-select>
+                [searchKey]="'label'">
+              </app-common-select>
             </td>
 
             <td>
@@ -65,9 +70,11 @@
 
             <td>
               <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
-                (click)="deleteIndex(i)" *ngIf="formData.exceptions.length > 1"></button>
+                (click)="deleteIndex(i)" *ngIf="formData.exceptions.length > 1">
+              </button>
               <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"
-                (click)="addMore()" *ngIf="i === formData.exceptions.length - 1"></button>
+                (click)="addMore()" *ngIf="i === formData.exceptions.length - 1">
+              </button>
             </td>
           </tr>
         </ng-template>

@@ -25,6 +25,7 @@ interface ExceptionRequest {
   exceptionApprovedDays: number;
   status: string;
   managerRemarks: string;
+  exceptionId: string;
 }
 
 @Component({
@@ -54,6 +55,20 @@ export class WfoDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.commonService.loading = true;
+    const storedData =
+      localStorage.getItem("role") == "MANAGER"
+        ? localStorage.getItem("managerEmployeeData")
+        : localStorage.getItem("allEmployeeData");
+    this.employeeList = storedData
+      ? JSON.parse(storedData).map((item: any) => {
+          return { label: item.FullName, value: item.FullName };
+        })
+      : [];
+    this.employeeIdList = storedData
+      ? JSON.parse(storedData).map((item: any) => {
+          return { label: item.EmployeeNumber, value: item.EmployeeNumber };
+        })
+      : [];
     this.getExceptionRequest();
   }
 
@@ -66,6 +81,10 @@ export class WfoDashboardComponent implements OnInit {
   employeeList = [
     { label: "Ravishankar (R151)", value: "R151" },
     { label: "Nand Kishor (N1531)", value: "N1531" },
+  ];
+  employeeIdList = [
+    { label: "R151", value: "R151" },
+    { label: "N1531", value: "N1531" },
   ];
 
   daysList = [
@@ -81,34 +100,7 @@ export class WfoDashboardComponent implements OnInit {
   ];
 
   // Exception Request Data
-  exceptionRequests: ExceptionRequest[] = [
-    {
-      employeeId: "R151",
-      employeeName: "Ravishankar",
-      designation: "Business Analyst",
-      projectName: "CyberIQ",
-      exceptionDate: "03-09-2025",
-      primaryReason: "Health",
-      submissionDate: "02-09-2025",
-      exceptionRequestedDays: 1,
-      exceptionApprovedDays: 1,
-      status: "Approved",
-      managerRemarks: "Approved on time",
-    },
-    {
-      employeeId: "N1531",
-      employeeName: "Nand Kishor",
-      designation: "Business Analyst",
-      projectName: "CyberIQ",
-      exceptionDate: "30-09-2025",
-      primaryReason: "Marriage",
-      submissionDate: "29-09-2025",
-      exceptionRequestedDays: 2,
-      exceptionApprovedDays: 1,
-      status: "Partial Approved",
-      managerRemarks: "Taken many exceptions",
-    },
-  ];
+  exceptionRequests: ExceptionRequest[] = [];
 
   filters = {
     employeeId: null,
@@ -142,6 +134,7 @@ export class WfoDashboardComponent implements OnInit {
             exceptionApprovedDays: ex.exceptionApprovedDays || "N/A",
             status: req.currentStatus || "N/A",
             managerRemarks: req.managerRemarks || "N/A",
+            exceptionId: ex.id,
           }))
         );
 
@@ -161,56 +154,58 @@ export class WfoDashboardComponent implements OnInit {
     }
   }
 
-openActionDialog(request: ExceptionRequest) {
-  const modalRef = this.dialog.open(WfoActionPopupComponent, {
-    width: "500px",
-    data: request,
-  });
+  openActionDialog(request: ExceptionRequest) {
+    console.log("ewwwww", request);
 
-  modalRef.afterClosed().subscribe((result) => {
-    if (result) {
-      // Map action to backend status
-      let currentStatus = "";
-      switch (result.action) {
-        case "approved":
-          currentStatus = "APPROVED";
-          break;
-        case "partial":
-          currentStatus = "PARTIALLY_APPROVED";
-          break;
-        case "rejected":
-          currentStatus = "REJECTED";
-          break;
-        default:
-          currentStatus = "PENDING";
+    const modalRef = this.dialog.open(WfoActionPopupComponent, {
+      width: "500px",
+      data: request,
+    });
+
+    modalRef.afterClosed().subscribe((result) => {
+      if (result) {
+        // Map action to backend status
+        let currentStatus = "";
+        switch (result.action) {
+          case "approved":
+            currentStatus = "APPROVED";
+            break;
+          case "partial":
+            currentStatus = "PARTIALLY_APPROVED";
+            break;
+          case "rejected":
+            currentStatus = "REJECTED";
+            break;
+          default:
+            currentStatus = "PENDING";
+        }
+
+        // Build the payload
+        const payload = {
+          updateDateRangeId: request.exceptionId, // replace if needed
+          currentStatus: currentStatus,
+          managerRemarks: result.remarks,
+          exceptionApprovedDays:
+            result.approvedDays || request.exceptionApprovedDays || 1,
+        };
+
+        console.log("PUT Payload:", payload);
+
+        // Call PUT API
+        this.http
+          .putData(request.employeeId, payload, this.constants.exceptionRequest)
+          .subscribe({
+            next: (res: any) => {
+              console.log("PUT API Success:", res);
+              this.getExceptionRequest(); // refresh list after update
+            },
+            error: (err: any) => {
+              console.error("PUT API Error:", err);
+            },
+          });
       }
-
-      // Build the payload
-   const payload = {
-  updateDateRangeId: request.employeeId, // replace if needed
-  currentStatus: currentStatus,
-  managerRemarks: result.remarks,
-  exceptionApprovedDays: result.approvedDays || request.exceptionApprovedDays || 1,
-};
-
-
-      console.log("PUT Payload:", payload);
-
-      // Call PUT API
-      this.http.putData(payload.updateDateRangeId, payload, this.constants.exceptionRequest)
-        .subscribe({
-          next: (res: any) => {
-            console.log("PUT API Success:", res);
-            this.getExceptionRequest(); // refresh list after update
-          },
-          error: (err: any) => {
-            console.error("PUT API Error:", err);
-          },
-        });
-    }
-  });
-}
-
+    });
+  }
 
   export() {
     console.log("Exporting to Excel...");

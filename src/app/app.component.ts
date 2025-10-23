@@ -74,10 +74,47 @@ export class AppComponent implements DoCheck, OnInit {
         this.jwtToken = storedToken;
         this.commonService.userDataLoaded$.next();
         this.loadEmployeeData();
+        if (localStorage.getItem("role") === "MANAGER") {
+          console.log("1");
+
+          this.loadManagerData();
+        } else if (localStorage.getItem("role") === "HR") {
+          this.loadAllEmployeeData();
+        }
       }
     });
   }
+  loadAllEmployeeData() {
+    this.http.getData(this.constants.allEmployeeData).subscribe({
+      next: (empResponse: any) => {
+        console.log("All Employee Data Response:", empResponse);
+        localStorage.setItem(
+          "allEmployeeData",
+          JSON.stringify(empResponse.data.employees || [])
+        );
+      },
+      error: (err) => {
+        console.error("All Employee Data API Error:", err);
+      },
+    });
+  }
 
+  loadManagerData() {
+    this.http.getData(this.constants.mangerEmployeeData).subscribe({
+      next: (mgrResponse: any) => {
+        console.log("Manager Employee Data Response:", mgrResponse);
+        if (mgrResponse?.success) {
+          localStorage.setItem(
+            "managerEmployeeData",
+            JSON.stringify(mgrResponse.data.employees || [])
+          );
+        }
+      },
+      error: (err) => {
+        console.error("Manager Employee Data API Error:", err);
+      },
+    });
+  }
   loadEmployeeData() {
     this.http.getData(this.constants.employeeData).subscribe({
       next: (empResponse: any) => {

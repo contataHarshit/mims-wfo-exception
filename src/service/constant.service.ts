@@ -8,5 +8,7 @@ export class ConstantService {
   auth = this.baseUrl + "api/auth";
   exceptionRequest = this.baseUrl + "api/exception-requests";
   employeeData = this.baseUrl + "api/employee";
+  mangerEmployeeData = this.employeeData + "/manager";
+  allEmployeeData = this.employeeData + "/all";
   constructor() {}
 }

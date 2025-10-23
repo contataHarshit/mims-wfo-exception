@@ -40,7 +40,7 @@ export class HttpService {
 
   putData(id: string, data: any, url: string) {
     const headers = this.getAuthHeaders(url);
-    const tempUrl = `${url}/${id}`;
+    const tempUrl = `${url}?id=${id}`;
     return this.http.put(tempUrl, data, { headers });
   }
 

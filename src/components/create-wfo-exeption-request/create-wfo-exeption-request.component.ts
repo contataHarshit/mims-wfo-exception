@@ -70,6 +70,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
   disabledDates: Date[] = [];
 
+  // Key to enable same-week restrictions (weekends disabled + same week only)
+  enableSameWeekRestriction: boolean = true;
+
   constructor(
     private cdr: ChangeDetectorRef,
     private http: HttpService,
@@ -120,6 +123,15 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   }
 
   resetForm() {
+    this.formData.exceptions = [
+      {
+        dateRange: [],
+        primaryReason: "Health Issue",
+        remarks: "",
+        exceptionRequestedDays: 0,
+      },
+    ];
+    this.disabledDates = [];
     if (isPlatformBrowser(this.platformId)) this.loadData();
   }
 
@@ -168,6 +180,15 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     let allowedDays = 0;
     let current = new Date(start);
     while (current <= end) {
+      // Skip weekends if restriction is enabled
+      if (this.enableSameWeekRestriction) {
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          current.setDate(current.getDate() + 1);
+          continue;
+        }
+      }
+
       const weekKey = `${current.getFullYear()}-${getWeekNumber(current)}`;
       if ((usedDaysByWeek[weekKey] || 0) < 2) {
         allowedDays++;
@@ -206,11 +227,20 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     this.disabledDates = allDates;
   }
 
+  validateDays(e: any) {
+    if (e.exceptionRequestedDays > 2) {
+      e.exceptionRequestedDays = 2;
+    } else if (e.exceptionRequestedDays < 1) {
+      e.exceptionRequestedDays = 1;
+    }
+  }
+
   onDateRangeSelect(range: Date[], index: number): void {
     if (!range || range.length < 2) {
       this.formData.exceptions[index].exceptionRequestedDays = 0;
       return;
     }
+    console.log("range------------>", range);
 
     if (this.isOverlapping(index, range)) {
       alert("Selected date range overlaps with an existing one!");
@@ -224,6 +254,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   }
 
   onSubmit() {
+    console.log("this .form----->", this.formData);
+
     const payload = {
       ...this.formData,
       exceptions: this.formData.exceptions.map((ex: any) => ({
