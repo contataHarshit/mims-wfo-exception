@@ -11,9 +11,26 @@
       </mat-radio-group>
     </div>
 
+    <!-- Show input only when Partial Approved -->
+    <div *ngIf="selectedAction === 'partial'" class="section">
+      <label class="section-label">Approved Days *</label>
+      <input
+        matInput
+        type="number"
+        min="1"
+        [(ngModel)]="exceptionApprovedDays"
+        placeholder="Enter approved days"
+       
+      />
+    </div>
+
     <div class="remarks">
       <label class="section-label">Manager Remarks</label>
-      <textarea matInput [(ngModel)]="managerRemarks" placeholder="Enter your comments here..."></textarea>
+      <textarea
+        matInput
+        [(ngModel)]="managerRemarks"
+        placeholder="Enter your comments here..."
+      ></textarea>
     </div>
   </div>
 
@@ -40,7 +57,15 @@
 
 <mat-dialog-actions align="end" class="action-buttons">
   <button mat-stroked-button color="warn" (click)="onCancel()">Cancel</button>
-  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="!selectedAction">
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="
+      !selectedAction ||
+      (selectedAction === 'partial' && !exceptionApprovedDays)
+    "
+  >
     Submit
   </button>
 </mat-dialog-actions>

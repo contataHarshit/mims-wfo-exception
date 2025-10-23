@@ -52,8 +52,8 @@ export class AppComponent implements DoCheck, OnInit {
           .auth(this.constants.auth, { sessionid: sessionId })
           .subscribe({
             next: (response: any) => {
-              const employee = response?.employee || {};
-              this.jwtToken = response?.token || null;
+              const employee = response?.data?.employee || {};
+              this.jwtToken = response?.data?.token || null;
 
               Object.keys(employee).forEach((key) => {
                 localStorage.setItem(key, employee[key]);
@@ -84,7 +84,7 @@ export class AppComponent implements DoCheck, OnInit {
         console.log("Employee Data Response:", empResponse);
         localStorage.setItem(
           "projectManager",
-          empResponse?.managerName?.name || ""
+          empResponse?.data?.employee?.managerName?.name || ""
         );
         this.commonService.userDataLoaded$.next();
       },

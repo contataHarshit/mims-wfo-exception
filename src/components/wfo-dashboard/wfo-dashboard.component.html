@@ -20,15 +20,16 @@
           placeholder="Select Project"></app-common-select>
       </div>
 
-      <div class="form-row">
-        <label>Exception Requested (Days)</label>
-        <app-common-select [options]="daysList" [(value)]="filters.exceptionRequestedDays"
-          placeholder="Select Days"></app-common-select>
-      </div>
+     
 
       <div class="form-row">
         <label>Exception Date Range</label>
         <app-date-range-picker (rangeChange)="onDateRangeChange($event)"></app-date-range-picker>
+      </div>
+       <div class="form-row">
+        <label>Exception Requested (Days)</label>
+        <app-common-select [options]="daysList" [(value)]="filters.exceptionRequestedDays"
+          placeholder="Select Days"></app-common-select>
       </div>
 
       <div class="form-row">

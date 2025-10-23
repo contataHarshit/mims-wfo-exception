@@ -125,7 +125,7 @@ export class WfoDashboardComponent implements OnInit {
         console.log("Exception Request Data Response:", response);
 
         // Transform the API data to match table structure
-        this.exceptionRequests = response.flatMap((req: any) =>
+        this.exceptionRequests = response.data.data.flatMap((req: any) =>
           req.exceptions.map((ex: any) => ({
             employeeId: req.id || "N/A", // If available
             employeeName: `${req.employee?.FirstName || ""} ${
@@ -161,13 +161,56 @@ export class WfoDashboardComponent implements OnInit {
     }
   }
 
-  openActionDialog(request: ExceptionRequest) {
-    const modalRef = this.dialog.open(WfoActionPopupComponent, {
-      width: "500px",
-      data: request,
-    });
-    modalRef.componentInstance.data = request;
-  }
+openActionDialog(request: ExceptionRequest) {
+  const modalRef = this.dialog.open(WfoActionPopupComponent, {
+    width: "500px",
+    data: request,
+  });
+
+  modalRef.afterClosed().subscribe((result) => {
+    if (result) {
+      // Map action to backend status
+      let currentStatus = "";
+      switch (result.action) {
+        case "approved":
+          currentStatus = "APPROVED";
+          break;
+        case "partial":
+          currentStatus = "PARTIALLY_APPROVED";
+          break;
+        case "rejected":
+          currentStatus = "REJECTED";
+          break;
+        default:
+          currentStatus = "PENDING";
+      }
+
+      // Build the payload
+   const payload = {
+  updateDateRangeId: request.employeeId, // replace if needed
+  currentStatus: currentStatus,
+  managerRemarks: result.remarks,
+  exceptionApprovedDays: result.approvedDays || request.exceptionApprovedDays || 1,
+};
+
+
+      console.log("PUT Payload:", payload);
+
+      // Call PUT API
+      this.http.putData(payload.updateDateRangeId, payload, this.constants.exceptionRequest)
+        .subscribe({
+          next: (res: any) => {
+            console.log("PUT API Success:", res);
+            this.getExceptionRequest(); // refresh list after update
+          },
+          error: (err: any) => {
+            console.error("PUT API Error:", err);
+          },
+        });
+    }
+  });
+}
+
 
   export() {
     console.log("Exporting to Excel...");
