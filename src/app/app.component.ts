@@ -71,10 +71,7 @@ export class AppComponent implements DoCheck, OnInit {
       });
 
     // Restore selected view if saved
-    const savedView = localStorage.getItem("selectedView") as
-      | "self"
-      | "resource"
-      | null;
+    const savedView = "self";
     if (savedView) this.selectedView = savedView;
 
     const storedToken = localStorage.getItem("jwtToken");
@@ -108,6 +105,7 @@ export class AppComponent implements DoCheck, OnInit {
         this.role = localStorage.getItem("role") || "";
         if (this.role === "MANAGER") this.loadManagerData();
         else if (this.role === "HR") this.loadAllEmployeeData();
+        else if(this.role=="ADMIN") this.commonService.currentView="resource"
       }
     });
   }
@@ -143,7 +141,12 @@ export class AppComponent implements DoCheck, OnInit {
         );
         localStorage.setItem(
           "projectName",
-          JSON.stringify(res?.data?.employee?.projects || [])
+          JSON.stringify([
+            {
+              id: 1,
+              name: "Digital Workflow System",
+            },
+          ])
         );
         this.commonService.userDataLoaded$.next();
       },
@@ -193,7 +196,7 @@ export class AppComponent implements DoCheck, OnInit {
 
   onViewChange(event: any) {
     this.selectedView = event.target.value;
-    localStorage.setItem("selectedView", this.selectedView); // Persist selection
+    // localStorage.setItem("selectedView", this.selectedView); // Persist selection
     this.commonService.viewChange(event);
   }
 }

@@ -19,7 +19,9 @@ import { InputTextareaModule } from "primeng/inputtextarea";
 import { CardModule } from "primeng/card";
 import { ToastModule } from "primeng/toast";
 import { MultiSelectModule } from "primeng/multiselect";
-
+import { TooltipModule } from "primeng/tooltip";
+import { MessageService } from "primeng/api";
+import { ToastrModule, ToastrService } from "ngx-toastr";
 // Common components
 import { DateRangePickerComponent } from "../../common/date-range-picker/date-range-picker.component";
 import { CommonSelectComponent } from "../../common/common-select/common-select.component";
@@ -33,6 +35,7 @@ import { CommonSelectComponent } from "../../common/common-select/common-select.
     CommonModule,
     FormsModule,
     TableModule,
+    TooltipModule,
     ButtonModule,
     InputTextModule,
     InputTextareaModule,
@@ -41,7 +44,10 @@ import { CommonSelectComponent } from "../../common/common-select/common-select.
     MultiSelectModule,
     DateRangePickerComponent,
     CommonSelectComponent,
+    CardModule,
+    ToastModule,
   ],
+  providers: [MessageService],
 })
 export class CreateWfoExeptionRequestComponent implements OnInit {
   formData: any = {
@@ -77,6 +83,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     private http: HttpService,
     private constant: ConstantService,
     private commonService: CommonService,
+    private messageService: MessageService,
+    private toastr:ToastrService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -98,6 +106,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
   loadData() {
     if (!isPlatformBrowser(this.platformId)) return;
+
     this.formData.employeeId = localStorage.getItem("employeeId") || "N/A";
     this.formData.employeeName = localStorage.getItem("name") || "N/A";
     this.formData.projectManager =
@@ -110,6 +119,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
         label: p.name,
         value: p.id,
       }));
+      this.formData.projectName = parsed.map((p: any) => p.id);
     }
   }
 
@@ -143,6 +153,12 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     ];
     this.disabledDates = [];
     this.loadData();
+    this.messageService.add({
+      severity: "info",
+      summary: "Form Reset",
+      detail: "All fields have been cleared.",
+    });
+    this.toastr.info("Form Reset Successfully")
   }
 
   onDateRangeSelect(range: Date[], index: number): void {
@@ -152,7 +168,11 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     }
 
     if (this.isOverlapping(index, range)) {
-      alert("Selected date range overlaps with an existing one!");
+      this.messageService.add({
+        severity: "warn",
+        summary: "Invalid Range",
+        detail: "Selected date range overlaps with an existing one.",
+      });
       this.formData.exceptions[index].dateRange = [];
       this.formData.exceptions[index].exceptionRequestedDays = 0;
       return;
@@ -169,7 +189,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     return this.formData.exceptions.some((ex: any, idx: number) => {
       if (idx === currentIndex || !ex.dateRange || ex.dateRange.length < 2)
         return false;
-      const [s, e] = ex.dateRange.map((d: any) => new Date(d).getTime());
+      const [s, e] = ex.dateRange.map((d: Date) => new Date(d).getTime());
       return start <= e && end >= s;
     });
   }
@@ -269,12 +289,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     };
     exception.showOtherReason = false;
   }
-  validateDays(event: any): void {
-    const value = Number(event.target.value);
-    if (isNaN(value) || value < 0) {
-      event.target.value = 0;
-    }
-  }
 
   cancelOtherReason(exception: any) {
     exception.otherReason = "";
@@ -282,10 +296,60 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     exception.showOtherReason = false;
   }
 
+enforceMinMaxDays(exception: any, event: any): void {
+  const inputValue: string = event.target.value;
+
+  // Regex to allow only single digit 1 or 2
+  const regex = /^[1-2]$/;
+
+  if (regex.test(inputValue)) {
+    exception.exceptionRequestedDays = Number(inputValue);
+  } else {
+    // Reset invalid input
+    event.target.value = exception.exceptionRequestedDays ? exception.exceptionRequestedDays.toString() : '';
+  }
+}
+
+
+
+  validateForm(): boolean {
+    if (!this.formData.projectName?.length) {
+      this.messageService.add({
+        severity: "warn",
+        summary: "Missing Field",
+        detail: "Please select at least one project.",
+      });
+      return false;
+    }
+
+    for (const [i, ex] of this.formData.exceptions.entries()) {
+      if (!ex.dateRange?.length) {
+        this.messageService.add({
+          severity: "warn",
+          summary: "Invalid Entry",
+          detail: `Please select a valid date range for row ${i + 1}.`,
+        });
+        return false;
+      }
+      if (!ex.primaryReason) {
+        this.messageService.add({
+          severity: "warn",
+          summary: "Missing Field",
+          detail: `Please select a primary reason for row ${i + 1}.`,
+        });
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   onSubmit() {
+    if (!this.validateForm()) return;
+
     const payload = {
       ...this.formData,
-      projectIds: this.formData.projectName, // selected project IDs
+      projectIds: this.formData.projectName,
       exceptions: this.formData.exceptions.map((ex: any) => ({
         ...ex,
         fromDate: ex.dateRange[0] || null,
@@ -298,17 +362,33 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       })),
     };
 
-    console.log("SUBMIT PAYLOAD:", payload);
-
     this.http.postData(payload, this.constant.exceptionRequest).subscribe({
       next: () => {
-        alert("Form submitted successfully!");
+        this.messageService.add({
+          severity: "success",
+          summary: "Success",
+          detail: "Exception request submitted successfully.",
+        });
         this.resetForm();
       },
       error: (error) => {
         console.error("Error submitting form:", error);
-        alert("Error submitting form. Please try again.");
+        this.messageService.add({
+          severity: "error",
+          summary: "Error",
+          detail: "Error submitting form. Please try again.",
+        });
       },
     });
+  }
+
+  getProjectNamesTooltip(): string {
+    if (!this.formData.projectName?.length) return "No projects selected";
+
+    const selectedProjects = this.projectList
+      .filter((p) => this.formData.projectName.includes(p.value))
+      .map((p) => p.label);
+
+    return selectedProjects.join(", ");
   }
 }

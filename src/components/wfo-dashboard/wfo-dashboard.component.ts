@@ -52,28 +52,30 @@ export class WfoDashboardComponent implements OnInit {
     private http: HttpService,
     private constants: ConstantService
   ) {}
+ngOnInit(): void {
+  this.commonService.loading = true;
 
-  ngOnInit(): void {
-    this.commonService.loading = true;
-    const storedData =
-      localStorage.getItem("role") == "MANAGER"
-        ? localStorage.getItem("managerEmployeeData")
-        : localStorage.getItem("allEmployeeData");
-    this.employeeList = storedData
-      ? JSON.parse(storedData).map((item: any) => {
-          return {
-            label: `${item.FullName}(${item.EmployeeNumber})`,
-            value: item.EmployeeNumber,
-          };
-        })
-      : [];
-    // this.employeeIdList = storedData
-    //   ? JSON.parse(storedData).map((item: any) => {
-    //       return { label: item.EmployeeNumber, value: item.EmployeeNumber };
-    //     })
-    //   : [];
+  const storedData =
+    localStorage.getItem("role") === "MANAGER"
+      ? localStorage.getItem("managerEmployeeData")
+      : localStorage.getItem("allEmployeeData");
+
+  this.employeeList = storedData
+    ? JSON.parse(storedData).map((item: any) => ({
+        label: `${item.FullName}(${item.EmployeeNumber})`,
+        value: item.EmployeeNumber,
+      }))
+    : [];
+
+  // Fetch initially
+  this.getExceptionRequest();
+
+  // Subscribe to view changes
+  this.commonService.viewChange$.subscribe(() => {
     this.getExceptionRequest();
-  }
+  });
+}
+
 
   // Dropdown data
   projectList = [
@@ -115,40 +117,50 @@ export class WfoDashboardComponent implements OnInit {
     dateRange: null as Date[] | null,
   };
   getExceptionRequest() {
-    this.http.getData(this.constants.exceptionRequest).subscribe({
-      next: (response: any) => {
-        console.log("Exception Request Data Response:", response);
+    this.commonService.loading = true;
+    const url =
+  this.constants.exceptionRequest +
+  (this.commonService.currentView === "self" ? "?isSelf=true" : "");
 
-        // Transform the API data to match table structure
-        this.exceptionRequests = response.data.data.flatMap((req: any) =>
-          req.exceptions.map((ex: any) => ({
-            employeeId: req.id || "N/A", // If available
-            employeeName: `${req.employee?.FirstName || ""} ${
-              req.employee?.LastName || ""
-            }`.trim(),
-            designation: req.employee?.Designation || "N/A", // Optional field
-            projectName: req.project?.ProjectName || req.projectName || "N/A",
-            exceptionDate: `${ex.fromDate} to ${ex.toDate}`,
-            primaryReason: ex.primaryReason,
-            submissionDate: req.submissionDate
-              ? new Date(req.submissionDate).toLocaleDateString("en-GB")
-              : "N/A",
-            exceptionRequestedDays: ex.exceptionRequestedDays || "N/A",
-            exceptionApprovedDays: ex.exceptionApprovedDays || "N/A",
-            status: ex.currentStatus || "N/A",
-            managerRemarks: req.managerRemarks || "N/A",
-            exceptionId: ex.id,
-          }))
-        );
+this.http.getData(url).subscribe({
+  next: (response: any) => {
+    console.log("Exception Request Data Response:", response);
 
-        this.commonService.loading = false;
-        console.log("Transformed Table Data:", this.exceptionRequests);
-      },
-      error: (err: any) => {
-        this.commonService.loading = false;
-        console.error("Exception Request API Error:", err);
-      },
-    });
+    if (!response?.data?.data) {
+      this.exceptionRequests = [];
+      this.commonService.loading = false;
+      return;
+    }
+
+    // Transform API data to table structure
+    this.exceptionRequests = response.data.data.flatMap((req: any) =>
+      req.exceptions.map((ex: any) => ({
+        employeeId: req.id || "N/A",
+        employeeName: `${req.employee?.FirstName || ""} ${req.employee?.LastName || ""}`.trim(),
+        designation: req.employee?.Designation || "N/A",
+        projectName: req.project?.ProjectName || req.projectName || "N/A",
+        exceptionDate: `${ex.fromDate} to ${ex.toDate}`,
+        primaryReason: ex.primaryReason,
+        submissionDate: req.submissionDate
+          ? new Date(req.submissionDate).toLocaleDateString("en-GB")
+          : "N/A",
+        exceptionRequestedDays: ex.exceptionRequestedDays || "N/A",
+        exceptionApprovedDays: ex.exceptionApprovedDays || "N/A",
+        status: ex.currentStatus || "N/A",
+        managerRemarks: req.managerRemarks || "N/A",
+        exceptionId: ex.id,
+      }))
+    );
+
+    this.commonService.loading = false;
+    console.log("Transformed Table Data:", this.exceptionRequests);
+  },
+  error: (err: any) => {
+    this.commonService.loading = false;
+    console.error("Exception Request API Error:", err);
+  },
+});
+
   }
 
   onDateRangeChange(range: Date[] | null) {

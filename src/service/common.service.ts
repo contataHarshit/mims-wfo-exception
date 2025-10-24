@@ -27,11 +27,15 @@ export class CommonService {
       this.projectManager = localStorage.getItem("projectManager") || "";
     }
   }
+
+viewChange$ = new Subject<string>(); // emits current view
+
   viewChange(event: any) {
     if (event.target.value === "self") {
       this.currentView = "self";
     } else {
       this.currentView = "resource";
     }
+    this.viewChange$.next(this.currentView); // notify subscribers
   }
 }

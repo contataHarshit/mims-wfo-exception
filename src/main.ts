@@ -4,13 +4,22 @@ import { appConfig } from './app/app.config';
 import { importProvidersFrom } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { HttpClientModule } from '@angular/common/http';
+import { ToastrModule } from 'ngx-toastr';
 
-// ✅ Merge animations + HTTP module into appConfig providers
+// ✅ Bootstrap standalone app with Toastr, HttpClient, and animations
 bootstrapApplication(AppComponent, {
   ...appConfig,
   providers: [
     ...(appConfig.providers || []),
-    provideAnimations(), // 👈 enables PrimeNG popups (calendar, dropdown, dialog, etc.)
+    provideAnimations(), // 👈 required for PrimeNG & Toastr
     importProvidersFrom(HttpClientModule),
+    importProvidersFrom(
+      ToastrModule.forRoot({
+        positionClass: 'toast-top-right',
+        timeOut: 3000,
+        preventDuplicates: true,
+        closeButton: true,
+      })
+    ),
   ],
 }).catch((err) => console.error(err));

@@ -1,4 +1,4 @@
-<app-header [header]="commonService.header"></app-header>
+<app-header [header]="commonService.header" [role]="role"></app-header>
 
 <div class="tabs-wrapper">
   <div class="tabs">
@@ -6,7 +6,7 @@
       {{ item.label }}
     </button>
 
-    <div class="select-wrapper" *ngIf="isDashboardPage">
+    <div class="select-wrapper" *ngIf="isDashboardPage && (role=='MANAGER' || role=='HR')">
       <select [(ngModel)]="selectedView" (change)="onViewChange($event)" class="styled-select">
         <option value="self">Self</option>
         <option value="resource">Resource</option>

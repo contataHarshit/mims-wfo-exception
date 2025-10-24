@@ -14,9 +14,13 @@
 
       <div class="form-row">
         <label>Project Name *</label>
-        <p-multiSelect [options]="projectList" [(ngModel)]="formData.projectName" optionLabel="label"
-          optionValue="value" placeholder="Select Project(s)" display="chip" styleClass="w-full"></p-multiSelect>
+        <div pTooltip="{{ getProjectNamesTooltip() }}" tooltipPosition="top" [escape]="false" style="width: 100%">
+          <p-multiSelect [options]="projectList" [(ngModel)]="formData.projectName" optionLabel="label"
+            optionValue="value" placeholder="Select Project(s)" display="chip" styleClass="w-full"
+            [disabled]="true"></p-multiSelect>
+        </div>
       </div>
+
 
       <div class="form-row">
         <label>Project Manager</label>
@@ -50,10 +54,14 @@
               </app-date-range-picker>
             </td>
 
-            <td>
-              <input type="number" pInputText [(ngModel)]="e.exceptionRequestedDays" placeholder="Enter Days" min="1"
-                max="2" (input)="validateDays(e)" />
-            </td>
+<td>
+  <input type="text"
+         pInputText
+         [(ngModel)]="e.exceptionRequestedDays"
+         placeholder="Enter Days"
+         (input)="enforceMinMaxDays(e, $event)" />
+</td>
+
 
             <td>
               <div *ngIf="!e.showOtherReason" class="stable-width">
@@ -71,7 +79,7 @@
             </td>
 
             <td>
-              <textarea pInputTextarea [(ngModel)]="e.remarks" rows="1"></textarea>
+              <textarea pInputTextarea [(ngModel)]="e.remarks" rows="1" placeholder="Enter Remarks"></textarea>
             </td>
 
             <td>
