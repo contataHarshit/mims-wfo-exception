@@ -1,18 +1,24 @@
 <div class="page-container">
   <!-- FILTER SECTION -->
   <div class="filter-card">
-    <div class="form-grid">
-      <div class="form-row">
-        <label>Employee ID</label>
-        <app-common-select [options]="employeeIdList" [(value)]="filters.employeeId"
-          placeholder="Select Employee ID"></app-common-select>
-      </div>
+    <div class="form-row" *ngIf="commonService.currentView=='self'">
+      <label>Employee</label>
+      <select [(ngModel)]="commonService.employeeName" disabled class="styled-disabled-select">
+        <option [value]="commonService.employeeName" selected>
+          {{ commonService.employeeName }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-grid" *ngIf="commonService.currentView!=='self'">
+
 
       <div class="form-row">
-        <label>Employee Name</label>
+        <label>Employee Name(Number)</label>
         <app-common-select [options]="employeeList" [(value)]="filters.employeeName"
           placeholder="Select Employee Name"></app-common-select>
       </div>
+
 
       <div class="form-row">
         <label>Project Name</label>
@@ -46,8 +52,9 @@
     </div>
 
     <div class="form-actions">
-      <button pButton label="Search" class="p-button-success"></button>
-      <button pButton label="Reset" class="p-button-danger" (click)="resetFilters()"></button>
+      <button pButton label="Search" class="p-button-success" *ngIf="commonService.currentView!=='self'"></button>
+      <button pButton label="Reset" class="p-button-danger" (click)="resetFilters()"
+        *ngIf="commonService.currentView!=='self'"></button>
       <button pButton label="Export to Excel" icon="pi pi-file-excel" class="p-button-info" (click)="export()"></button>
     </div>
   </div>

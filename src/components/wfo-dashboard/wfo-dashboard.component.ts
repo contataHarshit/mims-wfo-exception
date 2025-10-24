@@ -48,7 +48,7 @@ interface ExceptionRequest {
 export class WfoDashboardComponent implements OnInit {
   constructor(
     private dialog: MatDialog,
-    private commonService: CommonService,
+    public commonService: CommonService,
     private http: HttpService,
     private constants: ConstantService
   ) {}
@@ -61,14 +61,17 @@ export class WfoDashboardComponent implements OnInit {
         : localStorage.getItem("allEmployeeData");
     this.employeeList = storedData
       ? JSON.parse(storedData).map((item: any) => {
-          return { label: item.FullName, value: item.FullName };
+          return {
+            label: `${item.FullName}(${item.EmployeeNumber})`,
+            value: item.EmployeeNumber,
+          };
         })
       : [];
-    this.employeeIdList = storedData
-      ? JSON.parse(storedData).map((item: any) => {
-          return { label: item.EmployeeNumber, value: item.EmployeeNumber };
-        })
-      : [];
+    // this.employeeIdList = storedData
+    //   ? JSON.parse(storedData).map((item: any) => {
+    //       return { label: item.EmployeeNumber, value: item.EmployeeNumber };
+    //     })
+    //   : [];
     this.getExceptionRequest();
   }
 
@@ -132,7 +135,7 @@ export class WfoDashboardComponent implements OnInit {
               : "N/A",
             exceptionRequestedDays: ex.exceptionRequestedDays || "N/A",
             exceptionApprovedDays: ex.exceptionApprovedDays || "N/A",
-            status: req.currentStatus || "N/A",
+            status: ex.currentStatus || "N/A",
             managerRemarks: req.managerRemarks || "N/A",
             exceptionId: ex.id,
           }))

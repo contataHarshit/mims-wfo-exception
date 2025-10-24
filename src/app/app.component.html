@@ -5,10 +5,24 @@
     <button *ngFor="let item of tabs; let i = index" [class.active]="item.isActive" (click)="navigateTo(item.path)">
       {{ item.label }}
     </button>
+
+    <div class="select-wrapper" *ngIf="isDashboardPage">
+      <select [(ngModel)]="selectedView" (change)="onViewChange($event)" class="styled-select">
+        <option value="self">Self</option>
+        <option value="resource">Resource</option>
+      </select>
+      <span class="select-arrow">
+        <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+          <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </span>
+    </div>
   </div>
 
   <div class="tab-content">
     <router-outlet></router-outlet>
   </div>
 </div>
+
 <app-common-loader *ngIf="commonService.loading"></app-common-loader>

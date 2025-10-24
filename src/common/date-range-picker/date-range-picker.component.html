@@ -1,3 +1,3 @@
-<p-calendar [(ngModel)]="range" selectionMode="range" dateFormat="yy-mm-dd" showIcon="true" appendTo="body"
-  [disabledDates]="allDisabledDates" (onSelect)="onSelect()" (onClearClick)="onClear()" [showButtonBar]="true">
-</p-calendar>
+<p-calendar [(ngModel)]="range" (ngModelChange)="onModelChange($event)" selectionMode="range" dateFormat="yy-mm-dd"
+  showIcon="true" appendTo="body" [minDate]="minDate" [maxDate]="maxDate" [disabledDates]="allDisabledDates"
+  [disabledDays]="disabledDays" (onClearClick)="onClear()" [showButtonBar]="true"></p-calendar>

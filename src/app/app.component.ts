@@ -1,5 +1,11 @@
 import { Component, DoCheck, OnInit, Inject, PLATFORM_ID } from "@angular/core";
-import { Router, RouterOutlet, ActivatedRoute } from "@angular/router";
+import {
+  Router,
+  RouterOutlet,
+  ActivatedRoute,
+  NavigationEnd,
+  Event as RouterEvent,
+} from "@angular/router";
 import { HeaderComponent } from "../components/header/header.component";
 import { CommonService } from "../service/common.service";
 import { CommonModule, isPlatformBrowser } from "@angular/common";
@@ -7,6 +13,9 @@ import { HttpService } from "../service/http.service";
 import { ConstantService } from "../service/constant.service";
 import { HttpClientModule } from "@angular/common/http";
 import { CommonLoaderComponent } from "../common/common-loader/common-loader.component";
+import { filter } from "rxjs/operators";
+import { FormsModule } from "@angular/forms";
+
 @Component({
   selector: "app-root",
   standalone: true,
@@ -15,6 +24,7 @@ import { CommonLoaderComponent } from "../common/common-loader/common-loader.com
     HeaderComponent,
     CommonModule,
     HttpClientModule,
+    FormsModule,
     CommonLoaderComponent,
   ],
   templateUrl: "./app.component.html",
@@ -29,6 +39,10 @@ export class AppComponent implements DoCheck, OnInit {
   ];
 
   jwtToken: string | null = null;
+  role = "";
+  isDashboardPage = false;
+
+  selectedView: "self" | "resource" = "self"; // Persist select value
 
   constructor(
     public commonService: CommonService,
@@ -41,6 +55,27 @@ export class AppComponent implements DoCheck, OnInit {
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+
+    // Track route changes and maintain tab active
+    this.router.events
+      .pipe(
+        filter(
+          (event: RouterEvent): event is NavigationEnd =>
+            event instanceof NavigationEnd
+        )
+      )
+      .subscribe((event: NavigationEnd) => {
+        const url = event.urlAfterRedirects;
+        this.isDashboardPage = url.includes("dashboard");
+        this.updateActiveTabs(url);
+      });
+
+    // Restore selected view if saved
+    const savedView = localStorage.getItem("selectedView") as
+      | "self"
+      | "resource"
+      | null;
+    if (savedView) this.selectedView = savedView;
 
     const storedToken = localStorage.getItem("jwtToken");
 
@@ -59,96 +94,106 @@ export class AppComponent implements DoCheck, OnInit {
                 localStorage.setItem(key, employee[key]);
               });
 
-              if (this.jwtToken) {
+              if (this.jwtToken)
                 localStorage.setItem("jwtToken", this.jwtToken);
-              }
 
-              console.log("Auth Response:", response);
               this.loadEmployeeData();
             },
-            error: (err) => {
-              console.error("Auth API Error:", err);
-            },
+            error: (err) => console.error("Auth API Error:", err),
           });
       } else {
         this.jwtToken = storedToken;
         this.commonService.userDataLoaded$.next();
         this.loadEmployeeData();
-        if (localStorage.getItem("role") === "MANAGER") {
-          console.log("1");
-
-          this.loadManagerData();
-        } else if (localStorage.getItem("role") === "HR") {
-          this.loadAllEmployeeData();
-        }
+        this.role = localStorage.getItem("role") || "";
+        if (this.role === "MANAGER") this.loadManagerData();
+        else if (this.role === "HR") this.loadAllEmployeeData();
       }
     });
   }
+
   loadAllEmployeeData() {
     this.http.getData(this.constants.allEmployeeData).subscribe({
-      next: (empResponse: any) => {
-        console.log("All Employee Data Response:", empResponse);
+      next: (res: any) =>
         localStorage.setItem(
           "allEmployeeData",
-          JSON.stringify(empResponse.data.employees || [])
-        );
-      },
-      error: (err) => {
-        console.error("All Employee Data API Error:", err);
-      },
+          JSON.stringify(res.data.employees || [])
+        ),
+      error: (err) => console.error("All Employee Data API Error:", err),
     });
   }
 
   loadManagerData() {
     this.http.getData(this.constants.mangerEmployeeData).subscribe({
-      next: (mgrResponse: any) => {
-        console.log("Manager Employee Data Response:", mgrResponse);
-        if (mgrResponse?.success) {
-          localStorage.setItem(
-            "managerEmployeeData",
-            JSON.stringify(mgrResponse.data.employees || [])
-          );
-        }
-      },
-      error: (err) => {
-        console.error("Manager Employee Data API Error:", err);
-      },
+      next: (res: any) =>
+        localStorage.setItem(
+          "managerEmployeeData",
+          JSON.stringify(res.data.employees || [])
+        ),
+      error: (err) => console.error("Manager Employee Data API Error:", err),
     });
   }
+
   loadEmployeeData() {
     this.http.getData(this.constants.employeeData).subscribe({
-      next: (empResponse: any) => {
-        console.log("Employee Data Response:", empResponse);
+      next: (res: any) => {
         localStorage.setItem(
           "projectManager",
-          empResponse?.data?.employee?.managerName?.name || ""
+          res?.data?.employee?.managerName?.name || ""
+        );
+        localStorage.setItem(
+          "projectName",
+          JSON.stringify(res?.data?.employee?.projects || [])
         );
         this.commonService.userDataLoaded$.next();
       },
-      error: (err) => {
-        console.error("Employee Data API Error:", err);
-      },
+      error: (err) => console.error("Employee Data API Error:", err),
     });
   }
 
   ngDoCheck(): void {
+    // Ensure tabs are active on refresh
     this.tabs.forEach((tab) => {
       tab.isActive = this.isActive(tab.path);
     });
   }
 
   navigateTo(path: string) {
-    this.router.navigate([path]);
+    this.router.navigate([path], { queryParamsHandling: "preserve" }); // Maintain query params
   }
 
   isActive(path: string): boolean {
-    const currentUrl = this.router.url.replace(/^\/+/, "");
+    const currentUrl = this.router.url.split("?")[0].replace(/^\/+/, ""); // remove query params and leading slash
     const cleanedPath = path.replace(/^\/+/, "");
 
     if (cleanedPath === "") {
-      return currentUrl === "" || currentUrl === "create-wfo-exception-request";
+      // Default tab
+      return (
+        currentUrl === "" ||
+        currentUrl.startsWith("create-wfo-exception-request")
+      );
     }
 
-    return currentUrl === cleanedPath;
+    return (
+      currentUrl === cleanedPath || currentUrl.startsWith(cleanedPath + "/")
+    );
+  }
+
+  updateActiveTabs(url: string) {
+    const currentUrl = url.split("?")[0].replace(/^\/+/, ""); // remove query params
+    this.tabs.forEach((tab) => {
+      const path = tab.path.replace(/^\/+/, "");
+      tab.isActive =
+        path === ""
+          ? currentUrl === "" ||
+            currentUrl.startsWith("create-wfo-exception-request")
+          : currentUrl === path || currentUrl.startsWith(path + "/");
+    });
+  }
+
+  onViewChange(event: any) {
+    this.selectedView = event.target.value;
+    localStorage.setItem("selectedView", this.selectedView); // Persist selection
+    this.commonService.viewChange(event);
   }
 }

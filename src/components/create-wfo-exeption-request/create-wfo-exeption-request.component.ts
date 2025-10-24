@@ -18,6 +18,7 @@ import { InputTextModule } from "primeng/inputtext";
 import { InputTextareaModule } from "primeng/inputtextarea";
 import { CardModule } from "primeng/card";
 import { ToastModule } from "primeng/toast";
+import { MultiSelectModule } from "primeng/multiselect";
 
 // Common components
 import { DateRangePickerComponent } from "../../common/date-range-picker/date-range-picker.component";
@@ -37,6 +38,7 @@ import { CommonSelectComponent } from "../../common/common-select/common-select.
     InputTextareaModule,
     CardModule,
     ToastModule,
+    MultiSelectModule,
     DateRangePickerComponent,
     CommonSelectComponent,
   ],
@@ -45,33 +47,30 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   formData: any = {
     employeeId: "",
     employeeName: "",
-    projectId: 1001,
+    projectName: [], // multi-select
     projectManager: "",
     exceptions: [
       {
-        dateRange: [], // [fromDate, toDate]
-        primaryReason: "Health Issue",
+        dateRange: [],
+        primaryReason: null,
+        otherReason: "",
         remarks: "",
         exceptionRequestedDays: 0,
       },
     ],
   };
 
-  projectList = [
-    { label: "Project A", value: "Project A" },
-    { label: "Project B", value: "Project B" },
-  ];
+  disabledDates: Date[] = [];
+  projectList: any[] = [];
 
   reasonList = [
     { label: "Health Issue", value: "Health Issue" },
     { label: "Personal Work", value: "Personal Work" },
     { label: "Travel", value: "Travel" },
+    { label: "Other", value: "other" },
   ];
 
-  disabledDates: Date[] = [];
-
-  // Key to enable same-week restrictions (weekends disabled + same week only)
-  enableSameWeekRestriction: boolean = true;
+  enableSameWeekRestriction = true;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -101,15 +100,24 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     if (!isPlatformBrowser(this.platformId)) return;
     this.formData.employeeId = localStorage.getItem("employeeId") || "N/A";
     this.formData.employeeName = localStorage.getItem("name") || "N/A";
-    this.formData.projectId = 1001;
     this.formData.projectManager =
       localStorage.getItem("projectManager") || "N/A";
+
+    const storedProjects = localStorage.getItem("projectName");
+    if (storedProjects) {
+      const parsed = JSON.parse(storedProjects);
+      this.projectList = parsed.map((p: any) => ({
+        label: p.name,
+        value: p.id,
+      }));
+    }
   }
 
   addMore() {
     this.formData.exceptions.push({
       dateRange: [],
-      primaryReason: "Health Issue",
+      primaryReason: null,
+      otherReason: "",
       remarks: "",
       exceptionRequestedDays: 0,
     });
@@ -123,16 +131,62 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   }
 
   resetForm() {
+    this.formData.projectName = [];
     this.formData.exceptions = [
       {
         dateRange: [],
-        primaryReason: "Health Issue",
+        primaryReason: null,
+        otherReason: "",
         remarks: "",
         exceptionRequestedDays: 0,
       },
     ];
     this.disabledDates = [];
-    if (isPlatformBrowser(this.platformId)) this.loadData();
+    this.loadData();
+  }
+
+  onDateRangeSelect(range: Date[], index: number): void {
+    if (!range || range.length < 2) {
+      this.formData.exceptions[index].exceptionRequestedDays = 0;
+      return;
+    }
+
+    if (this.isOverlapping(index, range)) {
+      alert("Selected date range overlaps with an existing one!");
+      this.formData.exceptions[index].dateRange = [];
+      this.formData.exceptions[index].exceptionRequestedDays = 0;
+      return;
+    }
+
+    this.calculateExceptionDays(this.formData.exceptions[index]);
+    this.updateDisabledDates();
+  }
+
+  isOverlapping(currentIndex: number, newRange: Date[]): boolean {
+    if (!newRange || newRange.length < 2) return false;
+    const [start, end] = newRange.map((d) => new Date(d).getTime());
+
+    return this.formData.exceptions.some((ex: any, idx: number) => {
+      if (idx === currentIndex || !ex.dateRange || ex.dateRange.length < 2)
+        return false;
+      const [s, e] = ex.dateRange.map((d: any) => new Date(d).getTime());
+      return start <= e && end >= s;
+    });
+  }
+
+  updateDisabledDates() {
+    const allDates: Date[] = [];
+    this.formData.exceptions.forEach((ex: any) => {
+      if (ex.dateRange && ex.dateRange.length === 2) {
+        const [start, end] = ex.dateRange;
+        let current = new Date(start);
+        while (current <= new Date(end)) {
+          allDates.push(new Date(current));
+          current.setDate(current.getDate() + 1);
+        }
+      }
+    });
+    this.disabledDates = allDates;
   }
 
   calculateExceptionDays(e: any): void {
@@ -163,7 +217,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       );
     };
 
-    // Step 1: Collect all previously used days by week
     const usedDaysByWeek: Record<string, number> = {};
     this.formData.exceptions.forEach((ex: any) => {
       if (ex === e || !ex.dateRange || ex.dateRange.length < 2) return;
@@ -176,11 +229,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       }
     });
 
-    // Step 2: Calculate valid exception days for this new range
     let allowedDays = 0;
     let current = new Date(start);
     while (current <= end) {
-      // Skip weekends if restriction is enabled
       if (this.enableSameWeekRestriction) {
         const dayOfWeek = current.getDay();
         if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -200,73 +251,54 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     e.exceptionRequestedDays = allowedDays;
   }
 
-  isOverlapping(currentIndex: number, newRange: Date[]): boolean {
-    if (!newRange || newRange.length < 2) return false;
-    const [start, end] = newRange.map((d) => new Date(d).getTime());
-
-    return this.formData.exceptions.some((ex: any, idx: number) => {
-      if (idx === currentIndex || !ex.dateRange || ex.dateRange.length < 2)
-        return false;
-      const [s, e] = ex.dateRange.map((d: Date) => new Date(d).getTime());
-      return start <= e && end >= s;
-    });
-  }
-
-  updateDisabledDates() {
-    const allDates: Date[] = [];
-    this.formData.exceptions.forEach((ex: any) => {
-      if (ex.dateRange && ex.dateRange.length === 2) {
-        const [start, end] = ex.dateRange;
-        let current = new Date(start);
-        while (current <= new Date(end)) {
-          allDates.push(new Date(current));
-          current.setDate(current.getDate() + 1);
-        }
-      }
-    });
-    this.disabledDates = allDates;
-  }
-
-  validateDays(e: any) {
-    if (e.exceptionRequestedDays > 2) {
-      e.exceptionRequestedDays = 2;
-    } else if (e.exceptionRequestedDays < 1) {
-      e.exceptionRequestedDays = 1;
+  onPrimaryReasonChange(exception: any) {
+    if (exception.primaryReason?.value === "other") {
+      exception.showOtherReason = true;
+      exception.otherReason = "";
+    } else {
+      exception.showOtherReason = false;
+      exception.otherReason = "";
     }
   }
 
-  onDateRangeSelect(range: Date[], index: number): void {
-    if (!range || range.length < 2) {
-      this.formData.exceptions[index].exceptionRequestedDays = 0;
-      return;
+  confirmOtherReason(exception: any) {
+    if (!exception.otherReason?.trim()) return;
+    exception.primaryReason = {
+      label: exception.otherReason,
+      value: exception.otherReason,
+    };
+    exception.showOtherReason = false;
+  }
+  validateDays(event: any): void {
+    const value = Number(event.target.value);
+    if (isNaN(value) || value < 0) {
+      event.target.value = 0;
     }
-    console.log("range------------>", range);
+  }
 
-    if (this.isOverlapping(index, range)) {
-      alert("Selected date range overlaps with an existing one!");
-      this.formData.exceptions[index].dateRange = [];
-      this.formData.exceptions[index].exceptionRequestedDays = 0;
-      return;
-    }
-
-    this.calculateExceptionDays(this.formData.exceptions[index]);
-    this.updateDisabledDates();
+  cancelOtherReason(exception: any) {
+    exception.otherReason = "";
+    exception.primaryReason = null;
+    exception.showOtherReason = false;
   }
 
   onSubmit() {
-    console.log("this .form----->", this.formData);
-
     const payload = {
       ...this.formData,
+      projectIds: this.formData.projectName, // selected project IDs
       exceptions: this.formData.exceptions.map((ex: any) => ({
         ...ex,
         fromDate: ex.dateRange[0] || null,
         toDate: ex.dateRange[1] || null,
         dateRange: undefined,
+        primaryReason:
+          ex.primaryReason === "other"
+            ? ex.otherReason
+            : ex.primaryReason?.value || ex.primaryReason,
       })),
     };
 
-    console.log("Submitting form data:", payload);
+    console.log("SUBMIT PAYLOAD:", payload);
 
     this.http.postData(payload, this.constant.exceptionRequest).subscribe({
       next: () => {

@@ -16,6 +16,7 @@ export class CommonService {
   userDataLoaded$ = new Subject<void>();
   loading = false;
   managerEmployeeData: any[] = [];
+  currentView: string = "self";
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     if (isPlatformBrowser(this.platformId)) {
       this.employeeName = localStorage.getItem("name") || "User";
@@ -24,6 +25,13 @@ export class CommonService {
       this.employeeEmail = localStorage.getItem("email") || "";
       this.projectName = localStorage.getItem("projectName") || "";
       this.projectManager = localStorage.getItem("projectManager") || "";
+    }
+  }
+  viewChange(event: any) {
+    if (event.target.value === "self") {
+      this.currentView = "self";
+    } else {
+      this.currentView = "resource";
     }
   }
 }

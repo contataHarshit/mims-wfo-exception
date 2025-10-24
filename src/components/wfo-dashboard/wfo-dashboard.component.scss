@@ -125,3 +125,18 @@ p-calendar {
 ::ng-deep .mat-mdc-dialog-surface {
   width: unset !important;
 }
+
+.styled-disabled-select {
+  width: 30%;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #f5f5f5;
+  color: #0f0e0e;
+  font-size: 14px;
+  cursor: not-allowed;
+}
+
+.styled-disabled-select option {
+  color: #555;
+}

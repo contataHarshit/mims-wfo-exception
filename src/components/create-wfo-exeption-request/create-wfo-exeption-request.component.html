@@ -1,7 +1,5 @@
 <div class="page-container">
   <p-card class="main-form-card">
-    <h3 class="page-title">Work From Office Exception Request</h3>
-
     <!-- EMPLOYEE DETAILS SECTION -->
     <div class="form-grid">
       <div class="form-row">
@@ -16,9 +14,8 @@
 
       <div class="form-row">
         <label>Project Name *</label>
-        <app-common-select [options]="projectList" [(value)]="formData.projectName" placeholder="Select Project"
-          [searchKey]="'label'">
-        </app-common-select>
+        <p-multiSelect [options]="projectList" [(ngModel)]="formData.projectName" optionLabel="label"
+          optionValue="value" placeholder="Select Project(s)" display="chip" styleClass="w-full"></p-multiSelect>
       </div>
 
       <div class="form-row">
@@ -59,9 +56,18 @@
             </td>
 
             <td>
-              <app-common-select [options]="reasonList" [(value)]="e.primaryReason" placeholder="Select"
-                [searchKey]="'label'">
-              </app-common-select>
+              <div *ngIf="!e.showOtherReason" class="stable-width">
+                <app-common-select [options]="reasonList" [(value)]="e.primaryReason" placeholder="Select"
+                  [searchKey]="'label'" (valueChange)="onPrimaryReasonChange(e)">
+                </app-common-select>
+              </div>
+
+              <div *ngIf="e.showOtherReason" class="stable-width input-wrapper">
+                <input pInputText [(ngModel)]="e.otherReason" placeholder="Enter other reason"
+                  class="input-with-icons" />
+                <i class="pi pi-check inside-icon tick" (click)="confirmOtherReason(e)"></i>
+                <i class="pi pi-times inside-icon cross" (click)="cancelOtherReason(e)"></i>
+              </div>
             </td>
 
             <td>

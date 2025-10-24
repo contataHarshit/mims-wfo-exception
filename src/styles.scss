@@ -62,3 +62,43 @@ body {
   border-color: var(--primary-color) !important;
   box-shadow: 0 0 0 0.2rem rgba(230, 81, 0, 0.2) !important;
 }
+
+.p-button-danger {
+  background: white;
+  color: dimgray;
+  border: none;
+  border-radius: 6px;
+  /* Rounded corners */
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  box-shadow: -1px 0px 5px rgba(0, 0, 0, 0.1);
+  /* subtle shadow */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  /* smooth hover transition */
+}
+
+.p-button-danger:hover {
+  background: #f8d7da;
+  /* light red on hover */
+  color: #a94442;
+  /* darker text on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  /* elevate on hover */
+  transform: translateY(-2px);
+  /* subtle lift effect */
+}
+
+.p-button-danger:active {
+  background: #f5c6cb;
+  /* slightly darker when clicked */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+  /* reset lift */
+}
+
+.p-button-danger:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3);
+  /* focus ring */
+}
