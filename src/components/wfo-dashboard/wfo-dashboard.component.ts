@@ -100,7 +100,7 @@ export class WfoDashboardComponent implements OnInit {
 
   statusList = [
     { label: "All", value: "" },
-    { label: "Pending", value: "" },
+    { label: "Pending", value: "pending" },
   ];
 
   // Exception Request Data
@@ -331,5 +331,23 @@ export class WfoDashboardComponent implements OnInit {
     });
 
     return changes;
+  }
+  filterData(){
+     this.commonService.loading=true
+    if(this.filters.status=="pending"){
+     
+      this.exceptionRequests.filter((item:any)=>item.status=="pending")
+      setTimeout(() => {
+        this.commonService.loading=false
+      }, 2000);
+    }
+    else{
+      this.getExceptionRequest()
+    }
+  }
+  deleteRequest(index:number){
+    if(window.confirm("Are you sure you want to delete this request?"))
+    this.exceptionRequests.splice(index,1)
+  this.toastr.success("Request deleted successfully")
   }
 }

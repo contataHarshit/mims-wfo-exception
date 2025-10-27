@@ -1,17 +1,17 @@
 <div class="page-container">
   <!-- FILTER SECTION -->
   <div class="filter-card">
-    <div class="form-row" *ngIf="commonService.currentView=='self'">
+    <div class="form-row" *ngIf="commonService.currentView=='self'" style="flex-direction: row; gap: 20px;">
       <div>
         <label>Employee</label>
         <br>
-        <select [(ngModel)]="commonService.employeeName" disabled class="styled-disabled-select">
+        <select [(ngModel)]="commonService.employeeName" disabled class="styled-disabled-select" style="width: 300px;">
           <option [value]="commonService.employeeName" selected>
             {{ commonService.employeeName }}
           </option>
         </select>
       </div>
-      <div style="width: 300px;">
+      <div style="width: 300px; ">
         <label>Status</label>
         <app-common-select [options]="statusList" [(value)]="filters.status"
           placeholder="Select Status"></app-common-select>
@@ -60,7 +60,7 @@
     </div>
 
     <div class="form-actions">
-      <button pButton label="Search" class="p-button-success" *ngIf="commonService.currentView!=='self'"></button>
+      <button pButton label="Search" class="p-button-success" (click)="filterData()" ></button>
       <button pButton label="Reset" class="p-button-danger" (click)="resetFilters()"
         *ngIf="commonService.currentView!=='self'"></button>
       <button pButton label="Export to Excel" icon="pi pi-file-excel" class="p-button-info" (click)="export()"></button>
@@ -70,7 +70,7 @@
   <!-- TABLE SECTION -->
   <div class="table-card">
     <p-table [value]="exceptionRequests" class="p-datatable-gridlines" [tableStyle]="{ 'max-height': '40vh' }"
-      [paginator]="true" [rows]="10" [rowsPerPageOptions]="[5, 10, 20]" [responsiveLayout]="'scroll'">
+      [paginator]="true" [rows]="10" [rowsPerPageOptions]="[5, 10, 20]" [responsiveLayout]="'scroll'" >
       <ng-template pTemplate="header">
         <tr>
           <th>Employee ID</th>
@@ -88,7 +88,7 @@
         </tr>
       </ng-template>
 
-      <ng-template pTemplate="body" let-req>
+      <ng-template pTemplate="body" let-req let-index="rowIndex">
         <tr>
           <!-- Non-editable fields -->
           <td>{{ req.employeeId }}</td>
@@ -152,7 +152,7 @@
                 </ng-template>
               </div>
               <div>
-                <i class="fa fa-trash"></i>
+                <i class="fa fa-trash" (click)="deleteRequest(index)"></i>
               </div>
             </div>
           </td>

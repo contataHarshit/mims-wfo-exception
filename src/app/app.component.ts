@@ -13,7 +13,7 @@ import { HttpService } from "../service/http.service";
 import { ConstantService } from "../service/constant.service";
 import { HttpClientModule } from "@angular/common/http";
 import { CommonLoaderComponent } from "../common/common-loader/common-loader.component";
-import { filter } from "rxjs/operators";
+import { filter, firstValueFrom } from "rxjs";
 import { FormsModule } from "@angular/forms";
 
 @Component({
@@ -41,8 +41,7 @@ export class AppComponent implements DoCheck, OnInit {
   jwtToken: string | null = null;
   role = "";
   isDashboardPage = false;
-
-  selectedView: "self" | "resource" = "self"; // Persist select value
+  selectedView: "self" | "resource" = "self";
 
   constructor(
     public commonService: CommonService,
@@ -53,150 +52,129 @@ export class AppComponent implements DoCheck, OnInit {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // Track route changes and maintain tab active
+    // Track navigation
     this.router.events
-      .pipe(
-        filter(
-          (event: RouterEvent): event is NavigationEnd =>
-            event instanceof NavigationEnd
-        )
-      )
-      .subscribe((event: NavigationEnd) => {
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
         const url = event.urlAfterRedirects;
         this.isDashboardPage = url.includes("dashboard");
         this.updateActiveTabs(url);
       });
 
-    // Restore selected view if saved
-    const savedView = "self";
-    if (savedView) this.selectedView = savedView;
+    // Restore view
+    const savedView = localStorage.getItem("selectedView") || "self";
+    this.selectedView = savedView as "self" | "resource";
 
     const storedToken = localStorage.getItem("jwtToken");
+    const storedRole = localStorage.getItem("role");
 
-    this.route.queryParams.subscribe((params) => {
+    // Case 1: User already logged in
+    if (storedToken && storedRole) {
+      this.jwtToken = storedToken;
+      this.role = storedRole;
+      this.commonService.userDataLoaded$.next();
+      await this.loadRoleSpecificData(storedRole);
+      return;
+    }
+
+    // Case 2: No localStorage, but sessionid present (fresh login)
+    this.route.queryParams.subscribe(async (params) => {
       const sessionId = params["sessionid"];
+      if (!sessionId) return;
 
-      if (!storedToken && sessionId) {
-        this.http
-          .auth(this.constants.auth, { sessionid: sessionId })
-          .subscribe({
-            next: (response: any) => {
-              const employee = response?.data?.employee || {};
-              this.jwtToken = response?.data?.token || null;
+      try {
+        const response: any = await firstValueFrom(
+          this.http.auth(this.constants.auth, { sessionid: sessionId })
+        );
 
-              Object.keys(employee).forEach((key) => {
-                localStorage.setItem(key, employee[key]);
-              });
+        const employee = response?.data?.employee || {};
+        this.jwtToken = response?.data?.token || null;
 
-              if (this.jwtToken)
-                localStorage.setItem("jwtToken", this.jwtToken);
+        // Save data in localStorage
+        localStorage.setItem("jwtToken", this.jwtToken || "");
+        localStorage.setItem("role", employee.role || "");
+        localStorage.setItem("name", employee.name || "");
+        localStorage.setItem("employeeNumber", employee.employeeNumber || "");
+        localStorage.setItem("email", employee.email || "");
 
-              this.loadEmployeeData();
-            },
-            error: (err) => console.error("Auth API Error:", err),
-          });
-      } else {
-        this.jwtToken = storedToken;
+        this.role = employee.role || "";
+
+        // Load additional role data
+        await this.loadRoleSpecificData(this.role);
+
+        // Notify app that user data is loaded
         this.commonService.userDataLoaded$.next();
-        this.loadEmployeeData();
-        this.role = localStorage.getItem("role") || "";
-        if (this.role === "MANAGER") this.loadManagerData();
-        else if (this.role === "HR") this.loadAllEmployeeData();
-        else if(this.role=="ADMIN") this.commonService.currentView="resource"
+      } catch (err) {
+        console.error("Auth API Error:", err);
       }
     });
   }
 
-  loadAllEmployeeData() {
-    this.http.getData(this.constants.allEmployeeData).subscribe({
-      next: (res: any) =>
-        localStorage.setItem(
-          "allEmployeeData",
-          JSON.stringify(res.data.employees || [])
-        ),
-      error: (err) => console.error("All Employee Data API Error:", err),
-    });
+  /** Load data based on user role */
+  async loadRoleSpecificData(role: string) {
+    if (role === "MANAGER") {
+      await this.loadManagerData();
+    } else if (role === "HR") {
+      await this.loadAllEmployeeData();
+    } else if (role === "ADMIN") {
+      this.commonService.currentView = "resource";
+    }
   }
 
-  loadManagerData() {
-    this.http.getData(this.constants.mangerEmployeeData).subscribe({
-      next: (res: any) =>
-        localStorage.setItem(
-          "managerEmployeeData",
-          JSON.stringify(res.data.employees || [])
-        ),
-      error: (err) => console.error("Manager Employee Data API Error:", err),
-    });
+  async loadAllEmployeeData() {
+    try {
+      const res: any = await firstValueFrom(this.http.getData(this.constants.allEmployeeData));
+      localStorage.setItem("allEmployeeData", JSON.stringify(res.data.employees || []));
+    } catch (err) {
+      console.error("All Employee Data API Error:", err);
+    }
   }
 
-  loadEmployeeData() {
-    this.http.getData(this.constants.employeeData).subscribe({
-      next: (res: any) => {
-        localStorage.setItem(
-          "projectManager",
-          res?.data?.employee?.managerName?.name || ""
-        );
-        localStorage.setItem(
-          "projectName",
-          JSON.stringify([
-            {
-              id: 1,
-              name: "Digital Workflow System",
-            },
-          ])
-        );
-        this.commonService.userDataLoaded$.next();
-      },
-      error: (err) => console.error("Employee Data API Error:", err),
-    });
+  async loadManagerData() {
+    try {
+      const res: any = await firstValueFrom(this.http.getData(this.constants.mangerEmployeeData));
+      localStorage.setItem("managerEmployeeData", JSON.stringify(res.data.employees || []));
+    } catch (err) {
+      console.error("Manager Employee Data API Error:", err);
+    }
   }
 
   ngDoCheck(): void {
-    // Ensure tabs are active on refresh
-    this.tabs.forEach((tab) => {
-      tab.isActive = this.isActive(tab.path);
-    });
+    this.tabs.forEach((tab) => (tab.isActive = this.isActive(tab.path)));
   }
 
   navigateTo(path: string) {
-    this.router.navigate([path], { queryParamsHandling: "preserve" }); // Maintain query params
+    this.router.navigate([path], { queryParamsHandling: "preserve" });
   }
 
   isActive(path: string): boolean {
-    const currentUrl = this.router.url.split("?")[0].replace(/^\/+/, ""); // remove query params and leading slash
+    const currentUrl = this.router.url.split("?")[0].replace(/^\/+/, "");
     const cleanedPath = path.replace(/^\/+/, "");
-
     if (cleanedPath === "") {
-      // Default tab
       return (
-        currentUrl === "" ||
-        currentUrl.startsWith("create-wfo-exception-request")
+        currentUrl === "" || currentUrl.startsWith("create-wfo-exception-request")
       );
     }
-
-    return (
-      currentUrl === cleanedPath || currentUrl.startsWith(cleanedPath + "/")
-    );
+    return currentUrl === cleanedPath || currentUrl.startsWith(cleanedPath + "/");
   }
 
   updateActiveTabs(url: string) {
-    const currentUrl = url.split("?")[0].replace(/^\/+/, ""); // remove query params
+    const currentUrl = url.split("?")[0].replace(/^\/+/, "");
     this.tabs.forEach((tab) => {
       const path = tab.path.replace(/^\/+/, "");
       tab.isActive =
         path === ""
-          ? currentUrl === "" ||
-            currentUrl.startsWith("create-wfo-exception-request")
+          ? currentUrl === "" || currentUrl.startsWith("create-wfo-exception-request")
           : currentUrl === path || currentUrl.startsWith(path + "/");
     });
   }
 
   onViewChange(event: any) {
     this.selectedView = event.target.value;
-    // localStorage.setItem("selectedView", this.selectedView); // Persist selection
+    localStorage.setItem("selectedView", this.selectedView);
     this.commonService.viewChange(event);
   }
 }
