@@ -21,10 +21,11 @@ import { ToastModule } from "primeng/toast";
 import { MultiSelectModule } from "primeng/multiselect";
 import { TooltipModule } from "primeng/tooltip";
 import { MessageService } from "primeng/api";
-import { ToastrModule, ToastrService } from "ngx-toastr";
+// import { ToastrModule, ToastrService } from "ngx-toastr";
 // Common components
 import { DateRangePickerComponent } from "../../common/date-range-picker/date-range-picker.component";
 import { CommonSelectComponent } from "../../common/common-select/common-select.component";
+import { ToastrService } from "ngx-toastr";
 
 @Component({
   selector: "app-create-wfo-exeption-request",
@@ -403,7 +404,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
     const payload = {
       ...this.formData,
-      projectIds: this.formData.projectName,
+      projectId: 1,
       exceptions: this.formData.exceptions.map((ex: any) => ({
         ...ex,
         fromDate: ex.dateRange[0] || null,
@@ -437,6 +438,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
         }
       },
       error: (error) => {
+        alert("Error submitting form. Please try again.");
         console.error("Error submitting form:", error);
         this.toastr.error("Api Error, Something Went Wrong");
         this.messageService.add({
