@@ -404,7 +404,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
     const payload = {
       ...this.formData,
-      projectId: 1,
+      projectId: 101,
       exceptions: this.formData.exceptions.map((ex: any) => ({
         ...ex,
         fromDate: ex.dateRange[0] || null,
