@@ -21,7 +21,7 @@ import { ToastModule } from "primeng/toast";
 import { MultiSelectModule } from "primeng/multiselect";
 import { TooltipModule } from "primeng/tooltip";
 import { MessageService } from "primeng/api";
-import { ToastrModule, ToastrService } from "ngx-toastr";
+// import { ToastrModule, ToastrService } from "ngx-toastr";
 // Common components
 import { DateRangePickerComponent } from "../../common/date-range-picker/date-range-picker.component";
 import { CommonSelectComponent } from "../../common/common-select/common-select.component";
@@ -84,7 +84,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     private constant: ConstantService,
     private commonService: CommonService,
     private messageService: MessageService,
-    private toastr:ToastrService,
+    // private toastr: ToastrService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -158,7 +158,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       summary: "Form Reset",
       detail: "All fields have been cleared.",
     });
-    this.toastr.info("Form Reset Successfully")
+    // this.toastr.info("Form Reset Successfully");
   }
 
   onDateRangeSelect(range: Date[], index: number): void {
@@ -296,21 +296,21 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     exception.showOtherReason = false;
   }
 
-enforceMinMaxDays(exception: any, event: any): void {
-  const inputValue: string = event.target.value;
+  enforceMinMaxDays(exception: any, event: any): void {
+    const inputValue: string = event.target.value;
 
-  // Regex to allow only single digit 1 or 2
-  const regex = /^[1-2]$/;
+    // Regex to allow only single digit 1 or 2
+    const regex = /^[1-2]$/;
 
-  if (regex.test(inputValue)) {
-    exception.exceptionRequestedDays = Number(inputValue);
-  } else {
-    // Reset invalid input
-    event.target.value = exception.exceptionRequestedDays ? exception.exceptionRequestedDays.toString() : '';
+    if (regex.test(inputValue)) {
+      exception.exceptionRequestedDays = Number(inputValue);
+    } else {
+      // Reset invalid input
+      event.target.value = exception.exceptionRequestedDays
+        ? exception.exceptionRequestedDays.toString()
+        : "";
+    }
   }
-}
-
-
 
   validateForm(): boolean {
     if (!this.formData.projectName?.length) {
@@ -349,7 +349,7 @@ enforceMinMaxDays(exception: any, event: any): void {
 
     const payload = {
       ...this.formData,
-      projectIds: this.formData.projectName,
+      projectId: 1,
       exceptions: this.formData.exceptions.map((ex: any) => ({
         ...ex,
         fromDate: ex.dateRange[0] || null,
@@ -364,6 +364,7 @@ enforceMinMaxDays(exception: any, event: any): void {
 
     this.http.postData(payload, this.constant.exceptionRequest).subscribe({
       next: () => {
+        alert("Exception request submitted successfully.");
         this.messageService.add({
           severity: "success",
           summary: "Success",
@@ -372,6 +373,7 @@ enforceMinMaxDays(exception: any, event: any): void {
         this.resetForm();
       },
       error: (error) => {
+        alert("Error submitting form. Please try again.");
         console.error("Error submitting form:", error);
         this.messageService.add({
           severity: "error",
