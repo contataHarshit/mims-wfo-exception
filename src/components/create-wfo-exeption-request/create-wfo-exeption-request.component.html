@@ -49,18 +49,19 @@
           <tr>
             <td>{{ i + 1 }}</td>
             <td>
-              <app-date-range-picker [(range)]="e.dateRange" [restrictionKey]="'restrictWeekSelection'"
+              <app-date-range-picker [(range)]="e.dateRange" [restrictionKey]="'restrictMonthSelection'"
                 [disabledDates]="disabledDates" (rangeChange)="onDateRangeSelect($event, i)">
               </app-date-range-picker>
+
             </td>
 
-<td>
-  <input type="text"
-         pInputText
-         [(ngModel)]="e.exceptionRequestedDays"
-         placeholder="Enter Days"
-         (input)="enforceMinMaxDays(e, $event)" />
-</td>
+            <td>
+              <input type="text" pInputText [(ngModel)]="e.exceptionRequestedDays" placeholder="Enter Days"
+                (input)="enforceMinMaxDays(e, $event)" />
+              <br>
+              <span> <i>{{userRole=="MANAGER"?"Max exception 3 days per week":"Max exception 2 days per
+                  week"}}</i></span>
+            </td>
 
 
             <td>

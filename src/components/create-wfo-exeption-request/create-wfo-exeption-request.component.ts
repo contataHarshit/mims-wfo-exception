@@ -77,6 +77,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   ];
 
   enableSameWeekRestriction = true;
+  userRole: string = ""; // Store user role
+  maxDaysPerWeek: number = 2; // Default to 2 days
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -84,7 +86,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     private constant: ConstantService,
     private commonService: CommonService,
     private messageService: MessageService,
-    private toastr:ToastrService,
+    private toastr: ToastrService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -112,6 +114,10 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     this.formData.projectManager =
       localStorage.getItem("projectManager") || "N/A";
 
+    // Get user role and set max days per week
+    this.userRole = localStorage.getItem("role") || "";
+    this.maxDaysPerWeek = this.userRole === "MANAGER" ? 3 : 2;
+
     const storedProjects = localStorage.getItem("projectName");
     if (storedProjects) {
       const parsed = JSON.parse(storedProjects);
@@ -124,6 +130,27 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   }
 
   addMore() {
+    const lastException =
+      this.formData.exceptions[this.formData.exceptions.length - 1];
+
+    // Validate required fields for last row before adding a new one
+    if (!lastException.dateRange?.length) {
+      this.toastr.error(
+        "Please select a valid date range before adding another entry.",
+        "Missing Field"
+      );
+      return;
+    }
+
+    if (!lastException.primaryReason) {
+      this.toastr.error(
+        "Please select a primary reason before adding another entry.",
+        "Missing Field"
+      );
+      return;
+    }
+
+    // ✅ If validation passes, add new empty row
     this.formData.exceptions.push({
       dateRange: [],
       primaryReason: null,
@@ -131,6 +158,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       remarks: "",
       exceptionRequestedDays: 0,
     });
+
+    this.toastr.success("New exception row added successfully.", "Success");
   }
 
   deleteIndex(index: number) {
@@ -158,15 +187,19 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       summary: "Form Reset",
       detail: "All fields have been cleared.",
     });
-    this.toastr.info("Form Reset Successfully")
+    this.toastr.info("Form Reset Successfully");
   }
 
   onDateRangeSelect(range: Date[], index: number): void {
-    if (!range || range.length < 2) {
+    // Handle clearing or incomplete selection
+    if (!range || range.length === 0 || range.length < 2 || !range[1]) {
       this.formData.exceptions[index].exceptionRequestedDays = 0;
+      // Immediately update disabled dates to exclude this row's dates
+      this.updateDisabledDates();
       return;
     }
 
+    // Check for overlapping with OTHER exceptions (not current one)
     if (this.isOverlapping(index, range)) {
       this.messageService.add({
         severity: "warn",
@@ -175,9 +208,11 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       });
       this.formData.exceptions[index].dateRange = [];
       this.formData.exceptions[index].exceptionRequestedDays = 0;
+      this.updateDisabledDates();
       return;
     }
 
+    // Calculate days and update disabled dates
     this.calculateExceptionDays(this.formData.exceptions[index]);
     this.updateDisabledDates();
   }
@@ -213,6 +248,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     const range = e.dateRange;
     if (!range || range.length < 2) {
       e.exceptionRequestedDays = 0;
+      e.calculatedDays = 0; // reset if invalid range
       return;
     }
 
@@ -222,6 +258,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
     if (end < start) {
       e.exceptionRequestedDays = 0;
+      e.calculatedDays = 0;
       return;
     }
 
@@ -261,7 +298,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       }
 
       const weekKey = `${current.getFullYear()}-${getWeekNumber(current)}`;
-      if ((usedDaysByWeek[weekKey] || 0) < 2) {
+      if ((usedDaysByWeek[weekKey] || 0) < this.maxDaysPerWeek) {
         allowedDays++;
         usedDaysByWeek[weekKey] = (usedDaysByWeek[weekKey] || 0) + 1;
       }
@@ -269,6 +306,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     }
 
     e.exceptionRequestedDays = allowedDays;
+    e.calculatedDays = allowedDays; // ✅ store for later manual validation
   }
 
   onPrimaryReasonChange(exception: any) {
@@ -296,21 +334,36 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     exception.showOtherReason = false;
   }
 
-enforceMinMaxDays(exception: any, event: any): void {
-  const inputValue: string = event.target.value;
+  enforceMinMaxDays(exception: any, event: any): void {
+    let inputValue = event.target.value;
 
-  // Regex to allow only single digit 1 or 2
-  const regex = /^[1-2]$/;
+    // Convert to number
+    const enteredDays = Number(inputValue);
 
-  if (regex.test(inputValue)) {
-    exception.exceptionRequestedDays = Number(inputValue);
-  } else {
-    // Reset invalid input
-    event.target.value = exception.exceptionRequestedDays ? exception.exceptionRequestedDays.toString() : '';
+    // Get calculated max (based on date range calculation)
+    const calculatedDays =
+      exception.calculatedDays || exception.exceptionRequestedDays || 1;
+
+    // Ensure at least 1 is allowed
+    const minDays = 1;
+
+    // Validation
+    if (isNaN(enteredDays)) {
+      event.target.value = exception.exceptionRequestedDays.toString();
+      return;
+    }
+
+    if (enteredDays < minDays) {
+      event.target.value = minDays;
+      exception.exceptionRequestedDays = minDays;
+    } else if (enteredDays > calculatedDays) {
+      // Prevent typing numbers beyond calculated
+      event.target.value = calculatedDays;
+      exception.exceptionRequestedDays = calculatedDays;
+    } else {
+      exception.exceptionRequestedDays = enteredDays;
+    }
   }
-}
-
-
 
   validateForm(): boolean {
     if (!this.formData.projectName?.length) {
@@ -344,8 +397,9 @@ enforceMinMaxDays(exception: any, event: any): void {
     return true;
   }
 
-  onSubmit() {
-    if (!this.validateForm()) return;
+  onSubmit(): any {
+    if (!this.validateForm())
+      return this.toastr.info("Please fill All Details");
 
     const payload = {
       ...this.formData,
@@ -363,16 +417,28 @@ enforceMinMaxDays(exception: any, event: any): void {
     };
 
     this.http.postData(payload, this.constant.exceptionRequest).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: "success",
-          summary: "Success",
-          detail: "Exception request submitted successfully.",
-        });
-        this.resetForm();
+      next: (res: any) => {
+        if (res.success) {
+          this.toastr.success(
+            "Exception request submitted successfully.",
+            "Success"
+          );
+          this.messageService.add({
+            severity: "success",
+            summary: "Success",
+            detail: "Exception request submitted successfully.",
+          });
+          this.resetForm();
+        } else {
+          this.toastr.error(
+            "Error submitting form. Please try again.",
+            "Error"
+          );
+        }
       },
       error: (error) => {
         console.error("Error submitting form:", error);
+        this.toastr.error("Api Error, Something Went Wrong");
         this.messageService.add({
           severity: "error",
           summary: "Error",

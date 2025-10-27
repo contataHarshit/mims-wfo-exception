@@ -24,248 +24,133 @@ export class DateRangePickerComponent implements OnChanges {
   @Input() disabledDates: Date[] = [];
   @Input() restrictionKey: string = "";
 
-  minDate: Date | undefined;
-  maxDate: Date | undefined;
+  minDate?: Date;
+  maxDate?: Date;
   allDisabledDates: Date[] = [];
-  disabledDays: number[] = [];
 
   constructor(private cdr: ChangeDetectorRef) {}
 
-  ngOnChanges(changes: SimpleChanges) {
+  ngOnChanges(changes: SimpleChanges): void {
     if (changes["disabledDates"]) {
       this.rebuildDisabledDates();
     }
-
-    if (changes["range"]) {
-      if (!this.range || this.range.length === 0) {
-        this.clearRestrictions();
-      }
+    if (changes["range"] && (!this.range || this.range.length === 0)) {
+      this.clearRestrictions();
     }
   }
 
-  onModelChange(value: Date[] | null) {
-    console.log("=== MODEL CHANGE ===");
-    console.log("Value:", value);
-    console.log("Value length:", value?.length);
-
-    if (this.restrictionKey !== "restrictWeekSelection") {
+  onModelChange(value: Date[] | null): void {
+    if (this.restrictionKey !== "restrictMonthSelection") {
       this.rangeChange.emit(value ?? []);
       return;
     }
 
-    // Clear state if no value
+    // Case 1: No selection
     if (!value || value.length === 0) {
-      console.log("No value - clearing");
       this.clearRestrictions();
       this.rangeChange.emit([]);
       return;
     }
 
-    // *** KEY FIX: Check for [Date, null] pattern (first date selected) ***
+    // Case 2: First date selected — PrimeNG emits [Date, null]
     if (value.length === 2 && value[0] && value[1] === null) {
       const startDate = new Date(value[0]);
-      const dayOfWeek = startDate.getDay();
-
-      console.log("✓✓✓ FIRST DATE SELECTED (with null) ✓✓✓");
-      console.log("Start date:", startDate);
-      console.log("Day of week:", dayOfWeek);
-
-      // Prevent weekend selection
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        console.log("Weekend selected - rejecting");
-        this.range = [];
-        this.clearRestrictions();
-        this.rangeChange.emit([]);
-        return;
-      }
-
-      // Apply restrictions IMMEDIATELY
-      console.log(">>> Applying restrictions NOW <<<");
-      this.applyWeekRestrictions(startDate);
-
+      this.applyMonthRestrictions(startDate);
       this.rangeChange.emit(value);
       return;
     }
 
-    // First date selected (alternative pattern - just in case)
+    // Case 3: Single date selected (alt pattern)
     if (value.length === 1 && value[0]) {
       const startDate = new Date(value[0]);
-      const dayOfWeek = startDate.getDay();
-
-      console.log("FIRST DATE SELECTED (single):", startDate);
-
-      // Prevent weekend selection
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        console.log("Weekend selected - rejecting");
-        this.range = [];
-        this.clearRestrictions();
-        this.rangeChange.emit([]);
-        return;
-      }
-
-      this.applyWeekRestrictions(startDate);
+      this.applyMonthRestrictions(startDate);
       this.rangeChange.emit(value);
       return;
     }
 
-    // Both dates selected (both are Date objects, no null)
-    if (value.length === 2 && value[0] && value[1] && value[1] !== null) {
+    // Case 4: Both dates selected
+    if (value.length === 2 && value[0] && value[1]) {
       const startDate = new Date(value[0]);
       const endDate = new Date(value[1]);
-      const friday = this.getFridayOfWeek(startDate);
+      const maxAllowed = this.getMaxDateForMonthRestriction(startDate);
 
-      console.log("✓✓✓ BOTH DATES SELECTED ✓✓✓");
-      console.log("Start:", startDate);
-      console.log("End:", endDate);
-      console.log("Friday:", friday);
-
-      // Check if end date exceeds Friday
-      const endTime = new Date(endDate).setHours(0, 0, 0, 0);
-      const fridayTime = new Date(friday).setHours(0, 0, 0, 0);
-
-      if (endTime > fridayTime) {
-        console.log("❌ End date exceeds Friday - resetting");
-        this.range = [startDate, null as any];
-        this.applyWeekRestrictions(startDate);
-        this.rangeChange.emit([startDate, null as any]);
-        return;
+      if (endDate > maxAllowed) {
+        // Clip end date to max allowed
+        this.range = [startDate, maxAllowed];
+        this.rangeChange.emit([startDate, maxAllowed]);
+        this.cdr.detectChanges();
+      } else {
+        this.rangeChange.emit(value);
       }
-
-      // Valid range
-      console.log("✓ Valid range selected");
-      this.rangeChange.emit(value);
-      return;
     }
   }
 
-  onClear() {
-    console.log("CLEAR CLICKED");
+  onClear(): void {
     this.range = [];
     this.clearRestrictions();
     this.rangeChange.emit([]);
   }
 
-  private applyWeekRestrictions(startDate: Date) {
-    console.log("╔════════════════════════════════════╗");
-    console.log("║   APPLYING WEEK RESTRICTIONS      ║");
-    console.log("╚════════════════════════════════════╝");
+  private applyMonthRestrictions(startDate: Date): void {
+    const maxDate = this.getMaxDateForMonthRestriction(startDate);
 
-    const friday = this.getFridayOfWeek(startDate);
-
-    console.log("Start Date:", startDate.toDateString());
-    console.log("Friday of week:", friday.toDateString());
-
-    // Set boundaries
     this.minDate = new Date(startDate);
     this.minDate.setHours(0, 0, 0, 0);
 
-    this.maxDate = new Date(friday);
+    this.maxDate = new Date(maxDate);
     this.maxDate.setHours(23, 59, 59, 999);
 
-    console.log("✓ Min Date set:", this.minDate.toDateString());
-    console.log("✓ Max Date set:", this.maxDate.toDateString());
-
-    // Always disable weekends
-    this.disabledDays = [0, 6];
-    console.log("✓ Weekends disabled (Sun, Sat)");
-
-    // Rebuild disabled dates array
-    this.rebuildDisabledDates(startDate, friday);
-
-    // Force multiple change detection cycles
+    this.rebuildDisabledDates(startDate, maxDate);
     this.cdr.detectChanges();
-    setTimeout(() => {
-      this.cdr.detectChanges();
-    }, 0);
-
-    console.log("✓✓✓ RESTRICTIONS APPLIED ✓✓✓");
-    console.log("════════════════════════════════════");
   }
 
-  private rebuildDisabledDates(startDate?: Date, friday?: Date) {
-    console.log("→ Rebuilding disabled dates array...");
+  private getMaxDateForMonthRestriction(startDate: Date): Date {
+    const max = new Date(startDate);
+    max.setMonth(max.getMonth() + 1);
+    // Fix overflow (Jan 31 → Mar 2 issue)
+    if (max.getDate() !== startDate.getDate()) {
+      max.setDate(0);
+    }
+    return max;
+  }
 
-    // Start fresh - create completely new array
+  private rebuildDisabledDates(startDate?: Date, maxDate?: Date): void {
     const disabled: Date[] = [];
 
-    // Add parent component's disabled dates
-    if (this.disabledDates && this.disabledDates.length > 0) {
+    if (this.disabledDates?.length) {
       disabled.push(...this.disabledDates);
     }
 
-    // If we have a selected range, disable everything outside it
-    if (startDate && friday) {
+    if (startDate && maxDate) {
       const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
+      const end = new Date(maxDate);
 
-      const end = new Date(friday);
-      end.setHours(0, 0, 0, 0);
+      const earliest = new Date(start);
+      earliest.setFullYear(start.getFullYear() - 1);
 
-      const startTime = start.getTime();
-      const endTime = end.getTime();
+      const latest = new Date(end);
+      latest.setFullYear(end.getFullYear() + 1);
 
-      // Disable dates for a 3 year range
-      const earliestDate = new Date();
-      earliestDate.setFullYear(earliestDate.getFullYear() - 1);
-      earliestDate.setMonth(0, 1);
-      earliestDate.setHours(0, 0, 0, 0);
+      const sTime = start.getTime();
+      const eTime = end.getTime();
 
-      const latestDate = new Date();
-      latestDate.setFullYear(latestDate.getFullYear() + 2);
-      latestDate.setMonth(11, 31);
-      latestDate.setHours(0, 0, 0, 0);
-
-      let current = new Date(earliestDate);
-      let count = 0;
-
-      while (current <= latestDate) {
-        const currentTime = new Date(current).setHours(0, 0, 0, 0);
-
-        // Disable if outside the valid range
-        if (currentTime < startTime || currentTime > endTime) {
-          disabled.push(new Date(current));
-          count++;
+      const cursor = new Date(earliest);
+      while (cursor <= latest) {
+        const t = cursor.getTime();
+        if (t < sTime || t > eTime) {
+          disabled.push(new Date(cursor));
         }
-
-        current.setDate(current.getDate() + 1);
+        cursor.setDate(cursor.getDate() + 1);
       }
-
-      console.log(`→ Disabled ${count} dates outside the range`);
-      console.log(`→ Total disabled dates: ${disabled.length}`);
     }
 
-    // IMPORTANT: Create new array reference for change detection
     this.allDisabledDates = [...disabled];
   }
 
-  private clearRestrictions() {
-    console.log("→ Clearing all restrictions");
-
+  private clearRestrictions(): void {
     this.minDate = undefined;
     this.maxDate = undefined;
-    this.disabledDays =
-      this.restrictionKey === "restrictWeekSelection" ? [0, 6] : [];
-
-    // Reset to only parent's disabled dates
     this.allDisabledDates = this.disabledDates ? [...this.disabledDates] : [];
-
     this.cdr.detectChanges();
-  }
-
-  private getMondayOfWeek(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    d.setDate(d.getDate() + diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-
-  private getFridayOfWeek(date: Date): Date {
-    const monday = this.getMondayOfWeek(date);
-    const friday = new Date(monday);
-    friday.setDate(monday.getDate() + 4);
-    friday.setHours(0, 0, 0, 0);
-    return friday;
   }
 }

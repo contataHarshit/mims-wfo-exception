@@ -140,3 +140,37 @@ p-calendar {
 .styled-disabled-select option {
   color: #555;
 }
+
+.p-paginator {
+  justify-content: flex-end; // align pagination to right
+  margin-top: 1rem;
+
+  .p-paginator-page,
+  .p-paginator-next,
+  .p-paginator-prev {
+    border-radius: 4px;
+  }
+
+  .p-dropdown {
+    min-width: 4rem;
+  }
+}
+
+.editable-input {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+td,
+th {
+  min-width: 200px;
+  max-width: 200px;
+}
+
+.table-card .p-datatable-wrapper {
+  max-height: 20vh !important;
+  overflow-y: auto !important;
+}

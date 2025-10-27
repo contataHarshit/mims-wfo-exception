@@ -1,25 +1,28 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { AppComponent } from './app/app.component';
-import { appConfig } from './app/app.config';
-import { importProvidersFrom } from '@angular/core';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { HttpClientModule } from '@angular/common/http';
-import { ToastrModule } from 'ngx-toastr';
+import { bootstrapApplication } from "@angular/platform-browser";
+import { AppComponent } from "./app/app.component";
+import { appConfig } from "./app/app.config";
+import { importProvidersFrom } from "@angular/core";
+import { provideAnimations } from "@angular/platform-browser/animations";
+import { HttpClientModule } from "@angular/common/http";
+import { ToastrModule } from "ngx-toastr";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 
-// ✅ Bootstrap standalone app with Toastr, HttpClient, and animations
 bootstrapApplication(AppComponent, {
   ...appConfig,
   providers: [
     ...(appConfig.providers || []),
-    provideAnimations(), // 👈 required for PrimeNG & Toastr
-    importProvidersFrom(HttpClientModule),
+
+    // ✅ Import all required providers for Toastr + HTTP
     importProvidersFrom(
+      BrowserAnimationsModule,
+      HttpClientModule,
       ToastrModule.forRoot({
-        positionClass: 'toast-top-right',
         timeOut: 3000,
+        positionClass: "toast-top-right",
         preventDuplicates: true,
-        closeButton: true,
       })
     ),
+
+    provideAnimations(),
   ],
 }).catch((err) => console.error(err));
