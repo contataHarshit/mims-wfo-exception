@@ -170,7 +170,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     }
   }
 
-  resetForm() {
+  resetForm(showTaostr = true) {
     this.formData.projectName = [];
     this.formData.exceptions = [
       {
@@ -188,7 +188,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       summary: "Form Reset",
       detail: "All fields have been cleared.",
     });
-    this.toastr.info("Form Reset Successfully");
+    if (showTaostr) {
+      this.toastr.info("Form Reset Successfully");
+    }
   }
 
   onDateRangeSelect(range: Date[], index: number): void {
@@ -429,7 +431,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
             summary: "Success",
             detail: "Exception request submitted successfully.",
           });
-          this.resetForm();
+          this.resetForm(false);
         } else {
           this.toastr.error(
             "Error submitting form. Please try again.",

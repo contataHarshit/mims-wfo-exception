@@ -2,12 +2,20 @@
   <!-- FILTER SECTION -->
   <div class="filter-card">
     <div class="form-row" *ngIf="commonService.currentView=='self'">
-      <label>Employee</label>
-      <select [(ngModel)]="commonService.employeeName" disabled class="styled-disabled-select">
-        <option [value]="commonService.employeeName" selected>
-          {{ commonService.employeeName }}
-        </option>
-      </select>
+      <div>
+        <label>Employee</label>
+        <br>
+        <select [(ngModel)]="commonService.employeeName" disabled class="styled-disabled-select">
+          <option [value]="commonService.employeeName" selected>
+            {{ commonService.employeeName }}
+          </option>
+        </select>
+      </div>
+      <div style="width: 300px;">
+        <label>Status</label>
+        <app-common-select [options]="statusList" [(value)]="filters.status"
+          placeholder="Select Status"></app-common-select>
+      </div>
     </div>
 
     <div class="form-grid" *ngIf="commonService.currentView!=='self'">
@@ -77,7 +85,6 @@
           <th>Status</th>
           <th>Manager Remarks</th>
           <th>Action</th>
-          <th>Edit</th>
         </tr>
       </ng-template>
 
@@ -124,28 +131,34 @@
           <td>{{ req.managerRemarks }}</td>
 
           <td>
-            <button pButton icon="pi pi-external-link" class="p-button-rounded p-button-text p-button-warning"
-              (click)="openActionDialog(req)"></button>
+            <div style="display: flex; align-items: center; justify-content: space-around;">
+              <button pButton icon="pi pi-external-link" class="p-button-rounded p-button-text p-button-warning"
+                (click)="openActionDialog(req)"></button>
+              <div>
+                <ng-container *ngIf="editingRow !== req.exceptionId; else editMode">
+                  <div>
+                    <button pButton icon="pi pi-file-edit" class="p-button-rounded p-button-text p-button-info"
+                      (click)="editRow(req)"></button>
+                  </div>
+                </ng-container>
+
+                <ng-template #editMode style="max-width: 200px; min-width: 200px;">
+                  <div style="display:flex ;">
+                    <button pButton icon="pi pi-check" class="p-button-rounded p-button-text p-button-success"
+                      (click)="saveRow(req)"></button>
+                    <button pButton icon="pi pi-times" class="p-button-rounded p-button-text p-button-danger"
+                      (click)="cancelEdit()"></button>
+                  </div>
+                </ng-template>
+              </div>
+              <div>
+                <i class="fa fa-trash"></i>
+              </div>
+            </div>
           </td>
 
           <!-- Edit/Save/Cancel -->
-          <td>
-            <ng-container *ngIf="editingRow !== req.exceptionId; else editMode">
-              <div style="max-width: 200px;min-width: 200px;">
-                <button pButton icon="pi pi-file-edit" class="p-button-rounded p-button-text p-button-info"
-                  (click)="editRow(req)"></button>
-              </div>
-            </ng-container>
 
-            <ng-template #editMode style="max-width: 200px; min-width: 200px;">
-              <div style="display:flex ;">
-                <button pButton icon="pi pi-check" class="p-button-rounded p-button-text p-button-success"
-                  (click)="saveRow(req)"></button>
-                <button pButton icon="pi pi-times" class="p-button-rounded p-button-text p-button-danger"
-                  (click)="cancelEdit()"></button>
-              </div>
-            </ng-template>
-          </td>
         </tr>
       </ng-template>
 

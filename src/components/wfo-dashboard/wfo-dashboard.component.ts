@@ -12,7 +12,7 @@ import { ButtonModule } from "primeng/button";
 import { InputTextareaModule } from "primeng/inputtextarea";
 import { DateRangePickerComponent } from "../../common/date-range-picker/date-range-picker.component";
 import { CommonSelectComponent } from "../../common/common-select/common-select.component";
-
+import { ToastrService } from "ngx-toastr";
 interface ExceptionRequest {
   employeeId: string;
   employeeName: string;
@@ -50,7 +50,8 @@ export class WfoDashboardComponent implements OnInit {
     private dialog: MatDialog,
     public commonService: CommonService,
     private http: HttpService,
-    private constants: ConstantService
+    private constants: ConstantService,
+    private toastr: ToastrService
   ) {}
   ngOnInit(): void {
     this.commonService.loading = true;
@@ -98,9 +99,8 @@ export class WfoDashboardComponent implements OnInit {
   ];
 
   statusList = [
-    { label: "Approved", value: "Approved" },
-    { label: "Partial Approved", value: "Partial Approved" },
-    { label: "Rejected", value: "Rejected" },
+    { label: "All", value: "" },
+    { label: "Pending", value: "" },
   ];
 
   // Exception Request Data
@@ -134,7 +134,7 @@ export class WfoDashboardComponent implements OnInit {
         // Transform API data to table structure
         this.exceptionRequests = response.data.data.flatMap((req: any) =>
           req.exceptions.map((ex: any) => ({
-            employeeId: req.id || "N/A",
+            employeeId: req.employeeNumber || "N/A",
             employeeName: `${req.employee?.FirstName || ""} ${
               req.employee?.LastName || ""
             }`.trim(),
@@ -211,10 +211,15 @@ export class WfoDashboardComponent implements OnInit {
           .putData(request.employeeId, payload, this.constants.exceptionRequest)
           .subscribe({
             next: (res: any) => {
-              console.log("PUT API Success:", res);
-              this.getExceptionRequest(); // refresh list after update
+              if (res.success) {
+                console.log("PUT API Success:", res);
+                this.getExceptionRequest();
+              } else {
+                this.toastr.error("Error updating request. Please try again.");
+              }
             },
             error: (err: any) => {
+              this.toastr.error("Error updating request. Please try again.");
               console.error("PUT API Error:", err);
             },
           });
@@ -223,7 +228,7 @@ export class WfoDashboardComponent implements OnInit {
   }
 
   export() {
-    console.log("Exporting to Excel...");
+    this.toastr.info("Exporting...");
   }
 
   resetFilters() {
