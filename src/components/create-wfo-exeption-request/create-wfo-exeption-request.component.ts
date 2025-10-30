@@ -21,7 +21,7 @@ import { ToastModule } from "primeng/toast";
 import { MultiSelectModule } from "primeng/multiselect";
 import { TooltipModule } from "primeng/tooltip";
 import { MessageService } from "primeng/api";
-// import { ToastrModule, ToastrService } from "ngx-toastr";
+
 // Common components
 import { DateRangePickerComponent } from "../../common/date-range-picker/date-range-picker.component";
 import { CommonSelectComponent } from "../../common/common-select/common-select.component";
@@ -45,8 +45,6 @@ import { ToastrService } from "ngx-toastr";
     MultiSelectModule,
     DateRangePickerComponent,
     CommonSelectComponent,
-    CardModule,
-    ToastModule,
   ],
   providers: [MessageService],
 })
@@ -193,73 +191,76 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     }
   }
 
-  onDateRangeSelect(range: Date[], index: number): void {
-    // Handle clearing or incomplete selection
-    if (!range || range.length === 0 || range.length < 2 || !range[1]) {
+  onDateRangeSelect(selectedDates: Date[], index: number): void {
+    // Handle clearing or empty selection
+    if (!selectedDates || selectedDates.length === 0) {
       this.formData.exceptions[index].exceptionRequestedDays = 0;
-      // Immediately update disabled dates to exclude this row's dates
+      this.formData.exceptions[index].calculatedDays = 0;
+      this.updateDisabledDates();
+      return;
+    }
+
+    // Validate dates are within allowed range (current month + next month only)
+    if (!this.validateDateRange(selectedDates)) {
+      this.toastr.warning(
+        "Selected dates must be within current month and next month only."
+      );
+      this.formData.exceptions[index].dateRange = [];
+      this.formData.exceptions[index].exceptionRequestedDays = 0;
+      this.formData.exceptions[index].calculatedDays = 0;
       this.updateDisabledDates();
       return;
     }
 
     // Check for overlapping with OTHER exceptions (not current one)
-    if (this.isOverlapping(index, range)) {
-      this.messageService.add({
-        severity: "warn",
-        summary: "Invalid Range",
-        detail: "Selected date range overlaps with an existing one.",
-      });
+    if (this.isOverlappingMultipleDates(index, selectedDates)) {
+      this.toastr.warning(
+        "One or more selected dates overlap with existing exceptions."
+      );
       this.formData.exceptions[index].dateRange = [];
       this.formData.exceptions[index].exceptionRequestedDays = 0;
+      this.formData.exceptions[index].calculatedDays = 0;
       this.updateDisabledDates();
       return;
     }
 
-    // Calculate days and update disabled dates
-    this.calculateExceptionDays(this.formData.exceptions[index]);
+    // Calculate days based on selected dates
+    this.calculateExceptionDaysForMultipleDates(
+      this.formData.exceptions[index]
+    );
     this.updateDisabledDates();
   }
 
-  isOverlapping(currentIndex: number, newRange: Date[]): boolean {
-    if (!newRange || newRange.length < 2) return false;
-    const [start, end] = newRange.map((d) => new Date(d).getTime());
+  validateDateRange(dates: Date[]): boolean {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
 
-    return this.formData.exceptions.some((ex: any, idx: number) => {
-      if (idx === currentIndex || !ex.dateRange || ex.dateRange.length < 2)
-        return false;
-      const [s, e] = ex.dateRange.map((d: Date) => new Date(d).getTime());
-      return start <= e && end >= s;
+    // Calculate next month
+    const nextMonth = currentMonth + 1;
+    const nextMonthYear = nextMonth > 11 ? currentYear + 1 : currentYear;
+    const adjustedNextMonth = nextMonth > 11 ? 0 : nextMonth;
+
+    // Get last day of next month
+    const lastDayOfNextMonth = new Date(
+      nextMonthYear,
+      adjustedNextMonth + 1,
+      0
+    );
+    lastDayOfNextMonth.setHours(23, 59, 59, 999);
+
+    // Check if all dates are within the allowed range
+    return dates.every((date) => {
+      const dateToCheck = new Date(date);
+      dateToCheck.setHours(0, 0, 0, 0);
+      return dateToCheck <= lastDayOfNextMonth;
     });
   }
 
-  updateDisabledDates() {
-    const allDates: Date[] = [];
-    this.formData.exceptions.forEach((ex: any) => {
-      if (ex.dateRange && ex.dateRange.length === 2) {
-        const [start, end] = ex.dateRange;
-        let current = new Date(start);
-        while (current <= new Date(end)) {
-          allDates.push(new Date(current));
-          current.setDate(current.getDate() + 1);
-        }
-      }
-    });
-    this.disabledDates = allDates;
-  }
+  calculateExceptionDaysForMultipleDates(e: any): void {
+    const selectedDates = e.dateRange;
 
-  calculateExceptionDays(e: any): void {
-    const range = e.dateRange;
-    if (!range || range.length < 2) {
-      e.exceptionRequestedDays = 0;
-      e.calculatedDays = 0; // reset if invalid range
-      return;
-    }
-
-    const [fromDate, toDate] = range;
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
-
-    if (end < start) {
+    if (!selectedDates || selectedDates.length === 0) {
       e.exceptionRequestedDays = 0;
       e.calculatedDays = 0;
       return;
@@ -277,39 +278,90 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       );
     };
 
+    // Count days already used by other exceptions per week
     const usedDaysByWeek: Record<string, number> = {};
     this.formData.exceptions.forEach((ex: any) => {
-      if (ex === e || !ex.dateRange || ex.dateRange.length < 2) return;
-      const [s, en] = ex.dateRange.map((d: Date) => new Date(d));
-      let current = new Date(s);
-      while (current <= en) {
-        const weekKey = `${current.getFullYear()}-${getWeekNumber(current)}`;
+      if (ex === e || !ex.dateRange || ex.dateRange.length === 0) return;
+
+      ex.dateRange.forEach((date: Date) => {
+        const d = new Date(date);
+        const weekKey = `${d.getFullYear()}-${getWeekNumber(d)}`;
         usedDaysByWeek[weekKey] = (usedDaysByWeek[weekKey] || 0) + 1;
-        current.setDate(current.getDate() + 1);
-      }
+      });
     });
 
     let allowedDays = 0;
-    let current = new Date(start);
-    while (current <= end) {
+    const rejectedDates: Date[] = [];
+
+    // Process each selected date
+    for (const date of selectedDates) {
+      const current = new Date(date);
+
+      // Skip weekends if restriction is enabled
       if (this.enableSameWeekRestriction) {
         const dayOfWeek = current.getDay();
         if (dayOfWeek === 0 || dayOfWeek === 6) {
-          current.setDate(current.getDate() + 1);
+          rejectedDates.push(current);
           continue;
         }
       }
 
       const weekKey = `${current.getFullYear()}-${getWeekNumber(current)}`;
+
+      // Check if adding this day would exceed the weekly limit
       if ((usedDaysByWeek[weekKey] || 0) < this.maxDaysPerWeek) {
         allowedDays++;
         usedDaysByWeek[weekKey] = (usedDaysByWeek[weekKey] || 0) + 1;
+      } else {
+        rejectedDates.push(current);
       }
-      current.setDate(current.getDate() + 1);
+    }
+
+    // Show warning if some dates were rejected due to weekly limit
+    if (rejectedDates.length > 0) {
+      const rejectedCount = rejectedDates.length;
+      this.toastr.info(
+        `${rejectedCount} date(s) excluded: either weekends or exceeding ${this.maxDaysPerWeek} days/week limit`,
+        "Info"
+      );
     }
 
     e.exceptionRequestedDays = allowedDays;
-    e.calculatedDays = allowedDays; // ✅ store for later manual validation
+    e.calculatedDays = allowedDays;
+  }
+
+  isOverlappingMultipleDates(currentIndex: number, newDates: Date[]): boolean {
+    if (!newDates || newDates.length === 0) return false;
+
+    const newDateTimes = newDates.map((d) => new Date(d).setHours(0, 0, 0, 0));
+
+    return this.formData.exceptions.some((ex: any, idx: number) => {
+      if (idx === currentIndex || !ex.dateRange || ex.dateRange.length === 0) {
+        return false;
+      }
+
+      const existingDateTimes = ex.dateRange.map((d: Date) =>
+        new Date(d).setHours(0, 0, 0, 0)
+      );
+
+      // Check if any date in newDates exists in existing dates
+      return newDateTimes.some((newTime) => existingDateTimes.includes(newTime));
+    });
+  }
+
+  updateDisabledDates() {
+    const allDates: Date[] = [];
+
+    this.formData.exceptions.forEach((ex: any) => {
+      if (ex.dateRange && ex.dateRange.length > 0) {
+        // Add all selected dates to disabled list
+        ex.dateRange.forEach((date: Date) => {
+          allDates.push(new Date(date));
+        });
+      }
+    });
+
+    this.disabledDates = allDates;
   }
 
   onPrimaryReasonChange(exception: any) {
@@ -363,60 +415,60 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       // Prevent typing numbers beyond calculated
       event.target.value = calculatedDays;
       exception.exceptionRequestedDays = calculatedDays;
+      this.toastr.warning(
+        `Maximum ${calculatedDays} days allowed based on selected dates`
+      );
     } else {
       exception.exceptionRequestedDays = enteredDays;
     }
   }
 
-  validateForm(): boolean {
-    if (!this.formData.projectName?.length) {
-      this.messageService.add({
-        severity: "warn",
-        summary: "Missing Field",
-        detail: "Please select at least one project.",
-      });
-      return false;
-    }
-
-    for (const [i, ex] of this.formData.exceptions.entries()) {
-      if (!ex.dateRange?.length) {
-        this.messageService.add({
-          severity: "warn",
-          summary: "Invalid Entry",
-          detail: `Please select a valid date range for row ${i + 1}.`,
-        });
-        return false;
-      }
-      if (!ex.primaryReason) {
-        this.messageService.add({
-          severity: "warn",
-          summary: "Missing Field",
-          detail: `Please select a primary reason for row ${i + 1}.`,
-        });
-        return false;
-      }
-    }
-
-    return true;
+validateForm(): boolean {
+  // Check if at least one project is selected (optional — remove if not needed)
+  if (!this.formData.projectName?.length) {
+    this.toastr.warning("Please select at least one project.");
+    return false;
   }
 
+  // Check each exception entry
+  for (const [i, ex] of this.formData.exceptions.entries()) {
+    if (!ex.dateRange?.length) {
+      this.toastr.warning(`Please select at least one date for row ${i + 1}.`);
+      return false;
+    }
+  }
+
+  // All good if dates exist
+  return true;
+}
+
+
   onSubmit(): any {
-    if (!this.validateForm())
-      return this.toastr.info("Please fill All Details");
+    if (!this.validateForm()) {
+      return this.toastr.info("Please fill all required details");
+    }
 
     const payload = {
       ...this.formData,
       projectId: 101,
-      exceptions: this.formData.exceptions.map((ex: any) => ({
-        ...ex,
-        fromDate: ex.dateRange[0] || null,
-        toDate: ex.dateRange[1] || null,
-        dateRange: undefined,
-        primaryReason:
-          ex.primaryReason === "other"
-            ? ex.otherReason
-            : ex.primaryReason?.value || ex.primaryReason,
-      })),
+      exceptions: this.formData.exceptions.map((ex: any) => {
+        // For multiple dates, send as array or format as needed by your API
+        const sortedDates = ex.dateRange.sort(
+          (a: Date, b: Date) => a.getTime() - b.getTime()
+        );
+
+        return {
+          ...ex,
+          fromDate: sortedDates[0] || null, // First date
+          toDate: sortedDates[sortedDates.length - 1] || null, // Last date
+          selectedDates: sortedDates.map((d: Date) => d.toISOString()), // All selected dates as ISO strings
+          dateRange: undefined,
+          primaryReason:
+            ex.primaryReason === "other"
+              ? ex.otherReason
+              : ex.primaryReason?.value || ex.primaryReason,
+        };
+      }),
     };
 
     this.http.postData(payload, this.constant.exceptionRequest).subscribe({
@@ -426,28 +478,17 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
             "Exception request submitted successfully.",
             "Success"
           );
-          this.messageService.add({
-            severity: "success",
-            summary: "Success",
-            detail: "Exception request submitted successfully.",
-          });
           this.resetForm(false);
         } else {
           this.toastr.error(
-            "Error submitting form. Please try again.",
+            res.message || "Error submitting form. Please try again.",
             "Error"
           );
         }
       },
       error: (error) => {
-        alert("Error submitting form. Please try again.");
         console.error("Error submitting form:", error);
-        this.toastr.error("Api Error, Something Went Wrong");
-        this.messageService.add({
-          severity: "error",
-          summary: "Error",
-          detail: "Error submitting form. Please try again.",
-        });
+        this.toastr.error("API Error, Something Went Wrong");
       },
     });
   }

@@ -1,156 +1,144 @@
-import {
-  Component,
-  Input,
-  Output,
-  EventEmitter,
-  OnChanges,
-  SimpleChanges,
-  ChangeDetectorRef,
-} from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { CalendarModule } from "primeng/calendar";
-import { FormsModule } from "@angular/forms";
+import { Component, Input, Output, EventEmitter, OnInit, forwardRef } from '@angular/core';
+import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { CalendarModule } from 'primeng/calendar';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: "app-date-range-picker",
+  selector: 'app-date-range-picker',
+  template: `
+    <p-calendar 
+      [(ngModel)]="selectedDates" 
+      (ngModelChange)="onDateSelect($event)" 
+      [selectionMode]="allowMultipleDates ? 'multiple' : 'range'"
+      dateFormat="yy-mm-dd"
+      [showIcon]="true" 
+      appendTo="body" 
+      [minDate]="minDate" 
+      [maxDate]="calculatedMaxDate" 
+      [disabledDates]="disabledDates"
+      (onClearClick)="onClear()" 
+      [showButtonBar]="true" 
+      [placeholder]="allowMultipleDates ? 'Select multiple dates' : 'Select date range'">
+    </p-calendar>
+  `,
   standalone: true,
-  imports: [CommonModule, CalendarModule, FormsModule],
-  templateUrl: "./date-range-picker.component.html",
-  styleUrls: ["./date-range-picker.component.scss"],
+  imports: [CalendarModule, CommonModule, FormsModule],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => DateRangePickerComponent),
+      multi: true
+    }
+  ]
 })
-export class DateRangePickerComponent implements OnChanges {
+export class DateRangePickerComponent implements OnInit, ControlValueAccessor {
   @Input() range: Date[] = [];
-  @Output() rangeChange = new EventEmitter<Date[]>();
+  @Input() restrictionKey: string = ''; // Key to determine behavior
   @Input() disabledDates: Date[] = [];
-  @Input() restrictionKey: string = "";
+  @Input() minDate: Date | null = null;
+  @Input() maxDate: Date | null = null;
+  
+  @Output() rangeChange = new EventEmitter<Date[]>();
 
-  minDate?: Date;
-  maxDate?: Date;
-  allDisabledDates: Date[] = [];
+  selectedDates: Date[] | Date | null = [];
+  allowMultipleDates: boolean = false;
+  calculatedMaxDate: Date | null = null;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  private onChange: any = () => {};
+  private onTouch: any = () => {};
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes["disabledDates"]) {
-      this.rebuildDisabledDates();
-    }
-    if (changes["range"] && (!this.range || this.range.length === 0)) {
-      this.clearRestrictions();
+  ngOnInit() {
+    // Determine mode based on restrictionKey
+    // If restrictionKey is NOT 'restrictMonthSelection', allow multiple date selection
+    this.allowMultipleDates = this.restrictionKey !== 'restrictMonthSelection';
+    
+    // Calculate max date: last day of next month
+    this.calculateMaxDate();
+    
+    if (this.range && this.range.length > 0) {
+      this.selectedDates = this.allowMultipleDates ? [...this.range] : this.range;
     }
   }
 
-  onModelChange(value: Date[] | null): void {
-    if (this.restrictionKey !== "restrictMonthSelection") {
-      this.rangeChange.emit(value ?? []);
-      return;
+  calculateMaxDate() {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    
+    // Calculate next month
+    const nextMonth = currentMonth + 1;
+    const nextMonthYear = nextMonth > 11 ? currentYear + 1 : currentYear;
+    const adjustedNextMonth = nextMonth > 11 ? 0 : nextMonth;
+    
+    // Get last day of next month
+    // By setting day to 0 of the month after next, we get the last day of next month
+    const lastDayOfNextMonth = new Date(nextMonthYear, adjustedNextMonth + 1, 0);
+    
+    // Use the provided maxDate if it's earlier, otherwise use calculated max
+    if (this.maxDate && this.maxDate < lastDayOfNextMonth) {
+      this.calculatedMaxDate = this.maxDate;
+    } else {
+      this.calculatedMaxDate = lastDayOfNextMonth;
     }
+  }
 
-    // Case 1: No selection
-    if (!value || value.length === 0) {
-      this.clearRestrictions();
+  onDateSelect(dates: Date[] | Date | null) {
+    if (!dates) {
+      this.selectedDates = [];
+      this.range = [];
       this.rangeChange.emit([]);
+      this.onChange([]);
       return;
     }
 
-    // Case 2: First date selected — PrimeNG emits [Date, null]
-    if (value.length === 2 && value[0] && value[1] === null) {
-      const startDate = new Date(value[0]);
-      this.applyMonthRestrictions(startDate);
-      this.rangeChange.emit(value);
-      return;
-    }
-
-    // Case 3: Single date selected (alt pattern)
-    if (value.length === 1 && value[0]) {
-      const startDate = new Date(value[0]);
-      this.applyMonthRestrictions(startDate);
-      this.rangeChange.emit(value);
-      return;
-    }
-
-    // Case 4: Both dates selected
-    if (value.length === 2 && value[0] && value[1]) {
-      const startDate = new Date(value[0]);
-      const endDate = new Date(value[1]);
-      const maxAllowed = this.getMaxDateForMonthRestriction(startDate);
-
-      if (endDate > maxAllowed) {
-        // Clip end date to max allowed
-        this.range = [startDate, maxAllowed];
-        this.rangeChange.emit([startDate, maxAllowed]);
-        this.cdr.detectChanges();
-      } else {
-        this.rangeChange.emit(value);
-      }
+    // Handle multiple date selection mode
+    if (this.allowMultipleDates) {
+      const dateArray = Array.isArray(dates) ? dates : [dates];
+      
+      // Filter out dates beyond max allowed date
+      const validDates = dateArray.filter(date => {
+        return this.calculatedMaxDate ? date <= this.calculatedMaxDate : true;
+      });
+      
+      // Sort dates chronologically
+      const sortedDates = validDates.sort((a, b) => a.getTime() - b.getTime());
+      
+      this.selectedDates = sortedDates;
+      this.range = sortedDates;
+      this.rangeChange.emit(sortedDates);
+      this.onChange(sortedDates);
+    } 
+    // Handle range selection mode (original behavior)
+    else {
+      const dateArray = Array.isArray(dates) ? dates : [dates];
+      this.selectedDates = dateArray;
+      this.range = dateArray;
+      this.rangeChange.emit(dateArray);
+      this.onChange(dateArray);
     }
   }
 
-  onClear(): void {
+  onClear() {
+    this.selectedDates = [];
     this.range = [];
-    this.clearRestrictions();
     this.rangeChange.emit([]);
+    this.onChange([]);
   }
 
-  private applyMonthRestrictions(startDate: Date): void {
-    const maxDate = this.getMaxDateForMonthRestriction(startDate);
-
-    this.minDate = new Date(startDate);
-    this.minDate.setHours(0, 0, 0, 0);
-
-    this.maxDate = new Date(maxDate);
-    this.maxDate.setHours(23, 59, 59, 999);
-
-    this.rebuildDisabledDates(startDate, maxDate);
-    this.cdr.detectChanges();
-  }
-
-  private getMaxDateForMonthRestriction(startDate: Date): Date {
-    const max = new Date(startDate);
-    max.setMonth(max.getMonth() + 1);
-    // Fix overflow (Jan 31 → Mar 2 issue)
-    if (max.getDate() !== startDate.getDate()) {
-      max.setDate(0);
+  // ControlValueAccessor methods
+  writeValue(value: Date[]): void {
+    if (value) {
+      this.range = value;
+      this.selectedDates = this.allowMultipleDates ? [...value] : value;
     }
-    return max;
   }
 
-  private rebuildDisabledDates(startDate?: Date, maxDate?: Date): void {
-    const disabled: Date[] = [];
-
-    if (this.disabledDates?.length) {
-      disabled.push(...this.disabledDates);
-    }
-
-    if (startDate && maxDate) {
-      const start = new Date(startDate);
-      const end = new Date(maxDate);
-
-      const earliest = new Date(start);
-      earliest.setFullYear(start.getFullYear() - 1);
-
-      const latest = new Date(end);
-      latest.setFullYear(end.getFullYear() + 1);
-
-      const sTime = start.getTime();
-      const eTime = end.getTime();
-
-      const cursor = new Date(earliest);
-      while (cursor <= latest) {
-        const t = cursor.getTime();
-        if (t < sTime || t > eTime) {
-          disabled.push(new Date(cursor));
-        }
-        cursor.setDate(cursor.getDate() + 1);
-      }
-    }
-
-    this.allDisabledDates = [...disabled];
+  registerOnChange(fn: any): void {
+    this.onChange = fn;
   }
 
-  private clearRestrictions(): void {
-    this.minDate = undefined;
-    this.maxDate = undefined;
-    this.allDisabledDates = this.disabledDates ? [...this.disabledDates] : [];
-    this.cdr.detectChanges();
+  registerOnTouched(fn: any): void {
+    this.onTouch = fn;
   }
 }

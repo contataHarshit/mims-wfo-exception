@@ -23,7 +23,7 @@
 
 
       <div class="form-row">
-        <label>Project Manager</label>
+        <label>Primary Manager</label>
         <input pInputText [(ngModel)]="formData.projectManager" readonly />
       </div>
     </div>
@@ -38,8 +38,8 @@
           <tr>
             <th>#</th>
             <th>Date Range *</th>
-            <th>Days</th>
-            <th>Primary Reason *</th>
+            <th>Exception Days</th>
+            <th>Primary Reason </th>
             <th>Remarks</th>
             <th>Action</th>
           </tr>
@@ -49,18 +49,18 @@
           <tr>
             <td>{{ i + 1 }}</td>
             <td>
-              <app-date-range-picker [(range)]="e.dateRange" [restrictionKey]="'restrictMonthSelection'"
-                [disabledDates]="disabledDates" (rangeChange)="onDateRangeSelect($event, i)">
-              </app-date-range-picker>
+           <app-date-range-picker 
+  [(range)]="e.dateRange" 
+  [disabledDates]="disabledDates" 
+  (rangeChange)="onDateRangeSelect($event, i)">
+</app-date-range-picker>
 
             </td>
 
             <td>
               <input type="text" pInputText [(ngModel)]="e.exceptionRequestedDays" placeholder="Enter Days"
                 (input)="enforceMinMaxDays(e, $event)" />
-              <br>
-              <span> <i>{{userRole=="MANAGER"?"Max exception 3 days per week":"Max exception 2 days per
-                  week"}}</i></span>
+              
             </td>
 
 
