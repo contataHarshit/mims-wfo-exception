@@ -1,3 +1,5 @@
+// Fixed wfo-dashboard.component.ts
+
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
@@ -13,6 +15,9 @@ import { InputTextareaModule } from "primeng/inputtextarea";
 import { DateRangePickerComponent } from "../../common/date-range-picker/date-range-picker.component";
 import { CommonSelectComponent } from "../../common/common-select/common-select.component";
 import { ToastrService } from "ngx-toastr";
+import { MatCheckboxModule } from "@angular/material/checkbox";
+import { ConfirmPopupComponent } from "../../popup/confirm-popup/confirm-popup.component";
+
 interface ExceptionRequest {
   employeeId: string;
   employeeName: string;
@@ -20,12 +25,13 @@ interface ExceptionRequest {
   projectName: string;
   exceptionDate: string;
   primaryReason: string;
-  submissionDate: string;
-  exceptionRequestedDays: number;
-  exceptionApprovedDays: number;
+  submissionDate: string | null;
+  exceptionRequestedDays: number | null;
+  exceptionApprovedDays: number | null;
   status: string;
-  managerRemarks: string;
+  managerRemarks: string | null;
   exceptionId: string;
+  checked?: boolean;
 }
 
 @Component({
@@ -39,6 +45,7 @@ interface ExceptionRequest {
     TableModule,
     ButtonModule,
     InputTextareaModule,
+    MatCheckboxModule,
     DateRangePickerComponent,
     CommonSelectComponent,
   ],
@@ -46,6 +53,8 @@ interface ExceptionRequest {
   styleUrls: ["./wfo-dashboard.component.scss"],
 })
 export class WfoDashboardComponent implements OnInit {
+  selectedView: string = "";
+  
   constructor(
     private dialog: MatDialog,
     public commonService: CommonService,
@@ -53,14 +62,64 @@ export class WfoDashboardComponent implements OnInit {
     private constants: ConstantService,
     private toastr: ToastrService
   ) {}
+
+  // Store original unfiltered data
+  private allExceptionRequests: ExceptionRequest[] = [];
+  
+  // Exception Request Data
+  exceptionRequests: ExceptionRequest[] = [];
+
+  // selection for bulk actions
+  selectedRequests: ExceptionRequest[] = [];
+
+  // Dropdown data
+  employeeList: any[] = [];
+
+  statusList = [
+    { label: "All", value: "" },
+    { label: "Pending", value: "PENDING" },
+    { label: "Approved", value: "APPROVED" },
+    { label: "Rejected", value: "REJECTED" },
+  ];
+
+  reasonList = [
+    { label: "All", value: "" },
+    { label: "Health", value: "Health" },
+    { label: "Personal Work", value: "Personal Work" },
+    { label: "Travel", value: "Travel" },
+    { label: "Other", value: "Other" },
+  ];
+
+  reportTypeList = [
+    { label: "Employee", value: "employee" },
+    { label: "Manager", value: "manager" },
+  ];
+
+  filters = {
+    reportType: "employee",
+    employeeName: null,
+    status: null,
+    fromDate: null as Date | null,
+    toDate: null as Date | null,
+    reason: null,
+  };
+  showSubmit=false
+  role=""
   ngOnInit(): void {
     this.commonService.loading = true;
+    
+    // ✅ Get current view from localStorage and commonService
+    this.selectedView = localStorage.getItem("selectedView") || "self";
+    this.commonService.currentView = this.selectedView;
+    
+    console.log("Dashboard Init - selectedView:", this.selectedView);
+    console.log("Dashboard Init - commonService.currentView:", this.commonService.currentView);
 
     const storedData =
       localStorage.getItem("role") === "MANAGER"
         ? localStorage.getItem("managerEmployeeData")
         : localStorage.getItem("allEmployeeData");
-
+    this.role=localStorage.getItem("role") || ""
     this.employeeList = storedData
       ? JSON.parse(storedData).map((item: any) => ({
           label: `${item.FullName}(${item.EmployeeNumber})`,
@@ -71,87 +130,71 @@ export class WfoDashboardComponent implements OnInit {
     // Fetch initially
     this.getExceptionRequest();
 
-    // Subscribe to view changes
+    // ✅ Subscribe to view changes
     this.commonService.viewChange$.subscribe(() => {
+      // Update local view state
+      this.selectedView = localStorage.getItem("selectedView") || "self";
+      this.commonService.currentView = this.selectedView;
+      
+      console.log("View changed - selectedView:", this.selectedView);
+      console.log("View changed - commonService.currentView:", this.commonService.currentView);
+      
+      // Refresh data
       this.getExceptionRequest();
     });
   }
 
-  // Dropdown data
-  projectList = [
-    { label: "Project Alpha", value: "Project Alpha" },
-    { label: "Project Beta", value: "Project Beta" },
-  ];
-
-  employeeList = [
-    { label: "Ravishankar (R151)", value: "R151" },
-    { label: "Nand Kishor (N1531)", value: "N1531" },
-  ];
-  employeeIdList = [
-    { label: "R151", value: "R151" },
-    { label: "N1531", value: "N1531" },
-  ];
-
-  daysList = [
-    { label: "1", value: 1 },
-    { label: "2", value: 2 },
-    { label: "3", value: 3 },
-  ];
-
-  statusList = [
-    { label: "All", value: "" },
-    { label: "Pending", value: "pending" },
-  ];
-
-  // Exception Request Data
-  exceptionRequests: ExceptionRequest[] = [];
-
-  filters = {
-    employeeId: null,
-    employeeName: null,
-    projectName: null,
-    exceptionRequestedDays: null,
-    exceptionApprovedDays: null,
-    status: null,
-    dateRange: null as Date[] | null,
-  };
   getExceptionRequest() {
     this.commonService.loading = true;
+    
+    // ✅ Get current view from commonService
+    const currentView = this.commonService.currentView || localStorage.getItem("selectedView") || "self";
+    
+    console.log("Fetching data for view:", currentView);
+    
     const url =
       this.constants.exceptionRequest +
-      (this.commonService.currentView === "self" ? "?isSelf=true" : "");
+      "/paginated" +
+      (currentView === "self" && localStorage.getItem("role") !=="EMPLOYEE" && localStorage.getItem("role")!=="ADMIN" ? "?isSelf=true" : "");
+    console.log("url",url);
+    
+    console.log("API URL:", url);
 
     this.http.getData(url).subscribe({
       next: (response: any) => {
         console.log("Exception Request Data Response:", response);
 
-        if (!response?.data?.data) {
+        const exceptions = response?.data?.exceptions || [];
+
+        if (!exceptions.length) {
+          this.allExceptionRequests = [];
           this.exceptionRequests = [];
           this.commonService.loading = false;
           return;
         }
 
-        // Transform API data to table structure
-        this.exceptionRequests = response.data.data.flatMap((req: any) =>
-          req.exceptions.map((ex: any) => ({
-            employeeId: req.employeeNumber || "N/A",
-            employeeName: `${req.employee?.FirstName || ""} ${
-              req.employee?.LastName || ""
-            }`.trim(),
-            designation: req.employee?.Designation || "N/A",
-            projectName: req.project?.ProjectName || req.projectName || "N/A",
-            exceptionDate: `${ex.fromDate} to ${ex.toDate}`,
-            primaryReason: ex.primaryReason,
-            submissionDate: req.submissionDate
-              ? new Date(req.submissionDate).toLocaleDateString("en-GB")
-              : "N/A",
-            exceptionRequestedDays: ex.exceptionRequestedDays || "N/A",
-            exceptionApprovedDays: ex.exceptionApprovedDays || "N/A",
-            status: ex.currentStatus || "N/A",
-            managerRemarks: req.managerRemarks || "N/A",
-            exceptionId: ex.id,
-          }))
-        );
+        // Transform backend exceptions to table data
+        const transformedData = exceptions.map((ex: any) => ({
+          employeeId: ex.employeeNumber || "N/A",
+          employeeName: ex.employee || "N/A",
+          designation: ex.designation || "N/A",
+          projectName: ex.projectName || "N/A",
+          exceptionDate: ex.selectedDate || "N/A",
+          primaryReason: ex.primaryReason || "N/A",
+          submissionDate: ex.submissionDate
+            ? new Date(ex.submissionDate).toLocaleDateString("en-GB")
+            : "N/A",
+          exceptionRequestedDays: ex.exceptionRequestedDays || null,
+          exceptionApprovedDays: ex.exceptionApprovedDays || null,
+          status: ex.currentStatus || "PENDING",
+          managerRemarks: ex.remarks || "N/A",
+          exceptionId: ex.id,
+          checked: false,
+        }));
+
+        // Store both original and display data
+        this.allExceptionRequests = [...transformedData];
+        this.exceptionRequests = [...transformedData];
 
         this.commonService.loading = false;
         console.log("Transformed Table Data:", this.exceptionRequests);
@@ -163,15 +206,162 @@ export class WfoDashboardComponent implements OnInit {
     });
   }
 
-  onDateRangeChange(range: Date[] | null) {
-    if (range && range.length === 2) {
-      console.log("Selected Range:", range);
+  onDateChange() {
+    console.log("Date changed:", {
+      from: this.filters.fromDate,
+      to: this.filters.toDate,
+    });
+  }
+
+  applyFilter() {
+    this.commonService.loading = true;
+
+    let filteredData = [...this.allExceptionRequests];
+
+    // Employee Name / Employee Number filter
+    let employeeNumber: any = null;
+    if (this.filters.employeeName) {
+      employeeNumber =
+        typeof this.filters.employeeName === "object"
+          ? (this.filters.employeeName as any).value
+          : this.filters.employeeName;
+
+      if (employeeNumber && employeeNumber !== "") {
+        filteredData = filteredData.filter(
+          (item) =>
+            item.employeeId.includes(employeeNumber) ||
+            item.employeeName
+              .toLowerCase()
+              .includes(String(employeeNumber).toLowerCase())
+        );
+      }
+    }
+
+    // Status filter
+    let status = this.filters.status;
+    if (status && status !== "") {
+      status = typeof status === "object" ? (status as any).value : status;
+      filteredData = filteredData.filter(
+        (item) => item.status.toUpperCase() === String(status).toUpperCase()
+      );
+    }
+
+    // Reason filter
+    let reason = this.filters.reason;
+    if (reason && reason !== "" && reason !== "All") {
+      reason = typeof reason === "object" ? (reason as any).value : reason;
+      filteredData = filteredData.filter((item) =>
+        item.primaryReason.toLowerCase().includes(String(reason).toLowerCase())
+      );
+    }
+
+    // Date range filter
+    if (this.filters.fromDate || this.filters.toDate) {
+      filteredData = filteredData.filter((item) => {
+        const dateStr = item.exceptionDate;
+        let itemDate: Date;
+
+        if (dateStr.includes("/")) {
+          const [day, month, year] = dateStr.split("/");
+          itemDate = new Date(Number(year), Number(month) - 1, Number(day));
+        } else {
+          itemDate = new Date(dateStr);
+        }
+
+        itemDate.setHours(0, 0, 0, 0);
+
+        let matchesFrom = true;
+        let matchesTo = true;
+
+        if (this.filters.fromDate) {
+          const fromDate = new Date(this.filters.fromDate);
+          fromDate.setHours(0, 0, 0, 0);
+          matchesFrom = itemDate >= fromDate;
+        }
+
+        if (this.filters.toDate) {
+          const toDate = new Date(this.filters.toDate);
+          toDate.setHours(0, 0, 0, 0);
+          matchesTo = itemDate <= toDate;
+        }
+
+        return matchesFrom && matchesTo;
+      });
+    }
+
+    this.exceptionRequests = filteredData;
+
+    setTimeout(() => {
+      this.commonService.loading = false;
+      const count = this.exceptionRequests.length;
+      this.toastr.success(`Found ${count} record${count !== 1 ? "s" : ""}`);
+    }, 200);
+  }
+
+  resetFilters() {
+    this.filters = {
+      reportType: "employee",
+      employeeName: null,
+      status: null,
+      fromDate: null,
+      toDate: null,
+      reason: null,
+    };
+    
+    this.exceptionRequests = [...this.allExceptionRequests];
+    this.toastr.info("Filters reset");
+  }
+
+  export() {
+    this.toastr.info("Exporting...");
+  }
+
+  toggleSelection(req: ExceptionRequest, event: any) {
+    if (req.status === "APPROVED") return;
+
+    const checked = event?.target?.checked ?? false;
+    req.checked = checked;
+
+    if (checked) {
+      this.selectedRequests.push(req);
+    } else {
+      this.selectedRequests = this.selectedRequests.filter(
+        (r) => r.exceptionId !== req.exceptionId
+      );
     }
   }
 
-  openActionDialog(request: ExceptionRequest) {
-    console.log("ewwwww", request);
+  bulkUpdate(status: "APPROVED" | "REJECTED") {
+    if (this.selectedRequests.length === 0) {
+      this.toastr.warning("Please select at least one request.");
+      return;
+    }
 
+    const ids = this.selectedRequests.map((r) => r.exceptionId);
+    const payload = { ids, status };
+
+    console.log("Bulk Update Payload:", payload);
+    
+    this.http.putData(this.constants.exceptionRequest, payload).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.toastr.success(
+            `${this.selectedRequests.length} requests ${status.toLowerCase()} successfully`
+          );
+          this.selectedRequests = [];
+          this.getExceptionRequest();
+        } else {
+          this.toastr.error("Bulk update failed");
+        }
+      },
+      error: (err: any) => {
+        console.error("Bulk Update Error:", err);
+        this.toastr.error("Bulk update failed");
+      },
+    });
+  }
+
+  openActionDialog(request: ExceptionRequest) {
     const modalRef = this.dialog.open(WfoActionPopupComponent, {
       width: "500px",
       data: request,
@@ -179,7 +369,6 @@ export class WfoDashboardComponent implements OnInit {
 
     modalRef.afterClosed().subscribe((result) => {
       if (result) {
-        // Map action to backend status
         let currentStatus = "";
         switch (result.action) {
           case "approved":
@@ -195,159 +384,45 @@ export class WfoDashboardComponent implements OnInit {
             currentStatus = "PENDING";
         }
 
-        // Build the payload
         const payload = {
-          updateDateRangeId: request.exceptionId, // replace if needed
+          updateDateRangeId: request.exceptionId,
           currentStatus: currentStatus,
           managerRemarks: result.remarks,
           exceptionApprovedDays:
             result.approvedDays || request.exceptionApprovedDays || 1,
         };
 
-        console.log("PUT Payload:", payload);
-
-        // Call PUT API
-        this.http
-          .putData(request.employeeId, payload, this.constants.exceptionRequest)
-          .subscribe({
-            next: (res: any) => {
-              if (res.success) {
-                console.log("PUT API Success:", res);
-                this.getExceptionRequest();
-              } else {
-                this.toastr.error("Error updating request. Please try again.");
-              }
-            },
-            error: (err: any) => {
+        this.http.putData(this.constants.exceptionRequest, payload).subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              this.toastr.success("Request updated successfully");
+              this.getExceptionRequest();
+            } else {
               this.toastr.error("Error updating request. Please try again.");
-              console.error("PUT API Error:", err);
-            },
-          });
+            }
+          },
+          error: (err: any) => {
+            this.toastr.error("Error updating request. Please try again.");
+            console.error("PUT API Error:", err);
+          },
+        });
       }
     });
   }
+deleteRow(req?: any) {
+  const dialogRef = this.dialog.open(ConfirmPopupComponent, {
+    width: '400px',
+    data: { message: 'Are you sure you want to delete this record?' },
+  });
 
-  export() {
-    this.toastr.info("Exporting...");
-  }
-
-  resetFilters() {
-    this.filters = {
-      employeeId: null,
-      employeeName: null,
-      projectName: null,
-      exceptionRequestedDays: null,
-      exceptionApprovedDays: null,
-      status: null,
-      dateRange: null,
-    };
-  }
-  editingRow: string | null = null;
-  originalRowCopy: ExceptionRequest | null = null;
-
-  /** Start editing selected row */
-  editRow(req: ExceptionRequest) {
-    this.editingRow = req.exceptionId;
-    this.originalRowCopy = JSON.parse(JSON.stringify(req)); // deep copy
-  }
-
-  /** Cancel editing */
-  cancelEdit() {
-    if (this.originalRowCopy && this.editingRow) {
-      const index = this.exceptionRequests.findIndex(
-        (r) => r.exceptionId === this.editingRow
-      );
-      if (index > -1) {
-        this.exceptionRequests[index] = { ...this.originalRowCopy };
-      }
+  dialogRef.afterClosed().subscribe((confirmed) => {
+    if (confirmed) {
+      console.log('✅ Delete confirmed for record:', req);
+      // Here you can call your API when ready
+    } else {
+      console.log('❌ Delete canceled');
     }
-    this.editingRow = null;
-    this.originalRowCopy = null;
-  }
+  });
+}
 
-  /** Save edited row */
-  saveRow(req: ExceptionRequest) {
-    const changes = this.getEditLog(req, this.originalRowCopy!);
-    if (Object.keys(changes).length === 0) {
-      console.log("No changes detected.");
-      this.editingRow = null;
-      return;
-    }
-
-    console.log("Edited Fields Log:", changes);
-
-    // prepare payload for PUT API
-    const payload = {
-      updateDateRangeId: req.exceptionId,
-      exceptionRequestedDays: req.exceptionRequestedDays,
-      exceptionApprovedDays: req.exceptionApprovedDays,
-      submissionDate: req.submissionDate,
-      exceptionDate: req.exceptionDate,
-    };
-
-    // API call
-    this.http
-      .putData(req.employeeId, payload, this.constants.exceptionRequest)
-      .subscribe({
-        next: (res: any) => {
-          console.log("Update Success:", res);
-          this.getExceptionRequest();
-          this.editingRow = null;
-          this.originalRowCopy = null;
-        },
-        error: (err: any) => console.error("Update Error:", err),
-      });
-  }
-
-  /** Inline Date Range Change */
-  onInlineDateChange(range: Date[] | null, req: ExceptionRequest) {
-    if (range && range.length === 2) {
-      const from = range[0].toLocaleDateString("en-GB");
-      const to = range[1].toLocaleDateString("en-GB");
-      req.exceptionDate = `${from} to ${to}`;
-    }
-  }
-
-  /** Compare old and new values, return only changed fields */
-  getEditLog(updated: ExceptionRequest, original: ExceptionRequest) {
-    const editableFields = [
-      "exceptionDate",
-      "submissionDate",
-      "exceptionRequestedDays",
-      "exceptionApprovedDays",
-    ];
-    const changes: Record<string, any> = {};
-
-    editableFields.forEach((key) => {
-      if (
-        updated[key as keyof ExceptionRequest] !==
-        original[key as keyof ExceptionRequest]
-      ) {
-        changes[key] = {
-          oldValue: original[key as keyof ExceptionRequest],
-          newValue: updated[key as keyof ExceptionRequest],
-        };
-      }
-    });
-
-    return changes;
-  }
-  filterData(){
-     this.commonService.loading=true
-    if(this.filters.status=="pending"){
-     
-      this.exceptionRequests.filter((item:any)=>item.status=="pending")
-      setTimeout(() => {
-        this.commonService.loading=false
-      }, 2000);
-    }
-    else{
-      this.getExceptionRequest()
-    }
-  }
-  deleteRequest(index:number){
-    if(window.confirm("Are you sure you want to delete this request?"))
-    this.exceptionRequests.splice(index,1)
-  this.toastr.success("Request deleted successfully")
-  }
 }

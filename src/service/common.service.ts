@@ -1,41 +1,80 @@
 import { Injectable, Inject, PLATFORM_ID } from "@angular/core";
 import { isPlatformBrowser } from "@angular/common";
-import { Subject } from "rxjs";
+import { BehaviorSubject, Subject } from "rxjs";
 
 @Injectable({
   providedIn: "root",
 })
 export class CommonService {
   header: string = "WFO Exception Dashboard";
-  employeeName: string = "User";
-  employeeId: string = "";
-  employeeNumber: string = "";
-  employeeEmail: string = "";
-  projectName: string = "";
-  projectManager: string = "";
-  userDataLoaded$ = new Subject<void>();
+
+  // BehaviorSubjects hold latest values and auto emit to new subscribers
+  private employeeIdSubject = new BehaviorSubject<string>("");
+  private employeeNameSubject = new BehaviorSubject<string>("User");
+  private employeeNumberSubject = new BehaviorSubject<string>("");
+  private employeeEmailSubject = new BehaviorSubject<string>("");
+  private projectNameSubject = new BehaviorSubject<string>("");
+  private projectManagerSubject = new BehaviorSubject<string>("");
+
+  // Public observables for subscription
+  employeeId$ = this.employeeIdSubject.asObservable();
+  employeeName$ = this.employeeNameSubject.asObservable();
+  employeeNumber$ = this.employeeNumberSubject.asObservable();
+  employeeEmail$ = this.employeeEmailSubject.asObservable();
+  projectName$ = this.projectNameSubject.asObservable();
+  projectManager$ = this.projectManagerSubject.asObservable();
+
+  // View handling
+  currentView = "self";
+  viewChange$ = new BehaviorSubject<string>("self");
+
+  // Other properties
   loading = false;
   managerEmployeeData: any[] = [];
-  currentView: string = "self";
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-    if (isPlatformBrowser(this.platformId)) {
-      this.employeeName = localStorage.getItem("name") || "User";
-      this.employeeId = localStorage.getItem("employeeId") || "";
-      this.employeeNumber = localStorage.getItem("employeeNumber") || "";
-      this.employeeEmail = localStorage.getItem("email") || "";
-      this.projectName = localStorage.getItem("projectName") || "";
-      this.projectManager = localStorage.getItem("projectManager") || "";
-    }
+  userDataLoaded$ = new Subject<void>();
+
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+
+  /** ✅ Update employee data after fetching from API */
+  private loadingSubject = new BehaviorSubject<boolean>(false);
+  loading$ = this.loadingSubject.asObservable();
+  
+  setLoading(value: boolean) {
+    this.loadingSubject.next(value);
+  }
+  setEmployeeData(employee: any) {
+    this.employeeIdSubject.next(employee?.employeeId || "");
+    this.employeeNameSubject.next(employee?.employeeName || "User");
+    this.employeeNumberSubject.next(employee?.employeeNumber || "");
+    this.employeeEmailSubject.next(employee?.email || "");
+    this.projectNameSubject.next(employee?.projectName || "");
+    this.projectManagerSubject.next(employee?.managerName?.name || "");
   }
 
-viewChange$ = new Subject<string>(); // emits current view
-
+  /** ✅ Update current view reactively */
   viewChange(event: any) {
-    if (event.target.value === "self") {
-      this.currentView = "self";
-    } else {
-      this.currentView = "resource";
-    }
-    this.viewChange$.next(this.currentView); // notify subscribers
+    const view = event.target.value === "self" ? "self" : "resource";
+    this.currentView = view;
+    this.viewChange$.next(view);
+  }
+
+  /** ✅ Getters for instant access if needed */
+  get employeeId() {
+    return this.employeeIdSubject.value;
+  }
+  get employeeName() {
+    return this.employeeNameSubject.value;
+  }
+  get employeeNumber() {
+    return this.employeeNumberSubject.value;
+  }
+  get employeeEmail() {
+    return this.employeeEmailSubject.value;
+  }
+  get projectName() {
+    return this.projectNameSubject.value;
+  }
+  get projectManager() {
+    return this.projectManagerSubject.value;
   }
 }

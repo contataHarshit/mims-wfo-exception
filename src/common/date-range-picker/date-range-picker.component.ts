@@ -1,144 +1,95 @@
-import { Component, Input, Output, EventEmitter, OnInit, forwardRef } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
-import { CalendarModule } from 'primeng/calendar';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CalendarModule } from 'primeng/calendar';
 import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { NgZone } from '@angular/core';
 
 @Component({
   selector: 'app-date-range-picker',
-  template: `
-    <p-calendar 
-      [(ngModel)]="selectedDates" 
-      (ngModelChange)="onDateSelect($event)" 
-      [selectionMode]="allowMultipleDates ? 'multiple' : 'range'"
-      dateFormat="yy-mm-dd"
-      [showIcon]="true" 
-      appendTo="body" 
-      [minDate]="minDate" 
-      [maxDate]="calculatedMaxDate" 
-      [disabledDates]="disabledDates"
-      (onClearClick)="onClear()" 
-      [showButtonBar]="true" 
-      [placeholder]="allowMultipleDates ? 'Select multiple dates' : 'Select date range'">
-    </p-calendar>
-  `,
   standalone: true,
-  imports: [CalendarModule, CommonModule, FormsModule],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => DateRangePickerComponent),
-      multi: true
-    }
-  ]
+  imports: [CommonModule, CalendarModule, FormsModule, ButtonModule, InputTextareaModule],
+  templateUrl: './date-range-picker.component.html',
+  styleUrls: ['./date-range-picker.component.scss'],
 })
-export class DateRangePickerComponent implements OnInit, ControlValueAccessor {
+export class DateRangePickerComponent implements OnInit {
   @Input() range: Date[] = [];
-  @Input() restrictionKey: string = ''; // Key to determine behavior
   @Input() disabledDates: Date[] = [];
-  @Input() minDate: Date | null = null;
-  @Input() maxDate: Date | null = null;
-  
   @Output() rangeChange = new EventEmitter<Date[]>();
+  @Output() okClick = new EventEmitter<Date[]>();
+@Input() minDate: Date | null = null; // 👈 Added
+  @Input() maxDate: Date | null = null; 
+  @ViewChild('calendar', { static: true }) calendar: any;
 
-  selectedDates: Date[] | Date | null = [];
-  allowMultipleDates: boolean = false;
-  calculatedMaxDate: Date | null = null;
+  tempSelection: Date[] = [];
+  lastApplied: Date[] = [];
 
-  private onChange: any = () => {};
-  private onTouch: any = () => {};
+  constructor(private hostRef: ElementRef,private ngZone: NgZone) {}
 
   ngOnInit() {
-    // Determine mode based on restrictionKey
-    // If restrictionKey is NOT 'restrictMonthSelection', allow multiple date selection
-    this.allowMultipleDates = this.restrictionKey !== 'restrictMonthSelection';
-    
-    // Calculate max date: last day of next month
-    this.calculateMaxDate();
-    
-    if (this.range && this.range.length > 0) {
-      this.selectedDates = this.allowMultipleDates ? [...this.range] : this.range;
+    this.tempSelection = Array.isArray(this.range) ? [...this.range] : [];
+    this.lastApplied = Array.isArray(this.range) ? [...this.range] : [];
+  }
+
+  onCalendarShow() {
+    this.tempSelection = [...this.lastApplied];
+  }
+
+onCalendarHide() {
+  console.log("🟡 onCalendarHide() fired - overlay closed automatically");
+  this.cancelSelection(false);
+}
+
+
+  onDateSelect() {}
+
+  confirmSelection() {
+    this.range = [...this.tempSelection];
+    this.lastApplied = [...this.tempSelection];
+    this.rangeChange.emit(this.range);
+    this.okClick.emit(this.range);
+    this.hideCalendar();
+  }
+
+cancelSelection(manual: boolean = false) {
+  this.tempSelection = [];
+  this.hideCalendar();
+
+  if (manual) {
+    console.log("❌ Cancel button clicked manually");
+  } else {
+    console.log("🔹 Calendar closed automatically");
+  }
+}
+
+
+  hideCalendar() {
+    if (this.calendar?.hide) {
+      this.calendar.hide();
+    } else if (this.calendar) {
+      this.calendar.overlayVisible = false;
     }
   }
 
-  calculateMaxDate() {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    
-    // Calculate next month
-    const nextMonth = currentMonth + 1;
-    const nextMonthYear = nextMonth > 11 ? currentYear + 1 : currentYear;
-    const adjustedNextMonth = nextMonth > 11 ? 0 : nextMonth;
-    
-    // Get last day of next month
-    // By setting day to 0 of the month after next, we get the last day of next month
-    const lastDayOfNextMonth = new Date(nextMonthYear, adjustedNextMonth + 1, 0);
-    
-    // Use the provided maxDate if it's earlier, otherwise use calculated max
-    if (this.maxDate && this.maxDate < lastDayOfNextMonth) {
-      this.calculatedMaxDate = this.maxDate;
-    } else {
-      this.calculatedMaxDate = lastDayOfNextMonth;
+  get displayText(): string {
+    if (!this.range?.length) return '';
+    return this.range.map((d) => d.toISOString().split('T')[0]).join('\n');
+  }
+
+  openCalendar() {
+    if (this.calendar?.show) {
+      this.calendar.show();
+    } else if (this.calendar) {
+      this.calendar.overlayVisible = true;
     }
-  }
-
-  onDateSelect(dates: Date[] | Date | null) {
-    if (!dates) {
-      this.selectedDates = [];
-      this.range = [];
-      this.rangeChange.emit([]);
-      this.onChange([]);
-      return;
-    }
-
-    // Handle multiple date selection mode
-    if (this.allowMultipleDates) {
-      const dateArray = Array.isArray(dates) ? dates : [dates];
-      
-      // Filter out dates beyond max allowed date
-      const validDates = dateArray.filter(date => {
-        return this.calculatedMaxDate ? date <= this.calculatedMaxDate : true;
-      });
-      
-      // Sort dates chronologically
-      const sortedDates = validDates.sort((a, b) => a.getTime() - b.getTime());
-      
-      this.selectedDates = sortedDates;
-      this.range = sortedDates;
-      this.rangeChange.emit(sortedDates);
-      this.onChange(sortedDates);
-    } 
-    // Handle range selection mode (original behavior)
-    else {
-      const dateArray = Array.isArray(dates) ? dates : [dates];
-      this.selectedDates = dateArray;
-      this.range = dateArray;
-      this.rangeChange.emit(dateArray);
-      this.onChange(dateArray);
-    }
-  }
-
-  onClear() {
-    this.selectedDates = [];
-    this.range = [];
-    this.rangeChange.emit([]);
-    this.onChange([]);
-  }
-
-  // ControlValueAccessor methods
-  writeValue(value: Date[]): void {
-    if (value) {
-      this.range = value;
-      this.selectedDates = this.allowMultipleDates ? [...value] : value;
-    }
-  }
-
-  registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
-
-  registerOnTouched(fn: any): void {
-    this.onTouch = fn;
   }
 }

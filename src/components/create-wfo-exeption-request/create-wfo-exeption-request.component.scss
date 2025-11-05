@@ -172,7 +172,7 @@ textarea {
 
 /* Ensures both dropdown and input occupy same space */
 .stable-width {
-  width: 100%;
+  width: 320px;
   display: inline-block;
 }
 
@@ -227,4 +227,9 @@ app-common-select,
 .input-with-icons,
 ::ng-deep ng-select {
   width: 300px;
+}
+
+::ng-deep .custom-calendar-panel{
+     top: 520px !important;
+    position: revert-layer;
 }

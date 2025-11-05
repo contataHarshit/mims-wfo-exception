@@ -12,9 +12,9 @@
 
     <div
       class="select-wrapper"
-      *ngIf="isDashboardPage && (role == 'MANAGER' || role == 'HR')"
+      *ngIf="(role == 'MANAGER' || role == 'HR') && isDashboardPage"
     >
-      <select [(ngModel)]="selectedView" (change)="onViewChange($event)" class="styled-select">
+      <select [(ngModel)]="selectedView" (change)="onViewChange($event)" class="styled-select" >
         <option value="self">Self</option>
         <option value="resource">Resource</option>
       </select>

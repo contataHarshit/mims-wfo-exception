@@ -1,13 +1,21 @@
+// src/app/components/header/header.component.ts
 import { Component, Input } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.scss'
+  styleUrls: ['./header.component.scss'],
 })
 export class HeaderComponent {
-@Input() header:string="";
-@Input() role:string="";
+  @Input() header: string = '';
+  @Input() role: string = '';
+
+  constructor(private router: Router) {}
+
+  logout() {
+    localStorage.clear();
+    // this.router.navigate(['/login']);
+  }
 }

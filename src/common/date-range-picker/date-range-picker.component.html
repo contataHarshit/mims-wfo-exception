@@ -1,14 +1,46 @@
+<div class="date-picker-wrapper">
+ 
+
 <p-calendar
-  [(ngModel)]="selectedDates"
-  [selectionMode]="'multiple'"
-  (onSelect)="onDateSelect($event)"
-  [disabledDates]="allDisabledDates"
-  [showButtonBar]="true"
-  appendTo="body"
-  placeholder="Select multiple dates"
+  #calendar
+  [(ngModel)]="tempSelection"
+  selectionMode="multiple"
+  [disabledDates]="disabledDates"
+  [minDate]="minDate"
+  [maxDate]="maxDate"
   [showIcon]="true"
-  (onClearClick)="onClear()"
-  [dateFormat]="'yy-mm-dd'"
-  [readonlyInput]="true"
+  placeholder="Select Dates"
+  dateFormat="yy-mm-dd"
+  [appendTo]="'body'"
+  panelStyleClass="custom-calendar-panel"
+  (onSelect)="onDateSelect()"
+  (onShow)="onCalendarShow()"
+  (onHide)="onCalendarHide()"
+  styleClass="hidden-calendar"
 >
+<ng-template pTemplate="footer">
+  <div class="big-div" (click)="onCalendarHide()"></div>
+  <div class="popup-buttons">
+    <button
+      type="button"
+      pButton
+      label="OK"
+      icon="pi pi-check"
+      class="p-button-sm p-button-raised ok-btn"
+      (click)="confirmSelection()"
+    ></button>
+
+    <button
+      type="button"
+      pButton
+      label="Cancel"
+      icon="pi pi-times"
+      class="p-button-sm p-button-raised cancel-btn"
+      (click)="cancelSelection(true)"
+    ></button>
+  </div>
+</ng-template>
+
 </p-calendar>
+
+</div>

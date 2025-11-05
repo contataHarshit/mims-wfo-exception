@@ -1,0 +1,174 @@
+/* src/app/hr-admin-dashboard/hr-admin-dashboard.component.scss */
+.page-container {
+  padding: 1.5rem 2rem;
+  background-color: #fff;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.table-card {
+  margin-top: 1.5rem;
+}
+// hr-admin-dashboard.component.scss
+
+.page-container {
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.filter-card {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #333;
+  }
+}
+
+.date-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #4f46e5;
+  }
+}
+
+.table-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+// PrimeNG button customization
+::ng-deep {
+  .p-button {
+    font-size: 14px;
+    padding: 10px 24px;
+    border-radius: 4px;
+    transition: all 0.2s;
+
+    &.p-button-success {
+      background-color: #ff6b35;
+      border-color: #ff6b35;
+
+      &:hover {
+        background-color: #e85a2a;
+        border-color: #e85a2a;
+      }
+    }
+
+    &.p-button-secondary {
+      background-color: #6c757d;
+      border-color: #6c757d;
+
+      &:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+      }
+    }
+
+    &.p-button-info {
+      background-color: #0ea5e9;
+      border-color: #0ea5e9;
+
+      &:hover {
+        background-color: #0284c7;
+        border-color: #0284c7;
+      }
+    }
+  }
+
+  // Table styling
+  .p-datatable {
+    .p-datatable-thead > tr > th {
+      background-color: #f9fafb;
+      color: #374151;
+      font-weight: 600;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    .p-datatable-tbody > tr > td {
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      color: #1f2937;
+    }
+
+    .p-datatable-tbody > tr:hover {
+      background-color: #f9fafb;
+    }
+  }
+
+  // Paginator styling
+  .p-paginator {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    background-color: #f9fafb;
+
+    .p-paginator-current {
+      color: #374151;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 1400px) {
+  .filter-card {
+    > div > div:nth-child(2) {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .filter-card {
+    > div > div {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-card {
+    padding: 20px;
+
+    > div > div {
+      grid-template-columns: 1fr !important;
+    }
+  }
+}

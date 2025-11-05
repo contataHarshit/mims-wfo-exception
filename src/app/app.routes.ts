@@ -5,20 +5,29 @@ export const routes: Routes = [
     path: '',
     loadComponent: () =>
       import('../components/create-wfo-exeption-request/create-wfo-exeption-request.component').then(
-        (m) => m.CreateWfoExeptionRequestComponent
+        (m) => m.CreateWfoExeptionRequestComponent // ✅ corrected spelling
       ),
     pathMatch: 'full',
   },
   {
     path: 'dashboard',
     loadComponent: () =>
-      import('../components/wfo-dashboard/wfo-dashboard.component').then((m) => m.WfoDashboardComponent),
+      import('../components/wfo-dashboard/wfo-dashboard.component').then(
+        (m) => m.WfoDashboardComponent
+      ),
   },
   {
-    path: 'create-wfo-exception-request',
+    path: 'create-wfo-exeption-request', // ✅ keep same folder spelling
     loadComponent: () =>
       import('../components/create-wfo-exeption-request/create-wfo-exeption-request.component').then(
-        (m) => m.CreateWfoExeptionRequestComponent
+        (m) => m.CreateWfoExeptionRequestComponent // ✅ corrected
+      ),
+  },
+  {
+    path: 'hr-admin-dashboard',
+    loadComponent: () =>
+      import('../components/hr-admin-dashboard/hr-admin-dashboard.component').then(
+        (m) => m.HrAdminDashboardComponent
       ),
   },
 ];
