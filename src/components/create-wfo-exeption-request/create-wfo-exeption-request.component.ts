@@ -39,7 +39,6 @@ interface ExceptionEntry {
   otherReason?: string;
 }
 
-
 interface FormData {
   employeeId: string;
   employeeName: string;
@@ -90,6 +89,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   };
 
   disabledDates: Date[] = [];
+  // store API-provided disabled dates separately so we can merge them with user-selected dates
+  apiDisabledDates: Date[] = [];
   projectList: any[] = [];
 
   reasonList = [
@@ -153,17 +154,23 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
         next: (res: any) => {
           if (res?.success && res.data?.dates) {
             const dates = res.data.dates;
-            // ✅ Normalize dates properly
-            this.disabledDates = dates.map((dateStr: string) => {
+            // ✅ Normalize dates properly and store from API
+            this.apiDisabledDates = dates.map((dateStr: string) => {
               const date = new Date(dateStr);
               date.setHours(0, 0, 0, 0);
               return date;
             });
 
+            // Merge API-disabled dates with any currently selected dates
+            this.updateDisabledDates();
+
             // ✅ Force change detection
             this.cdr.detectChanges();
 
-            console.log("Initial disabled dates loaded:", this.disabledDates);
+            console.log(
+              "Initial disabled dates loaded:",
+              this.apiDisabledDates
+            );
           } else {
             this.toastr.warning("No disabled dates found for this month.");
           }
@@ -330,21 +337,37 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
   // ✅ CRITICAL FIX: Create new array reference
   updateDisabledDates() {
-    const allDates: Date[] = [];
+    // start with API disabled dates
+    const combined: Date[] = [];
+    if (this.apiDisabledDates?.length) {
+      combined.push(...this.apiDisabledDates.map((d) => new Date(d)));
+    }
+
+    // add currently selected dates from form rows
     this.formData.exceptions.forEach((ex) => {
       if (ex.dateRange?.length > 0) {
         ex.dateRange.forEach((date) => {
           const normalized = new Date(date);
           normalized.setHours(0, 0, 0, 0);
-          allDates.push(normalized);
+          combined.push(normalized);
         });
       }
     });
 
-    // ✅ Create NEW array reference (crucial for change detection)
-    this.disabledDates = [...allDates];
+    // dedupe by YYYY-MM-DD string
+    const map = new Map<string, Date>();
+    combined.forEach((d) => {
+      const key = d.toISOString().split("T")[0];
+      if (!map.has(key)) map.set(key, d);
+    });
 
-    console.log("Updated disabled dates:", this.disabledDates);
+    // create NEW array reference (crucial for change detection)
+    this.disabledDates = Array.from(map.values());
+
+    console.log(
+      "Updated disabled dates (merged API + selections):",
+      this.disabledDates
+    );
   }
 
   validateForm(): boolean {
@@ -386,25 +409,24 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       return;
     }
 
-const payload = {
-  exceptions: this.formData.exceptions
-    .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
-    .map((ex) => {
-      // Take the first selected date
-      const date = new Date(ex.dateRange[0]);
-      const newDate = addDays(date, 1); // add 1 day
+    const payload = {
+      exceptions: this.formData.exceptions
+        .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
+        .map((ex) => {
+          // Take the first selected date
+          const date = new Date(ex.dateRange[0]);
+          const newDate = addDays(date, 1); // add 1 day
 
-      return {
-        selectedDate: newDate.toISOString().split("T")[0], // format YYYY-MM-DD
-        primaryReason:
-          typeof ex.primaryReason === "object"
-            ? ex.primaryReason?.value || ex.primaryReason?.label || ""
-            : ex.primaryReason || "",
-        remarks: ex.remarks?.trim() || "",
-      };
-    }),
-};
-
+          return {
+            selectedDate: newDate.toISOString().split("T")[0], // format YYYY-MM-DD
+            primaryReason:
+              typeof ex.primaryReason === "object"
+                ? ex.primaryReason?.value || ex.primaryReason?.label || ""
+                : ex.primaryReason || "",
+            remarks: ex.remarks?.trim() || "",
+          };
+        }),
+    };
 
     console.log("Final Payload:", payload);
 
