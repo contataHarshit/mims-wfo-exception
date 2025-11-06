@@ -237,9 +237,9 @@ export class WfoDashboardComponent implements OnInit {
               exceptionRequestedDays: item.requestedDays || null,
               exceptionApprovedDays: item.approvedDays || null,
               status: item.currentStatus,
-              managerName:item.managerName,
+              managerName: item?.manager || "-",
               managerRemarks: item.managerRemarks || null,
-              checked: false // Reset checkbox state
+              checked: false, // Reset checkbox state
             };
           });
 
