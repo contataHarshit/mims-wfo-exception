@@ -7,7 +7,7 @@ import {
   OnChanges,
   SimpleChanges,
   ViewChild,
-  ElementRef,
+  ChangeDetectorRef,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { CalendarModule } from "primeng/calendar";
@@ -41,22 +41,43 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
 
   tempSelection: Date[] = [];
   lastApplied: Date[] = [];
-  internalDisabledDates: Date[] = []; // ✅ internal cloned version
+  internalDisabledDates: Date[] = [];
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.tempSelection = Array.isArray(this.range) ? [...this.range] : [];
     this.lastApplied = Array.isArray(this.range) ? [...this.range] : [];
-    this.internalDisabledDates = [...(this.disabledDates || [])];
+    this.updateInternalDisabledDates();
   }
 
-  // ✅ react to disabledDates updates dynamically
   ngOnChanges(changes: SimpleChanges) {
-    if (changes["disabledDates"] && changes["disabledDates"].currentValue) {
-      // Clone to prevent reference sharing
-      this.internalDisabledDates = [
-        ...changes["disabledDates"].currentValue.map((d: Date) => new Date(d)),
-      ];
+    // ✅ Update disabled dates whenever the input changes
+    if (changes["disabledDates"]) {
+      this.updateInternalDisabledDates();
+      this.cdr.detectChanges();
     }
+
+    // ✅ Update range if changed externally
+    if (changes["range"] && !changes["range"].firstChange) {
+      this.tempSelection = Array.isArray(this.range) ? [...this.range] : [];
+      this.lastApplied = Array.isArray(this.range) ? [...this.range] : [];
+    }
+  }
+
+  // ✅ Helper method to properly clone and normalize disabled dates
+  private updateInternalDisabledDates() {
+    if (!this.disabledDates || !Array.isArray(this.disabledDates)) {
+      this.internalDisabledDates = [];
+      return;
+    }
+
+    // Clone and normalize all disabled dates to midnight
+    this.internalDisabledDates = this.disabledDates.map((d) => {
+      const newDate = new Date(d);
+      newDate.setHours(0, 0, 0, 0);
+      return newDate;
+    });
   }
 
   onCalendarShow() {

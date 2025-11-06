@@ -199,8 +199,11 @@ export class WfoDashboardComponent implements OnInit {
         params.set("reason", reason);
       }
     }
-    if(this.commonService.currentView=="self" && (this.role=="MANAGER" || this.role=="HR")){
-      params.set("isSelf","true")
+    if (
+      this.commonService.currentView == "self" &&
+      (this.role == "MANAGER" || this.role == "HR")
+    ) {
+      params.set("isSelf", "true");
     }
     // Status filter - handle both object and string formats
     const status = this.filters.status
@@ -210,7 +213,8 @@ export class WfoDashboardComponent implements OnInit {
       : "PENDING";
 
     params.set("status", status);
-    let addedVal=this.commonService.currentView=="self"?"isSelf=true":""
+    let addedVal =
+      this.commonService.currentView == "self" ? "isSelf=true" : "";
     const url = `${
       this.constants.exceptionRequest
     }/paginated?${params.toString()}`;
@@ -223,6 +227,8 @@ export class WfoDashboardComponent implements OnInit {
           // Map backend response to frontend table format
           this.exceptionRequests = exceptions.map((item: any) => {
             if (item.currentStatus !== "PENDING") {
+              console.log("item", item);
+
               this.disableSelectAll = true;
             }
 

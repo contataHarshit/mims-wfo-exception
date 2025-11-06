@@ -117,10 +117,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       this.formData.employeeNumber =
         localStorage.getItem("employeeNumber") || "";
     }
-    // Subscribe to BehaviorSubjects
-    // this.commonService.employeeNumber$.subscribe((number) => {
-    //   this.formData.employeeNumber = number;
-    // });
 
     this.commonService.employeeName$.subscribe((name) => {
       this.formData.employeeName = name;
@@ -156,11 +152,17 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
         next: (res: any) => {
           if (res?.success && res.data?.dates) {
             const dates = res.data.dates;
+            // ✅ Normalize dates properly
             this.disabledDates = dates.map((dateStr: string) => {
               const date = new Date(dateStr);
               date.setHours(0, 0, 0, 0);
               return date;
             });
+
+            // ✅ Force change detection
+            this.cdr.detectChanges();
+
+            console.log("Initial disabled dates loaded:", this.disabledDates);
           } else {
             this.toastr.warning("No disabled dates found for this month.");
           }
@@ -172,19 +174,14 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       });
   }
 
-  // Triggered when primary reason dropdown changes
-  // Triggered when primary reason dropdown changes
   onPrimaryReasonChange(exception: ExceptionEntry, value: any) {
     console.log("Primary reason emitted value:", value);
 
     if (value.value === "other" || value.value === "Other") {
-      // Show custom input and clear the value SYNCHRONOUSLY
       exception.showOtherReason = true;
       exception.otherReason = "";
-      exception.primaryReason = null; // This should trigger writeValue in child
-      console.log("lllllllllll");
+      exception.primaryReason = null;
 
-      // ✅ Force immediate update
       setTimeout(() => {
         exception.primaryReason = null;
         this.cdr.detectChanges();
@@ -196,7 +193,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       this.cdr.detectChanges();
     }
   }
-  // Confirm typed "other" reason (tick icon)
+
   confirmOtherReason(exception: ExceptionEntry) {
     const entered = exception.otherReason?.trim();
     if (!entered) {
@@ -204,13 +201,11 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       return;
     }
 
-    // If this custom reason isn't already in reasonList, add it
     const exists = this.reasonList.some((r) => (r.value ?? r) === entered);
     if (!exists) {
       this.reasonList.push({ label: entered, value: entered });
     }
 
-    // Select the new custom reason immediately
     exception.primaryReason = entered;
     exception.showOtherReason = false;
     exception.otherReason = "";
@@ -218,7 +213,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Cancel typing "other" reason (X icon)
   cancelOtherReason(exception: ExceptionEntry) {
     exception.otherReason = "";
     exception.primaryReason = null;
@@ -247,6 +241,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       showOtherReason: false,
       otherReason: "",
     });
+
+    // ✅ Force update of disabled dates
+    this.updateDisabledDates();
     this.cdr.detectChanges();
   }
 
@@ -264,6 +261,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       });
     }
 
+    // ✅ Update disabled dates after deletion
     this.updateDisabledDates();
     this.cdr.detectChanges();
   }
@@ -319,7 +317,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       this.formData.exceptions.splice(rowIndex + i, 0, newRow);
     }
 
-    // Update disabled dates and refresh UI
+    // ✅ Update disabled dates and refresh UI
     this.updateDisabledDates();
     this.cdr.detectChanges();
 
@@ -329,6 +327,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     );
   }
 
+  // ✅ CRITICAL FIX: Create new array reference
   updateDisabledDates() {
     const allDates: Date[] = [];
     this.formData.exceptions.forEach((ex) => {
@@ -340,13 +339,15 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
         });
       }
     });
+
+    // ✅ Create NEW array reference (crucial for change detection)
     this.disabledDates = [...allDates];
+
+    console.log("Updated disabled dates:", this.disabledDates);
   }
 
   validateForm(): boolean {
     for (const [i, ex] of this.formData.exceptions.entries()) {
-      console.log("xxxxxxxxxxx", ex);
-
       if (!ex.dateRange?.length) {
         this.toastr.warning(`Please select a date for row ${i + 1}.`);
         return false;
@@ -358,8 +359,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       }
 
       if (!ex.remarks || !ex.remarks.trim()) {
-        console.log("11111111");
-
         this.toastr.warning(`Please enter remarks for row ${i + 1}.`);
         return false;
       }
@@ -405,7 +404,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       .postData(payload, this.constant.exceptionRequest)
       .pipe(
         finalize(() => {
-          // ensure loading is turned off regardless of success/error
           this.commonService.loading = false;
         })
       )
