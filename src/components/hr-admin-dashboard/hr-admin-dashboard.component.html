@@ -2,107 +2,89 @@
 <div class="page-container">
   <!-- FILTER SECTION -->
   <div class="filter-card">
-    <!-- Two Row Grid Layout -->
-    <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div class="filter-grid-container">
       
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-        <!-- <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Report type</label>
-          <app-common-select
-            [options]="reportTypeList"
-            [(value)]="filters.reportType"
-            placeholder="Select Report Type"
-            style="width: 100%;"
-          ></app-common-select>
-        </div> -->
-
+      <!-- Row 1: Employee name, Manager name, Status (3 columns) -->
+      <div class="filter-row-3">
         <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Employee name</label>
+          <label>Employee name</label>
           <app-common-select
             [options]="employeeList"
             [(value)]="filters.employeeName"
             placeholder="Select Employee"
-            style="width: 100%;"
           ></app-common-select>
         </div>
 
         <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Manager name</label>
+          <label>Manager name</label>
           <app-common-select
             [options]="managerList"
             [(value)]="filters.managerName"
             placeholder="Select Manager"
-            style="width: 100%;"
           ></app-common-select>
         </div>
-      </div>
 
-      <!-- Row 2: Status, From date, To date, Reason -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
         <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Status</label>
+          <label>Status</label>
           <app-common-select
             [options]="statusList"
             [(value)]="filters.status"
             placeholder="All"
-            style="width: 100%;"
-          ></app-common-select>
-        </div>
-
-        <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">From date</label>
-          <input
-            type="date"
-            [(ngModel)]="filters.fromDate"
-            class="date-input"
-            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;"
-            (change)="onDateChange()"
-          />
-        </div>
-
-        <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">To date</label>
-          <input
-            type="date"
-            [(ngModel)]="filters.toDate"
-            class="date-input"
-            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;"
-            (change)="onDateChange()"
-          />
-        </div>
-
-        <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Reason</label>
-          <app-common-select
-            [options]="reasonList"
-            [(value)]="filters.reason"
-            placeholder="All"
-            style="width: 100%;"
           ></app-common-select>
         </div>
       </div>
 
-      <!-- Action Buttons - Right Aligned -->
-      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
+      <!-- Row 2: From date, To date, Reason (3 columns) -->
+      <div class="filter-row-3">
+        <div class="form-row">
+          <label>From date</label>
+          <input
+            type="date"
+            [(ngModel)]="filters.fromDate"
+            class="date-input"
+            (change)="onDateChange()"
+          />
+        </div>
+
+        <div class="form-row">
+          <label>To date</label>
+          <input
+            type="date"
+            [(ngModel)]="filters.toDate"
+            class="date-input"
+            (change)="onDateChange()"
+          />
+        </div>
+
+        <div class="form-row">
+          <label>Reason</label>
+          <app-common-select
+            [options]="reasonList"
+            [(value)]="filters.reason"
+            placeholder="All"
+          ></app-common-select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-row">
         <button
           pButton
           label="Apply"
           class="p-button-success"
           (click)="applyFilters()"
-          style="padding: 10px 30px;"
         ></button>
         <button
           pButton
           label="Reset"
           class="p-button-secondary"
           (click)="resetFilters()"
-          style="padding: 10px 30px;"
         ></button>
       </div>
     </div>
 
-    <!-- Export Button - Separate Row -->
-    <div style="margin-top: 20px;">
+    <!-- Export Button -->
+    <div class="export-row">
       <button
         pButton
         label="Export to Excel"
@@ -114,7 +96,7 @@
   </div>
 
   <!-- TABLE SECTION -->
-  <div class="table-card" style="margin-top: 20px;">
+  <div class="table-card">
     <p-table
       [value]="hrData"
       class="p-datatable-gridlines"
@@ -128,7 +110,7 @@
           <th>Employee ID</th>
           <th>Employee Name</th>
           <th>Designation</th>
-          <th> Manager Name</th>
+          <th>Manager Name</th>
           <th>Applied Exceptions</th>
           <th>Accepted Exceptions</th>
           <th>Rejected Exceptions</th>

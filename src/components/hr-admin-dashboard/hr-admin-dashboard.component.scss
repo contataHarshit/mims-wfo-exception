@@ -1,27 +1,3 @@
-/* src/app/hr-admin-dashboard/hr-admin-dashboard.component.scss */
-.page-container {
-  padding: 1.5rem 2rem;
-  background-color: #fff;
-  font-family: "Segoe UI", sans-serif;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-start;
-  gap: 10px;
-  margin-top: 1rem;
-}
-
-.table-card {
-  margin-top: 1.5rem;
-}
 // hr-admin-dashboard.component.scss
 
 .page-container {
@@ -36,6 +12,18 @@
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+}
+
+.filter-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.filter-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
 .form-row {
@@ -63,6 +51,19 @@
     outline: none;
     border-color: #4f46e5;
   }
+}
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.export-row {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .table-card {
@@ -147,28 +148,26 @@
 }
 
 // Responsive adjustments
-@media (max-width: 1400px) {
-  .filter-card {
-    > div > div:nth-child(2) {
-      grid-template-columns: repeat(2, 1fr) !important;
-    }
-  }
-}
-
 @media (max-width: 1200px) {
-  .filter-card {
-    > div > div {
-      grid-template-columns: repeat(2, 1fr) !important;
-    }
+  .filter-row-3 {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
   .filter-card {
     padding: 20px;
+  }
 
-    > div > div {
-      grid-template-columns: 1fr !important;
+  .filter-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .button-row {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
     }
   }
 }
