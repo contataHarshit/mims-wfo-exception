@@ -285,7 +285,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
         otherReason: "",
       },
     ];
-    this.disabledDates = [];
+    // this.disabledDates = [];
     this.cdr.detectChanges();
     if (showToast) this.toastr.info("Form Reset Successfully");
   }
