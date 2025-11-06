@@ -28,8 +28,8 @@ import { CommonSelectComponent } from "../../common/common-select/common-select.
 import { ToastrService } from "ngx-toastr";
 import { addDays, endOfMonth } from "date-fns";
 import { finalize } from "rxjs/operators";
-
 // ✅ Define proper interfaces
+// Add to ExceptionEntry interface
 interface ExceptionEntry {
   dateRange: Date[];
   exceptionRequestedDays: string;
@@ -38,6 +38,7 @@ interface ExceptionEntry {
   showOtherReason?: boolean;
   otherReason?: string;
 }
+
 
 interface FormData {
   employeeId: string;
@@ -385,18 +386,25 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
       return;
     }
 
-    const payload = {
-      exceptions: this.formData.exceptions
-        .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
-        .map((ex) => ({
-          selectedDate: ex.dateRange[0].toISOString().split("T")[0],
-          primaryReason:
-            typeof ex.primaryReason === "object"
-              ? ex.primaryReason?.value || ex.primaryReason?.label || ""
-              : ex.primaryReason || "",
-          remarks: ex.remarks?.trim() || "",
-        })),
-    };
+const payload = {
+  exceptions: this.formData.exceptions
+    .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
+    .map((ex) => {
+      // Take the first selected date
+      const date = new Date(ex.dateRange[0]);
+      const newDate = addDays(date, 1); // add 1 day
+
+      return {
+        selectedDate: newDate.toISOString().split("T")[0], // format YYYY-MM-DD
+        primaryReason:
+          typeof ex.primaryReason === "object"
+            ? ex.primaryReason?.value || ex.primaryReason?.label || ""
+            : ex.primaryReason || "",
+        remarks: ex.remarks?.trim() || "",
+      };
+    }),
+};
+
 
     console.log("Final Payload:", payload);
 
