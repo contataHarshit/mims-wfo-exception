@@ -11,11 +11,11 @@
       <!-- Row 1: Report type, Employee name, Status -->
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
         <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Report type</label>
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Select Manager</label>
           <app-common-select
             [options]="reportTypeList"
             [(value)]="filters.reportType"
-            placeholder="Select Report Type"
+            placeholder="Select Manager"
             style="width: 100%;"
           ></app-common-select>
         </div>
@@ -111,18 +111,22 @@
   <div class="table-card" style="margin-top: 20px;">
     <p-table
       [value]="exceptionRequests"
-      class="p-datatable-gridlines"
-      [paginator]="true"
-      [rows]="10"
-      [responsiveLayout]="'scroll'"
+  [paginator]="true"
+  [rows]="limit"
+  [totalRecords]="totalRecords"
+  [lazy]="true"
+  (onLazyLoad)="onPageChange($event)"
+  class="p-datatable-gridlines"
+  [responsiveLayout]="'scroll'"
     >
       <ng-template pTemplate="header">
         <tr>
           <!-- ✅ Fixed condition -->
-          <th style="width: 60px; text-align: center;" *ngIf="commonService.currentView !== 'self'">Action</th>
+          <th style="width: 60px; text-align: center;" *ngIf="commonService.currentView !== 'self'"><input type="checkbox" [disabled]="disableSelectAll" (change)="selectAllChange($event)"></th>
           <th>Employee Id</th>
           <th>Employee Name</th>
           <th>Designation</th>
+          <th>Manager Name</th>
           <th>Exception Date(s)</th>
           <th>Reason</th>
           <th>Submission date</th>
@@ -138,27 +142,30 @@
             <input
               type="checkbox"
               [checked]="req.status === 'APPROVED' || req.checked"
-              [disabled]="req.status === 'APPROVED'"
+              [disabled]="req.status === 'APPROVED' || req.status=='REJECTED'"
               (change)="toggleSelection(req, $event)"
+              *ngIf="req.status !=='REJECTED'"
             />
           </td>
-          <td>{{ req.employeeId }}</td>
-          <td>{{ req.employeeName }}</td>
-          <td>{{ req.designation }}</td>
-          <td>{{ req.exceptionDate }}</td>
-          <td>{{ req.primaryReason }}</td>
-          <td>{{ req.submissionDate }}</td>
-          <td>
-            <span 
-              [ngClass]="{
-                'status-pending': req.status === 'PENDING',
-                'status-approved': req.status === 'APPROVED',
-                'status-rejected': req.status === 'REJECTED'
-              }"
-            >
-              {{ req.status }}
-            </span>
-          </td>
+         <td>{{ req.employeeId }}</td>
+<td>{{ req.employeeName }}</td>
+<td>{{ req.designation }}</td>
+<td>{{req.managerName}}</td>
+<td>{{ req.exceptionDate }}</td>
+<td>{{ req.primaryReason }}</td>
+<td>{{ req.submissionDate }}</td>
+<td>
+  <span 
+    [ngClass]="{
+      'status-pending': req.status === 'PENDING',
+      'status-approved': req.status === 'APPROVED',
+      'status-rejected': req.status === 'REJECTED'
+    }"
+  >
+    {{ req.status }}
+  </span>
+</td>
+
       <td *ngIf="commonService.currentView=='self'">
   <button
     (click)="deleteRow(req)"

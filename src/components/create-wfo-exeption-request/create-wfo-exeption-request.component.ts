@@ -276,31 +276,46 @@ cancelOtherReason(exception: ExceptionEntry) {
     if (showToast) this.toastr.info("Form Reset Successfully");
   }
 
-  onMultiDateConfirm(selectedDates: Date[], rowIndex: number) {
-    if (!selectedDates || selectedDates.length === 0) return;
+onMultiDateConfirm(selectedDates: Date[], rowIndex: number) {
+  if (!selectedDates || selectedDates.length === 0) return;
 
-    const sortedDates = selectedDates.sort((a, b) => a.getTime() - b.getTime());
+  // Sort selected dates in ascending order
+  const sortedDates = selectedDates.sort((a, b) => a.getTime() - b.getTime());
 
-    this.formData.exceptions[rowIndex] = {
-      ...this.formData.exceptions[rowIndex],
-      dateRange: [sortedDates[0]],
+  // Reference of the source row (the one from which user selected multiple dates)
+  const sourceRow = this.formData.exceptions[rowIndex];
+
+  // Update the current row with the first date
+  this.formData.exceptions[rowIndex] = {
+    ...sourceRow,
+    dateRange: [sortedDates[0]],
+  };
+
+  // If remarks/primaryReason are pre-filled in the current row, replicate them
+  const filledRemarks = sourceRow.remarks?.trim() || "";
+  const filledReason = sourceRow.primaryReason ? { ...sourceRow.primaryReason } : null;
+
+  // Insert additional rows for remaining selected dates
+  for (let i = 1; i < sortedDates.length; i++) {
+    const newRow: ExceptionEntry = {
+      dateRange: [sortedDates[i]],
+      exceptionRequestedDays: "",
+      primaryReason: filledReason ? { ...filledReason } : null,
+      remarks: filledRemarks,
+      showOtherReason: false,
+      otherReason: "",
     };
 
-    for (let i = 1; i < sortedDates.length; i++) {
-      const newRow: ExceptionEntry = {
-        dateRange: [sortedDates[i]],
-        exceptionRequestedDays: "",
-        primaryReason: null,
-        remarks: "",
-        showOtherReason: false,
-        otherReason: "",
-      };
-      this.formData.exceptions.splice(rowIndex + i, 0, newRow);
-    }
-
-    this.updateDisabledDates();
-    this.cdr.detectChanges();
+    this.formData.exceptions.splice(rowIndex + i, 0, newRow);
   }
+
+  // Update disabled dates and refresh UI
+  this.updateDisabledDates();
+  this.cdr.detectChanges();
+
+  console.log("✅ Rows after multi-date selection:", this.formData.exceptions);
+}
+
 
   updateDisabledDates() {
     const allDates: Date[] = [];

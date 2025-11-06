@@ -54,7 +54,7 @@ interface ExceptionRequest {
 })
 export class WfoDashboardComponent implements OnInit {
   selectedView: string = "";
-  
+
   constructor(
     private dialog: MatDialog,
     public commonService: CommonService,
@@ -65,7 +65,7 @@ export class WfoDashboardComponent implements OnInit {
 
   // Store original unfiltered data
   private allExceptionRequests: ExceptionRequest[] = [];
-  
+
   // Exception Request Data
   exceptionRequests: ExceptionRequest[] = [];
 
@@ -76,7 +76,6 @@ export class WfoDashboardComponent implements OnInit {
   employeeList: any[] = [];
 
   statusList = [
-    { label: "All", value: "" },
     { label: "Pending", value: "PENDING" },
     { label: "Approved", value: "APPROVED" },
     { label: "Rejected", value: "REJECTED" },
@@ -98,28 +97,35 @@ export class WfoDashboardComponent implements OnInit {
   filters = {
     reportType: "employee",
     employeeName: null,
-    status: null,
+    status: "PENDING",
     fromDate: null as Date | null,
     toDate: null as Date | null,
     reason: null,
   };
-  showSubmit=false
-  role=""
+  showSubmit = false;
+  role = "";
+  disableSelectAll = false;
+  page: number = 1;
+  limit: number = 10;
+  totalRecords: number = 0;
   ngOnInit(): void {
     this.commonService.loading = true;
-    
+
     // ✅ Get current view from localStorage and commonService
     this.selectedView = localStorage.getItem("selectedView") || "self";
     this.commonService.currentView = this.selectedView;
-    
+
     console.log("Dashboard Init - selectedView:", this.selectedView);
-    console.log("Dashboard Init - commonService.currentView:", this.commonService.currentView);
+    console.log(
+      "Dashboard Init - commonService.currentView:",
+      this.commonService.currentView
+    );
 
     const storedData =
       localStorage.getItem("role") === "MANAGER"
         ? localStorage.getItem("managerEmployeeData")
         : localStorage.getItem("allEmployeeData");
-    this.role=localStorage.getItem("role") || ""
+    this.role = localStorage.getItem("role") || "";
     this.employeeList = storedData
       ? JSON.parse(storedData).map((item: any) => ({
           label: `${item.FullName}(${item.EmployeeNumber})`,
@@ -135,77 +141,139 @@ export class WfoDashboardComponent implements OnInit {
       // Update local view state
       this.selectedView = localStorage.getItem("selectedView") || "self";
       this.commonService.currentView = this.selectedView;
-      
+
       console.log("View changed - selectedView:", this.selectedView);
-      console.log("View changed - commonService.currentView:", this.commonService.currentView);
-      
+      console.log(
+        "View changed - commonService.currentView:",
+        this.commonService.currentView
+      );
+
       // Refresh data
       this.getExceptionRequest();
     });
   }
-
   getExceptionRequest() {
     this.commonService.loading = true;
-    
-    // ✅ Get current view from commonService
-    const currentView = this.commonService.currentView || localStorage.getItem("selectedView") || "self";
-    
-    console.log("Fetching data for view:", currentView);
-    
-    const url =
-      this.constants.exceptionRequest +
-      "/paginated" +
-      (currentView === "self" && localStorage.getItem("role") !=="EMPLOYEE" && localStorage.getItem("role")!=="ADMIN" ? "?isSelf=true" : "");
-    console.log("url",url);
-    
-    console.log("API URL:", url);
+
+    const params = new URLSearchParams();
+
+    // Pagination params
+    params.set("page", this.page.toString());
+    params.set("limit", this.limit.toString());
+
+    // Date filters
+    if (this.filters.fromDate) {
+      const fromDate = new Date(this.filters.fromDate);
+      params.set("fromDate", fromDate.toISOString().split("T")[0]); // Format: YYYY-MM-DD
+    }
+
+    if (this.filters.toDate) {
+      const toDate = new Date(this.filters.toDate);
+      params.set("toDate", toDate.toISOString().split("T")[0]); // Format: YYYY-MM-DD
+    }
+
+    // Employee filter - handle both object and string formats
+    if (this.filters.employeeName) {
+      const employeeNumber =
+        typeof this.filters.employeeName === "object"
+          ? (this.filters.employeeName as any).value
+          : this.filters.employeeName;
+
+      if (employeeNumber) {
+        params.set("employeeNumber", employeeNumber);
+      }
+    }
+
+    // Reason filter - skip if "All" or empty
+    if (
+      this.filters.reason &&
+      this.filters.reason !== "All" &&
+      this.filters.reason !== ""
+    ) {
+      const reason =
+        typeof this.filters.reason === "object"
+          ? (this.filters.reason as any).value
+          : this.filters.reason;
+
+      if (reason) {
+        params.set("reason", reason);
+      }
+    }
+
+    // Status filter - handle both object and string formats
+    const status = this.filters.status
+      ? typeof this.filters.status === "object"
+        ? (this.filters.status as any).value
+        : this.filters.status
+      : "PENDING";
+
+    params.set("status", status);
+
+    const url = `${
+      this.constants.exceptionRequest
+    }/paginated?${params.toString()}`;
 
     this.http.getData(url).subscribe({
-      next: (response: any) => {
-        console.log("Exception Request Data Response:", response);
+      next: (res: any) => {
+        if (res.success) {
+          const exceptions = res.data.exceptions || [];
 
-        const exceptions = response?.data?.exceptions || [];
+          // Map backend response to frontend table format
+          this.exceptionRequests = exceptions.map((item: any) => {
+            if (item.currentStatus !== "PENDING") {
+              this.disableSelectAll = true;
+            }
 
-        if (!exceptions.length) {
-          this.allExceptionRequests = [];
+            return {
+              exceptionId: item.id,
+              employeeId: item.employeeNumber,
+              employeeName: item.employee,
+              designation: item.designation || "-",
+              exceptionDate: item.selectedDate,
+              primaryReason: item.primaryReason,
+              submissionDate: this.formatDate(item.submissionDate),
+              exceptionRequestedDays: item.requestedDays || null,
+              exceptionApprovedDays: item.approvedDays || null,
+              status: item.currentStatus,
+              managerName:item.managerName,
+              managerRemarks: item.managerRemarks || null,
+              checked: false // Reset checkbox state
+            };
+          });
+
+          this.totalRecords = res.data.pagination?.total || exceptions.length;
+
+          // Clear selections when data refreshes
+          this.selectedRequests = [];
+        } else {
           this.exceptionRequests = [];
-          this.commonService.loading = false;
-          return;
+          this.totalRecords = 0;
+          this.toastr.warning("No records found");
         }
-
-        // Transform backend exceptions to table data
-        const transformedData = exceptions.map((ex: any) => ({
-          employeeId: ex.employeeNumber || "N/A",
-          employeeName: ex.employee || "N/A",
-          designation: ex.designation || "N/A",
-          projectName: ex.projectName || "N/A",
-          exceptionDate: ex.selectedDate || "N/A",
-          primaryReason: ex.primaryReason || "N/A",
-          submissionDate: ex.submissionDate
-            ? new Date(ex.submissionDate).toLocaleDateString("en-GB")
-            : "N/A",
-          exceptionRequestedDays: ex.exceptionRequestedDays || null,
-          exceptionApprovedDays: ex.exceptionApprovedDays || null,
-          status: ex.currentStatus || "PENDING",
-          managerRemarks: ex.remarks || "N/A",
-          exceptionId: ex.id,
-          checked: false,
-        }));
-
-        // Store both original and display data
-        this.allExceptionRequests = [...transformedData];
-        this.exceptionRequests = [...transformedData];
-
         this.commonService.loading = false;
-        console.log("Transformed Table Data:", this.exceptionRequests);
       },
       error: (err: any) => {
+        console.error("Error fetching exception requests:", err);
+        this.exceptionRequests = [];
+        this.totalRecords = 0;
         this.commonService.loading = false;
-        console.error("Exception Request API Error:", err);
+        this.toastr.error("Failed to fetch data. Please try again.");
       },
     });
   }
-
+  onPageChange(event: any) {
+    this.page = Math.floor(event.first / event.rows) + 1;
+    this.limit = event.rows;
+    this.selectedRequests = []; // Clear selections on page change
+    this.getExceptionRequest();
+  }
+  formatDate(date: string): string {
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
   onDateChange() {
     console.log("Date changed:", {
       from: this.filters.fromDate,
@@ -214,102 +282,39 @@ export class WfoDashboardComponent implements OnInit {
   }
 
   applyFilter() {
-    this.commonService.loading = true;
+    // Reset to first page when applying filters
+    this.page = 1;
 
-    let filteredData = [...this.allExceptionRequests];
+    // Fetch data with current filters
+    this.getExceptionRequest();
 
-    // Employee Name / Employee Number filter
-    let employeeNumber: any = null;
-    if (this.filters.employeeName) {
-      employeeNumber =
-        typeof this.filters.employeeName === "object"
-          ? (this.filters.employeeName as any).value
-          : this.filters.employeeName;
-
-      if (employeeNumber && employeeNumber !== "") {
-        filteredData = filteredData.filter(
-          (item) =>
-            item.employeeId.includes(employeeNumber) ||
-            item.employeeName
-              .toLowerCase()
-              .includes(String(employeeNumber).toLowerCase())
-        );
-      }
-    }
-
-    // Status filter
-    let status = this.filters.status;
-    if (status && status !== "") {
-      status = typeof status === "object" ? (status as any).value : status;
-      filteredData = filteredData.filter(
-        (item) => item.status.toUpperCase() === String(status).toUpperCase()
-      );
-    }
-
-    // Reason filter
-    let reason = this.filters.reason;
-    if (reason && reason !== "" && reason !== "All") {
-      reason = typeof reason === "object" ? (reason as any).value : reason;
-      filteredData = filteredData.filter((item) =>
-        item.primaryReason.toLowerCase().includes(String(reason).toLowerCase())
-      );
-    }
-
-    // Date range filter
-    if (this.filters.fromDate || this.filters.toDate) {
-      filteredData = filteredData.filter((item) => {
-        const dateStr = item.exceptionDate;
-        let itemDate: Date;
-
-        if (dateStr.includes("/")) {
-          const [day, month, year] = dateStr.split("/");
-          itemDate = new Date(Number(year), Number(month) - 1, Number(day));
-        } else {
-          itemDate = new Date(dateStr);
-        }
-
-        itemDate.setHours(0, 0, 0, 0);
-
-        let matchesFrom = true;
-        let matchesTo = true;
-
-        if (this.filters.fromDate) {
-          const fromDate = new Date(this.filters.fromDate);
-          fromDate.setHours(0, 0, 0, 0);
-          matchesFrom = itemDate >= fromDate;
-        }
-
-        if (this.filters.toDate) {
-          const toDate = new Date(this.filters.toDate);
-          toDate.setHours(0, 0, 0, 0);
-          matchesTo = itemDate <= toDate;
-        }
-
-        return matchesFrom && matchesTo;
-      });
-    }
-
-    this.exceptionRequests = filteredData;
-
+    // Show success message after data loads
     setTimeout(() => {
-      this.commonService.loading = false;
       const count = this.exceptionRequests.length;
-      this.toastr.success(`Found ${count} record${count !== 1 ? "s" : ""}`);
-    }, 200);
+      this.toastr.success(
+        `Filter applied. Found ${count} record${count !== 1 ? "s" : ""}`
+      );
+    }, 300);
   }
-
   resetFilters() {
+    // Reset all filter values to defaults
     this.filters = {
       reportType: "employee",
       employeeName: null,
-      status: null,
+      status: "PENDING",
       fromDate: null,
       toDate: null,
       reason: null,
     };
-    
-    this.exceptionRequests = [...this.allExceptionRequests];
-    this.toastr.info("Filters reset");
+
+    // Reset pagination to first page
+    this.page = 1;
+
+    // Fetch fresh data with reset filters
+    this.getExceptionRequest();
+
+    // Show reset confirmation
+    this.toastr.info("Filters reset successfully");
   }
 
   export() {
@@ -341,12 +346,14 @@ export class WfoDashboardComponent implements OnInit {
     const payload = { ids, status };
 
     console.log("Bulk Update Payload:", payload);
-    
+
     this.http.putData(this.constants.exceptionRequest, payload).subscribe({
       next: (res: any) => {
         if (res.success) {
           this.toastr.success(
-            `${this.selectedRequests.length} requests ${status.toLowerCase()} successfully`
+            `${
+              this.selectedRequests.length
+            } requests ${status.toLowerCase()} successfully`
           );
           this.selectedRequests = [];
           this.getExceptionRequest();
@@ -409,20 +416,27 @@ export class WfoDashboardComponent implements OnInit {
       }
     });
   }
-deleteRow(req?: any) {
-  const dialogRef = this.dialog.open(ConfirmPopupComponent, {
-    width: '400px',
-    data: { message: 'Are you sure you want to delete this record?' },
-  });
+  deleteRow(req?: any) {
+    const dialogRef = this.dialog.open(ConfirmPopupComponent, {
+      width: "400px",
+      data: { message: "Are you sure you want to delete this record?" },
+    });
 
-  dialogRef.afterClosed().subscribe((confirmed) => {
-    if (confirmed) {
-      console.log('✅ Delete confirmed for record:', req);
-      // Here you can call your API when ready
-    } else {
-      console.log('❌ Delete canceled');
-    }
-  });
-}
-
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        console.log("✅ Delete confirmed for record:", req);
+        // Here you can call your API when ready
+      } else {
+        console.log("❌ Delete canceled");
+      }
+    });
+  }
+  selectAllChange(e: any) {
+    this.exceptionRequests = this.exceptionRequests.map((item: any) => {
+      return {
+        ...item,
+        checked: e.target.checked ? true : false,
+      };
+    });
+  }
 }
