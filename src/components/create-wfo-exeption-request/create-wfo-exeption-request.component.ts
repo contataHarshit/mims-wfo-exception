@@ -336,39 +336,45 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   }
 
   // ✅ CRITICAL FIX: Create new array reference
-  updateDisabledDates() {
-    // start with API disabled dates
-    const combined: Date[] = [];
-    if (this.apiDisabledDates?.length) {
-      combined.push(...this.apiDisabledDates.map((d) => new Date(d)));
-    }
+updateDisabledDates() {
+  const combined: Date[] = [];
 
-    // add currently selected dates from form rows
-    this.formData.exceptions.forEach((ex) => {
-      if (ex.dateRange?.length > 0) {
-        ex.dateRange.forEach((date) => {
-          const normalized = new Date(date);
-          normalized.setHours(0, 0, 0, 0);
-          combined.push(normalized);
-        });
-      }
-    });
-
-    // dedupe by YYYY-MM-DD string
-    const map = new Map<string, Date>();
-    combined.forEach((d) => {
-      const key = d.toISOString().split("T")[0];
-      if (!map.has(key)) map.set(key, d);
-    });
-
-    // create NEW array reference (crucial for change detection)
-    this.disabledDates = Array.from(map.values());
-
-    console.log(
-      "Updated disabled dates (merged API + selections):",
-      this.disabledDates
-    );
+  // Add API disabled dates
+  if (this.apiDisabledDates?.length) {
+    combined.push(...this.apiDisabledDates.map((d) => new Date(d)));
   }
+
+  // Add currently selected dates
+  this.formData.exceptions.forEach((ex) => {
+    if (ex.dateRange?.length > 0) {
+      ex.dateRange.forEach((date) => {
+        const normalized = new Date(date);
+        normalized.setHours(0, 0, 0, 0);
+        combined.push(normalized);
+      });
+    }
+  });
+
+  // Add all Saturdays and Sundays in the allowed range
+  if (this.minSelectableDate && this.maxSelectableDate) {
+    const weekends = this.getWeekendsBetween(
+      this.minSelectableDate,
+      this.maxSelectableDate
+    );
+    combined.push(...weekends);
+  }
+
+  // Deduplicate
+  const map = new Map<string, Date>();
+  combined.forEach((d) => {
+    const key = d.toISOString().split("T")[0];
+    if (!map.has(key)) map.set(key, d);
+  });
+
+  this.disabledDates = Array.from(map.values());
+  console.log("Updated disabled dates (including weekends):", this.disabledDates);
+}
+
 
   validateForm(): boolean {
     for (const [i, ex] of this.formData.exceptions.entries()) {
@@ -468,4 +474,20 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     const maxDate = endOfMonth(nextMonth);
     return { minDate, maxDate };
   }
+  getWeekendsBetween(start: Date, end: Date): Date[] {
+  const dates: Date[] = [];
+  let current = new Date(start);
+  current.setHours(0, 0, 0, 0);
+
+  while (current <= end) {
+    const day = current.getDay(); // 0 = Sunday, 6 = Saturday
+    if (day === 0 || day === 6) {
+      dates.push(new Date(current));
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+}
+
 }
