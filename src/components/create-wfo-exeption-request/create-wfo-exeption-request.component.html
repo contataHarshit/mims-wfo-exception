@@ -2,8 +2,8 @@
   <p-card class="main-form-card">
     <div class="form-grid">
       <div class="form-row">
-        <label>Employee ID</label>
-        <input pInputText [(ngModel)]="formData.employeeId" readonly />
+        <label>Employee Number</label>
+        <input pInputText [(ngModel)]="formData.employeeNumber" readonly />
       </div>
 
       <div class="form-row">
@@ -20,12 +20,8 @@
     <div class="exception-section">
       <h4 class="section-title">Exception Details</h4>
 
-      <p-table
-        [value]="formData.exceptions"
-        dataKey="index"
-        class="p-datatable-gridlines"
-        [tableStyle]="{ 'min-width': '100%' }"
-      >
+      <p-table [value]="formData.exceptions" dataKey="index" class="p-datatable-gridlines"
+        [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
             <th>#</th>
@@ -40,72 +36,35 @@
           <tr>
             <td>{{ i + 1 }}</td>
             <td>
-              <app-date-range-picker
-                [(range)]="e.dateRange"
-                [disabledDates]="disabledDates"
-                [minDate]="minSelectableDate"
-                [maxDate]="maxSelectableDate"
-                (okClick)="onMultiDateConfirm($event, i)"
-              ></app-date-range-picker>
+              <app-date-range-picker [(range)]="e.dateRange" [disabledDates]="disabledDates"
+                [minDate]="minSelectableDate" [maxDate]="maxSelectableDate"
+                (okClick)="onMultiDateConfirm($event, i)"></app-date-range-picker>
             </td>
 
             <td>
               <!-- Normal dropdown -->
-         <div *ngIf="!e.showOtherReason" class="stable-width">
-<app-common-select
-  [options]="reasonList"
-  [value]="e.primaryReason"
-  placeholder="Select Reason"
-  [searchKey]="'label'"
-  (valueChange)="onPrimaryReasonChange(e, $event)"
-></app-common-select>
-</div>
+              <div *ngIf="!e.showOtherReason" class="stable-width">
+                <app-common-select [options]="reasonList" [value]="e.primaryReason" placeholder="Select Reason"
+                  [searchKey]="'label'" (valueChange)="onPrimaryReasonChange(e, $event)"></app-common-select>
+              </div>
               <!-- Other reason input -->
               <div *ngIf="e.showOtherReason" class="stable-width input-wrapper">
-                <input
-                  pInputText
-                  [(ngModel)]="e.otherReason"
-                  placeholder="Enter other reason"
-                  class="input-with-icons"
-                  style="width: 100%;"
-                />
-                <i
-                  class="pi pi-check inside-icon tick"
-                  (click)="confirmOtherReason(e)"
-                  title="Confirm"
-                ></i>
-                <i
-                  class="pi pi-times inside-icon cross"
-                  (click)="cancelOtherReason(e)"
-                  title="Cancel"
-                ></i>
+                <input pInputText [(ngModel)]="e.otherReason" placeholder="Enter other reason" class="input-with-icons"
+                  style="width: 100%;" />
+                <i class="pi pi-check inside-icon tick" (click)="confirmOtherReason(e)" title="Confirm"></i>
+                <i class="pi pi-times inside-icon cross" (click)="cancelOtherReason(e)" title="Cancel"></i>
               </div>
             </td>
 
             <td>
-              <textarea
-                pInputTextarea
-                [(ngModel)]="e.remarks"
-                rows="1"
-                placeholder="Enter Remarks"
-              ></textarea>
+              <textarea pInputTextarea [(ngModel)]="e.remarks" rows="1" placeholder="Enter Remarks"></textarea>
             </td>
 
             <td>
-              <button
-                pButton
-                icon="pi pi-trash"
-                class="p-button-rounded p-button-danger p-button-sm"
-                (click)="deleteIndex(i)"
-                *ngIf="formData.exceptions.length > 1"
-              ></button>
-              <button
-                pButton
-                icon="pi pi-plus"
-                class="p-button-rounded p-button-success p-button-sm"
-                (click)="addMore()"
-                *ngIf="i === formData.exceptions.length - 1"
-              ></button>
+              <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
+                (click)="deleteIndex(i)" *ngIf="formData.exceptions.length > 1"></button>
+              <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"
+                (click)="addMore()" *ngIf="i === formData.exceptions.length - 1"></button>
             </td>
           </tr>
         </ng-template>
@@ -113,18 +72,8 @@
     </div>
 
     <div class="form-actions">
-      <button
-        pButton
-        label="Reset"
-        class="p-button-danger"
-        (click)="resetForm()"
-      ></button>
-      <button
-        pButton
-        label="Submit"
-        class="p-button-success"
-        (click)="onSubmit()"
-      ></button>
+      <button pButton label="Reset" class="p-button-danger" (click)="resetForm()"></button>
+      <button pButton label="Submit" class="p-button-success" (click)="onSubmit()"></button>
     </div>
   </p-card>
 </div>

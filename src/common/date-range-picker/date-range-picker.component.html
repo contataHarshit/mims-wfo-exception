@@ -1,46 +1,17 @@
 <div class="date-picker-wrapper">
- 
+  <p-calendar #calendar [(ngModel)]="tempSelection" selectionMode="multiple" [disabledDates]="internalDisabledDates"
+    [minDate]="minDate" [maxDate]="maxDate" [showIcon]="true" placeholder="Select Dates" dateFormat="yy-mm-dd"
+    [appendTo]="'body'" panelStyleClass="custom-calendar-panel" (onShow)="onCalendarShow()" (onHide)="onCalendarHide()"
+    styleClass="hidden-calendar">
+    <ng-template pTemplate="footer">
+      <div class="big-div" (click)="onCalendarHide()"></div>
+      <div class="popup-buttons">
+        <button type="button" pButton label="OK" icon="pi pi-check" class="p-button-sm p-button-raised ok-btn"
+          (click)="confirmSelection()"></button>
 
-<p-calendar
-  #calendar
-  [(ngModel)]="tempSelection"
-  selectionMode="multiple"
-  [disabledDates]="disabledDates"
-  [minDate]="minDate"
-  [maxDate]="maxDate"
-  [showIcon]="true"
-  placeholder="Select Dates"
-  dateFormat="yy-mm-dd"
-  [appendTo]="'body'"
-  panelStyleClass="custom-calendar-panel"
-  (onSelect)="onDateSelect()"
-  (onShow)="onCalendarShow()"
-  (onHide)="onCalendarHide()"
-  styleClass="hidden-calendar"
->
-<ng-template pTemplate="footer">
-  <div class="big-div" (click)="onCalendarHide()"></div>
-  <div class="popup-buttons">
-    <button
-      type="button"
-      pButton
-      label="OK"
-      icon="pi pi-check"
-      class="p-button-sm p-button-raised ok-btn"
-      (click)="confirmSelection()"
-    ></button>
-
-    <button
-      type="button"
-      pButton
-      label="Cancel"
-      icon="pi pi-times"
-      class="p-button-sm p-button-raised cancel-btn"
-      (click)="cancelSelection(true)"
-    ></button>
-  </div>
-</ng-template>
-
-</p-calendar>
-
+        <button type="button" pButton label="Cancel" icon="pi pi-times" class="p-button-sm p-button-raised cancel-btn"
+          (click)="cancelSelection(true)"></button>
+      </div>
+    </ng-template>
+  </p-calendar>
 </div>

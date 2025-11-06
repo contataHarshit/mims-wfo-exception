@@ -4,53 +4,68 @@ import {
   Output,
   EventEmitter,
   OnInit,
+  OnChanges,
+  SimpleChanges,
   ViewChild,
   ElementRef,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { CalendarModule } from 'primeng/calendar';
-import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { NgZone } from '@angular/core';
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { CalendarModule } from "primeng/calendar";
+import { FormsModule } from "@angular/forms";
+import { ButtonModule } from "primeng/button";
+import { InputTextareaModule } from "primeng/inputtextarea";
 
 @Component({
-  selector: 'app-date-range-picker',
+  selector: "app-date-range-picker",
   standalone: true,
-  imports: [CommonModule, CalendarModule, FormsModule, ButtonModule, InputTextareaModule],
-  templateUrl: './date-range-picker.component.html',
-  styleUrls: ['./date-range-picker.component.scss'],
+  imports: [
+    CommonModule,
+    CalendarModule,
+    FormsModule,
+    ButtonModule,
+    InputTextareaModule,
+  ],
+  templateUrl: "./date-range-picker.component.html",
+  styleUrls: ["./date-range-picker.component.scss"],
 })
-export class DateRangePickerComponent implements OnInit {
+export class DateRangePickerComponent implements OnInit, OnChanges {
   @Input() range: Date[] = [];
   @Input() disabledDates: Date[] = [];
+  @Input() minDate: Date | null = null;
+  @Input() maxDate: Date | null = null;
+
   @Output() rangeChange = new EventEmitter<Date[]>();
   @Output() okClick = new EventEmitter<Date[]>();
-@Input() minDate: Date | null = null; // 👈 Added
-  @Input() maxDate: Date | null = null; 
-  @ViewChild('calendar', { static: true }) calendar: any;
+
+  @ViewChild("calendar", { static: true }) calendar: any;
 
   tempSelection: Date[] = [];
   lastApplied: Date[] = [];
-
-  constructor(private hostRef: ElementRef,private ngZone: NgZone) {}
+  internalDisabledDates: Date[] = []; // ✅ internal cloned version
 
   ngOnInit() {
     this.tempSelection = Array.isArray(this.range) ? [...this.range] : [];
     this.lastApplied = Array.isArray(this.range) ? [...this.range] : [];
+    this.internalDisabledDates = [...(this.disabledDates || [])];
+  }
+
+  // ✅ react to disabledDates updates dynamically
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes["disabledDates"] && changes["disabledDates"].currentValue) {
+      // Clone to prevent reference sharing
+      this.internalDisabledDates = [
+        ...changes["disabledDates"].currentValue.map((d: Date) => new Date(d)),
+      ];
+    }
   }
 
   onCalendarShow() {
     this.tempSelection = [...this.lastApplied];
   }
 
-onCalendarHide() {
-  console.log("🟡 onCalendarHide() fired - overlay closed automatically");
-  this.cancelSelection(false);
-}
-
-
-  onDateSelect() {}
+  onCalendarHide() {
+    this.cancelSelection(false);
+  }
 
   confirmSelection() {
     this.range = [...this.tempSelection];
@@ -60,17 +75,10 @@ onCalendarHide() {
     this.hideCalendar();
   }
 
-cancelSelection(manual: boolean = false) {
-  this.tempSelection = [];
-  this.hideCalendar();
-
-  if (manual) {
-    console.log("❌ Cancel button clicked manually");
-  } else {
-    console.log("🔹 Calendar closed automatically");
+  cancelSelection(manual: boolean = false) {
+    this.tempSelection = [];
+    this.hideCalendar();
   }
-}
-
 
   hideCalendar() {
     if (this.calendar?.hide) {
@@ -81,8 +89,8 @@ cancelSelection(manual: boolean = false) {
   }
 
   get displayText(): string {
-    if (!this.range?.length) return '';
-    return this.range.map((d) => d.toISOString().split('T')[0]).join('\n');
+    if (!this.range?.length) return "";
+    return this.range.map((d) => d.toISOString().split("T")[0]).join("\n");
   }
 
   openCalendar() {

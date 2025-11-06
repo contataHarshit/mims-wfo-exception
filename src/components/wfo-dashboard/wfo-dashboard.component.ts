@@ -199,7 +199,9 @@ export class WfoDashboardComponent implements OnInit {
         params.set("reason", reason);
       }
     }
-
+    if(this.commonService.currentView=="self" && (this.role=="MANAGER" || this.role=="HR")){
+      params.set("isSelf","true")
+    }
     // Status filter - handle both object and string formats
     const status = this.filters.status
       ? typeof this.filters.status === "object"
@@ -208,7 +210,7 @@ export class WfoDashboardComponent implements OnInit {
       : "PENDING";
 
     params.set("status", status);
-
+    let addedVal=this.commonService.currentView=="self"?"isSelf=true":""
     const url = `${
       this.constants.exceptionRequest
     }/paginated?${params.toString()}`;

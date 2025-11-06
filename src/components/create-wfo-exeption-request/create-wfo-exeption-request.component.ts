@@ -45,6 +45,7 @@ interface FormData {
   projectName: string[];
   projectManager: string;
   exceptions: ExceptionEntry[];
+  employeeNumber: any;
 }
 
 @Component({
@@ -74,6 +75,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
     employeeName: "",
     projectName: [],
     projectManager: "",
+    employeeNumber: "",
     exceptions: [
       {
         dateRange: [],
@@ -111,11 +113,14 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
 
   ngOnInit(): void {
     this.commonService.loading = true;
-
+    if (isPlatformBrowser(this.platformId)) {
+      this.formData.employeeNumber =
+        localStorage.getItem("employeeNumber") || "";
+    }
     // Subscribe to BehaviorSubjects
-    this.commonService.employeeId$.subscribe((id) => {
-      this.formData.employeeId = id;
-    });
+    // this.commonService.employeeNumber$.subscribe((number) => {
+    //   this.formData.employeeNumber = number;
+    // });
 
     this.commonService.employeeName$.subscribe((name) => {
       this.formData.employeeName = name;
@@ -168,63 +173,66 @@ export class CreateWfoExeptionRequestComponent implements OnInit {
   }
 
   // Triggered when primary reason dropdown changes
-// Triggered when primary reason dropdown changes
-onPrimaryReasonChange(exception: ExceptionEntry, value: any) {
-  console.log("Primary reason emitted value:", value);
+  // Triggered when primary reason dropdown changes
+  onPrimaryReasonChange(exception: ExceptionEntry, value: any) {
+    console.log("Primary reason emitted value:", value);
 
-  if (value.value === "other" || value.value === "Other") {
-    // Show custom input and clear the value SYNCHRONOUSLY
-    exception.showOtherReason = true;
-    exception.otherReason = "";
-    exception.primaryReason = null; // This should trigger writeValue in child
-    console.log("lllllllllll");
-    
-    // ✅ Force immediate update
-    setTimeout(() => {
-      exception.primaryReason = null;
+    if (value.value === "other" || value.value === "Other") {
+      // Show custom input and clear the value SYNCHRONOUSLY
+      exception.showOtherReason = true;
+      exception.otherReason = "";
+      exception.primaryReason = null; // This should trigger writeValue in child
+      console.log("lllllllllll");
+
+      // ✅ Force immediate update
+      setTimeout(() => {
+        exception.primaryReason = null;
+        this.cdr.detectChanges();
+      }, 0);
+    } else {
+      exception.primaryReason = value;
+      exception.showOtherReason = false;
+      exception.otherReason = "";
       this.cdr.detectChanges();
-    }, 0);
-  } else {
-    exception.primaryReason = value;
+    }
+  }
+  // Confirm typed "other" reason (tick icon)
+  confirmOtherReason(exception: ExceptionEntry) {
+    const entered = exception.otherReason?.trim();
+    if (!entered) {
+      this.toastr.warning("Please enter a reason.");
+      return;
+    }
+
+    // If this custom reason isn't already in reasonList, add it
+    const exists = this.reasonList.some((r) => (r.value ?? r) === entered);
+    if (!exists) {
+      this.reasonList.push({ label: entered, value: entered });
+    }
+
+    // Select the new custom reason immediately
+    exception.primaryReason = entered;
     exception.showOtherReason = false;
     exception.otherReason = "";
+    this.toastr.success("Custom reason saved!");
     this.cdr.detectChanges();
   }
-}
-// Confirm typed "other" reason (tick icon)
-confirmOtherReason(exception: ExceptionEntry) {
-  const entered = exception.otherReason?.trim();
-  if (!entered) {
-    this.toastr.warning("Please enter a reason.");
-    return;
+
+  // Cancel typing "other" reason (X icon)
+  cancelOtherReason(exception: ExceptionEntry) {
+    exception.otherReason = "";
+    exception.primaryReason = null;
+    exception.showOtherReason = false;
+    this.cdr.detectChanges();
   }
-
-  // If this custom reason isn't already in reasonList, add it
-  const exists = this.reasonList.some(r => (r.value ?? r) === entered);
-  if (!exists) {
-    this.reasonList.push({ label: entered, value: entered });
-  }
-
-  // Select the new custom reason immediately
-  exception.primaryReason = entered;
-  exception.showOtherReason = false;
-  exception.otherReason = "";
-  this.toastr.success("Custom reason saved!");
-  this.cdr.detectChanges();
-}
-
-// Cancel typing "other" reason (X icon)
-cancelOtherReason(exception: ExceptionEntry) {
-  exception.otherReason = "";
-  exception.primaryReason = null;
-  exception.showOtherReason = false;
-  this.cdr.detectChanges();
-}
-
 
   addMore() {
     for (let i = 0; i < this.formData.exceptions.length; i++) {
-      if (this.formData.exceptions[i].dateRange.length == 0 || !this.formData.exceptions[i].primaryReason || !this.formData.exceptions[i].remarks) {
+      if (
+        this.formData.exceptions[i].dateRange.length == 0 ||
+        !this.formData.exceptions[i].primaryReason ||
+        !this.formData.exceptions[i].remarks
+      ) {
         this.toastr.warning(
           "Please fill the existing empty row before adding a new one."
         );
@@ -276,46 +284,50 @@ cancelOtherReason(exception: ExceptionEntry) {
     if (showToast) this.toastr.info("Form Reset Successfully");
   }
 
-onMultiDateConfirm(selectedDates: Date[], rowIndex: number) {
-  if (!selectedDates || selectedDates.length === 0) return;
+  onMultiDateConfirm(selectedDates: Date[], rowIndex: number) {
+    if (!selectedDates || selectedDates.length === 0) return;
 
-  // Sort selected dates in ascending order
-  const sortedDates = selectedDates.sort((a, b) => a.getTime() - b.getTime());
+    // Sort selected dates in ascending order
+    const sortedDates = selectedDates.sort((a, b) => a.getTime() - b.getTime());
 
-  // Reference of the source row (the one from which user selected multiple dates)
-  const sourceRow = this.formData.exceptions[rowIndex];
+    // Reference of the source row (the one from which user selected multiple dates)
+    const sourceRow = this.formData.exceptions[rowIndex];
 
-  // Update the current row with the first date
-  this.formData.exceptions[rowIndex] = {
-    ...sourceRow,
-    dateRange: [sortedDates[0]],
-  };
-
-  // If remarks/primaryReason are pre-filled in the current row, replicate them
-  const filledRemarks = sourceRow.remarks?.trim() || "";
-  const filledReason = sourceRow.primaryReason ? { ...sourceRow.primaryReason } : null;
-
-  // Insert additional rows for remaining selected dates
-  for (let i = 1; i < sortedDates.length; i++) {
-    const newRow: ExceptionEntry = {
-      dateRange: [sortedDates[i]],
-      exceptionRequestedDays: "",
-      primaryReason: filledReason ? { ...filledReason } : null,
-      remarks: filledRemarks,
-      showOtherReason: false,
-      otherReason: "",
+    // Update the current row with the first date
+    this.formData.exceptions[rowIndex] = {
+      ...sourceRow,
+      dateRange: [sortedDates[0]],
     };
 
-    this.formData.exceptions.splice(rowIndex + i, 0, newRow);
+    // If remarks/primaryReason are pre-filled in the current row, replicate them
+    const filledRemarks = sourceRow.remarks?.trim() || "";
+    const filledReason = sourceRow.primaryReason
+      ? { ...sourceRow.primaryReason }
+      : null;
+
+    // Insert additional rows for remaining selected dates
+    for (let i = 1; i < sortedDates.length; i++) {
+      const newRow: ExceptionEntry = {
+        dateRange: [sortedDates[i]],
+        exceptionRequestedDays: "",
+        primaryReason: filledReason ? { ...filledReason } : null,
+        remarks: filledRemarks,
+        showOtherReason: false,
+        otherReason: "",
+      };
+
+      this.formData.exceptions.splice(rowIndex + i, 0, newRow);
+    }
+
+    // Update disabled dates and refresh UI
+    this.updateDisabledDates();
+    this.cdr.detectChanges();
+
+    console.log(
+      "✅ Rows after multi-date selection:",
+      this.formData.exceptions
+    );
   }
-
-  // Update disabled dates and refresh UI
-  this.updateDisabledDates();
-  this.cdr.detectChanges();
-
-  console.log("✅ Rows after multi-date selection:", this.formData.exceptions);
-}
-
 
   updateDisabledDates() {
     const allDates: Date[] = [];
@@ -328,91 +340,90 @@ onMultiDateConfirm(selectedDates: Date[], rowIndex: number) {
         });
       }
     });
-    this.disabledDates = allDates;
+    this.disabledDates = [...allDates];
   }
 
-validateForm(): boolean {
-  for (const [i, ex] of this.formData.exceptions.entries()) {
-    console.log("xxxxxxxxxxx",ex);
-    
-    if (!ex.dateRange?.length) {
-      this.toastr.warning(`Please select a date for row ${i + 1}.`);
-      return false;
+  validateForm(): boolean {
+    for (const [i, ex] of this.formData.exceptions.entries()) {
+      console.log("xxxxxxxxxxx", ex);
+
+      if (!ex.dateRange?.length) {
+        this.toastr.warning(`Please select a date for row ${i + 1}.`);
+        return false;
+      }
+
+      if (!ex.primaryReason) {
+        this.toastr.warning(`Please select a reason for row ${i + 1}.`);
+        return false;
+      }
+
+      if (!ex.remarks || !ex.remarks.trim()) {
+        console.log("11111111");
+
+        this.toastr.warning(`Please enter remarks for row ${i + 1}.`);
+        return false;
+      }
+
+      const dateStr = ex.dateRange[0].toISOString().split("T")[0];
+      const duplicateCount = this.formData.exceptions.filter(
+        (e) =>
+          e.dateRange.length > 0 &&
+          e.dateRange[0].toISOString().split("T")[0] === dateStr
+      ).length;
+
+      if (duplicateCount > 1) {
+        this.toastr.warning(`Duplicate date found in row ${i + 1}: ${dateStr}`);
+        return false;
+      }
     }
-
-    if (!ex.primaryReason) {
-      this.toastr.warning(`Please select a reason for row ${i + 1}.`);
-      return false;
-    }
-
-    if (!ex.remarks || !ex.remarks.trim()) {
-      console.log("11111111");
-      
-      this.toastr.warning(`Please enter remarks for row ${i + 1}.`);
-      return false;
-    }
-
-    const dateStr = ex.dateRange[0].toISOString().split("T")[0];
-    const duplicateCount = this.formData.exceptions.filter(
-      (e) =>
-        e.dateRange.length > 0 &&
-        e.dateRange[0].toISOString().split("T")[0] === dateStr
-    ).length;
-
-    if (duplicateCount > 1) {
-      this.toastr.warning(`Duplicate date found in row ${i + 1}: ${dateStr}`);
-      return false;
-    }
-  }
-  return true;
-}
-
-
-onSubmit() {
-  this.commonService.loading=true
-  if (!this.validateForm()){
-    this.commonService.loading=false
-    return;
+    return true;
   }
 
-  const payload = {
-    exceptions: this.formData.exceptions
-      .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
-      .map((ex) => ({
-        selectedDate: ex.dateRange[0].toISOString().split("T")[0],
-        primaryReason:
-          typeof ex.primaryReason === "object"
-            ? ex.primaryReason?.value || ex.primaryReason?.label || ""
-            : ex.primaryReason || "",
-        remarks: ex.remarks?.trim() || "",
-      })),
-  };
+  onSubmit() {
+    this.commonService.loading = true;
+    if (!this.validateForm()) {
+      this.commonService.loading = false;
+      return;
+    }
 
-  console.log("Final Payload:", payload);
+    const payload = {
+      exceptions: this.formData.exceptions
+        .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
+        .map((ex) => ({
+          selectedDate: ex.dateRange[0].toISOString().split("T")[0],
+          primaryReason:
+            typeof ex.primaryReason === "object"
+              ? ex.primaryReason?.value || ex.primaryReason?.label || ""
+              : ex.primaryReason || "",
+          remarks: ex.remarks?.trim() || "",
+        })),
+    };
 
-  this.http
-    .postData(payload, this.constant.exceptionRequest)
-    .pipe(
-      finalize(() => {
-        // ensure loading is turned off regardless of success/error
-        this.commonService.loading = false;
-      })
-    )
-    .subscribe({
-      next: (res: any) => {
-        if (res?.success) {
-          this.toastr.success("Form submitted successfully!");
-          this.resetForm(false);
-        } else {
-          this.toastr.error("Submission failed. Please try again.");
-        }
-      },
-      error: (err) => {
-        console.error("Submission Error:", err);
-        this.toastr.error("An error occurred during submission.");
-      },
-    });
-}
+    console.log("Final Payload:", payload);
+
+    this.http
+      .postData(payload, this.constant.exceptionRequest)
+      .pipe(
+        finalize(() => {
+          // ensure loading is turned off regardless of success/error
+          this.commonService.loading = false;
+        })
+      )
+      .subscribe({
+        next: (res: any) => {
+          if (res?.success) {
+            this.toastr.success("Form submitted successfully!");
+            this.resetForm(false);
+          } else {
+            this.toastr.error("Submission failed. Please try again.");
+          }
+        },
+        error: (err) => {
+          console.error("Submission Error:", err);
+          this.toastr.error("An error occurred during submission.");
+        },
+      });
+  }
 
   getProjectNamesTooltip(): string {
     if (!this.formData.projectName?.length) return "No projects selected";
@@ -429,5 +440,4 @@ onSubmit() {
     const maxDate = endOfMonth(nextMonth);
     return { minDate, maxDate };
   }
-  
 }

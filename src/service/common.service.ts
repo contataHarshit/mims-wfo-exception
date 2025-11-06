@@ -38,7 +38,7 @@ export class CommonService {
   /** ✅ Update employee data after fetching from API */
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
-  
+
   setLoading(value: boolean) {
     this.loadingSubject.next(value);
   }
@@ -49,6 +49,7 @@ export class CommonService {
     this.employeeEmailSubject.next(employee?.email || "");
     this.projectNameSubject.next(employee?.projectName || "");
     this.projectManagerSubject.next(employee?.managerName?.name || "");
+    this.employeeNumberSubject.next(employee?.employeeNumber || "");
   }
 
   /** ✅ Update current view reactively */
