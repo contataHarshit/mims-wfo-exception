@@ -1,39 +1,39 @@
-// src/app/service/auth.interceptor.ts
-import { Injectable } from '@angular/core';
-import {
-  HttpEvent,
-  HttpInterceptor,
-  HttpHandler,
-  HttpRequest,
-  HttpErrorResponse,
-} from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { Router } from '@angular/router';
+import { HttpInterceptorFn, HttpErrorResponse } from "@angular/common/http";
+import { catchError } from "rxjs/operators";
+import { throwError } from "rxjs";
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  constructor(private router: Router) {}
-
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = localStorage.getItem('jwtToken');
-
-    let authReq = req;
-    if (token) {
-      authReq = req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` },
-      });
-    }
-
-    return next.handle(authReq).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401) {
-          // Redirect to login if token expired/invalid
-          localStorage.clear();
-        //   this.router.navigate(['/login']);
-        }
-        return throwError(() => error);
-      })
-    );
+export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
+  // Skip auth endpoint to avoid recursion
+  if (req.url.includes("auth")) {
+    return next(req);
   }
-}
+
+  const token = localStorage.getItem("jwtToken");
+
+  if (token) {
+    req = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  // ✅ Handle all errors globally
+  return next(req).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401) {
+        console.warn("🚫 Unauthorized (401) detected. Redirecting...");
+
+        // ✅ Clear token and redirect to login (same tab)
+        localStorage.removeItem("jwtToken");
+        window.location.href = "http://mims/";
+      } else {
+        console.error("❌ HTTP Error:", {
+          status: error.status,
+          message: error.message,
+          url: req.url,
+        });
+      }
+
+      return throwError(() => error);
+    })
+  );
+};

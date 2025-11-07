@@ -85,6 +85,12 @@ export class HrAdminDashboardComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.commonService.managerList$.subscribe((list) => {
+      this.managerList = list;
+    });
+
+    // Fetch HR Admin data
+    this.getHrAdminData();
     this.getHrAdminData();
   }
 
@@ -173,7 +179,9 @@ export class HrAdminDashboardComponent implements OnInit {
         filteredData = filteredData.filter(
           (item) =>
             item.employeeNumber === employeeValue ||
-            item.employeeName.toLowerCase().includes(String(employeeValue).toLowerCase())
+            item.employeeName
+              .toLowerCase()
+              .includes(String(employeeValue).toLowerCase())
         );
       }
     }
@@ -186,9 +194,10 @@ export class HrAdminDashboardComponent implements OnInit {
           : this.filters.managerName;
 
       if (managerValue) {
-        filteredData = filteredData.filter(
-          (item) =>
-            item.managerName.toLowerCase().includes(String(managerValue).toLowerCase())
+        filteredData = filteredData.filter((item) =>
+          item.managerName
+            .toLowerCase()
+            .includes(String(managerValue).toLowerCase())
         );
       }
     }

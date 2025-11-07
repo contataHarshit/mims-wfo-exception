@@ -35,14 +35,14 @@ export class AppComponent implements DoCheck, OnInit {
 
   tabs = [
     { label: "Create WFO Exception Request", path: "", isActive: false },
-    { label: "WFO Dashboard", path: "dashboard", isActive: false },
+    { label: "WFH Dashboard", path: "dashboard", isActive: false },
   ];
 
   jwtToken: string | null = null;
   role = "";
   isDashboardPage = false;
   selectedView: "self" | "resource" = "self";
-  
+
   constructor(
     public commonService: CommonService,
     private router: Router,
@@ -58,22 +58,28 @@ export class AppComponent implements DoCheck, OnInit {
     this.commonService.setLoading(true);
 
     // Track navigation
-this.router.events
-  .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-  .subscribe((event) => {
-    const url = event.urlAfterRedirects;
-    console.log("url---------",url);
-    console.log("rrrrrrrrrrrrrrrr",this.router.url);
-    
-    this.isDashboardPage = url.split('?')[0].split('-')[0].includes("dashboard");
-    this.updateActiveTabs(url);
-  });
+    this.router.events
+      .pipe(
+        filter(
+          (event): event is NavigationEnd => event instanceof NavigationEnd
+        )
+      )
+      .subscribe((event) => {
+        const url = event.urlAfterRedirects;
+        console.log("url---------", url);
+        console.log("rrrrrrrrrrrrrrrr", this.router.url);
 
-// 👇 Detect current route immediately
-const currentUrl = this.router.url;
-this.isDashboardPage = currentUrl.includes("dashboard");
-console.log("Initial page check:", this.isDashboardPage);
+        this.isDashboardPage = url
+          .split("?")[0]
+          .split("-")[0]
+          .includes("dashboard");
+        this.updateActiveTabs(url);
+      });
 
+    // 👇 Detect current route immediately
+    const currentUrl = this.router.url;
+    this.isDashboardPage = currentUrl.includes("dashboard");
+    console.log("Initial page check:", this.isDashboardPage);
 
     // Load stored token & role
     const storedToken = localStorage.getItem("jwtToken");
@@ -82,13 +88,12 @@ console.log("Initial page check:", this.isDashboardPage);
     if (storedToken && storedRole) {
       this.jwtToken = storedToken;
       this.role = storedRole;
-      if(storedRole=="ADMIN"){
-        this.tabs.splice(0,1)
+      if (storedRole == "ADMIN") {
+        this.tabs.splice(0, 1);
       }
       // Load stored view
-      
-        this.setDefaultViewByRole(this.role);
-      
+
+      this.setDefaultViewByRole(this.role);
 
       // ✅ Set commonService.currentView here
       this.commonService.currentView = this.selectedView;
@@ -158,6 +163,15 @@ console.log("Initial page check:", this.isDashboardPage);
     this.http.getData(this.constants.employeeData).subscribe((res: any) => {
       if (res?.success && res.data?.employee) {
         this.commonService.setEmployeeData(res.data.employee);
+        this.http
+          .getData(this.constants.managerList)
+          .subscribe((response: any) => {
+            this.commonService.setManagerList(response.data.managers);
+            console.log(
+              "Manager list stored in CommonService:",
+              response.data.managers
+            );
+          });
         this.commonService.userDataLoaded$.next();
       }
     });
@@ -242,16 +256,16 @@ console.log("Initial page check:", this.isDashboardPage);
 
   onViewChange(event: any) {
     this.selectedView = event.target.value;
-    
+
     // ✅ Update localStorage
     localStorage.setItem("selectedView", this.selectedView);
-    
+
     // ✅ Update commonService.currentView BEFORE triggering the change
     this.commonService.currentView = this.selectedView;
-    
+
     console.log("View changed to:", this.selectedView);
     console.log("commonService.currentView:", this.commonService.currentView);
-    
+
     // ✅ Now trigger the viewChange event
     this.commonService.viewChange(event);
   }

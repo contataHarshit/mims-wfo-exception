@@ -20,5 +20,7 @@ export class ConstantService {
 
   hrSummary = this.exceptionRequest + "/summary";
 
+  managerList = this.employeeData + "/managers/list";
+
   constructor() {}
 }

@@ -95,7 +95,7 @@ export class WfoDashboardComponent implements OnInit {
   ];
 
   filters = {
-    reportType: "employee",
+    managerName: null,
     employeeName: null,
     status: "PENDING",
     fromDate: null as Date | null,
@@ -108,6 +108,7 @@ export class WfoDashboardComponent implements OnInit {
   page: number = 1;
   limit: number = 10;
   totalRecords: number = 0;
+  managerList: any[] = [{ label: "All", value: "" }];
   ngOnInit(): void {
     this.commonService.loading = true;
 
@@ -147,7 +148,9 @@ export class WfoDashboardComponent implements OnInit {
         "View changed - commonService.currentView:",
         this.commonService.currentView
       );
-
+      this.commonService.managerList$.subscribe((list) => {
+        this.managerList = list;
+      });
       // Refresh data
       this.getExceptionRequest();
     });
@@ -307,7 +310,7 @@ export class WfoDashboardComponent implements OnInit {
   resetFilters() {
     // Reset all filter values to defaults
     this.filters = {
-      reportType: "employee",
+      managerName: null,
       employeeName: null,
       status: "PENDING",
       fromDate: null,

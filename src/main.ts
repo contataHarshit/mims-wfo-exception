@@ -3,20 +3,19 @@ import { AppComponent } from "./app/app.component";
 import { appConfig } from "./app/app.config";
 import { importProvidersFrom } from "@angular/core";
 import { provideAnimations } from "@angular/platform-browser/animations";
-import { HttpClientModule } from "@angular/common/http";
+import { provideHttpClient, withInterceptors } from "@angular/common/http";
 import { ToastrModule } from "ngx-toastr";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { AuthInterceptor } from '../src/interceptor/auth.interceptor';
+import { AuthInterceptor } from "./interceptor/auth.interceptor"; // ✅ adjust the path correctly
+
 bootstrapApplication(AppComponent, {
   ...appConfig,
   providers: [
     ...(appConfig.providers || []),
 
-    // ✅ Import all required providers for Toastr + HTTP
+    // ✅ Import Browser Animations + Toastr
     importProvidersFrom(
       BrowserAnimationsModule,
-      HttpClientModule,
       ToastrModule.forRoot({
         timeOut: 3000,
         positionClass: "toast-top-right",
@@ -24,11 +23,10 @@ bootstrapApplication(AppComponent, {
       })
     ),
 
+    // ✅ Animations
     provideAnimations(),
-      {
-    provide: HTTP_INTERCEPTORS,
-    useClass: AuthInterceptor,
-    multi: true,
-  },
+
+    // ✅ Modern Angular 16+ interceptor registration
+    provideHttpClient(withInterceptors([AuthInterceptor])),
   ],
 }).catch((err) => console.error(err));
