@@ -1,17 +1,40 @@
-<div class="date-picker-wrapper">
-  <p-calendar #calendar [(ngModel)]="tempSelection" selectionMode="multiple" [disabledDates]="internalDisabledDates"
-    [minDate]="minDate" [maxDate]="maxDate" [showIcon]="true" placeholder="Select Dates" dateFormat="yy-mm-dd"
-    [appendTo]="'body'" panelStyleClass="custom-calendar-panel" (onShow)="onCalendarShow()" (onHide)="onCalendarHide()"
-    styleClass="hidden-calendar">
-    <ng-template pTemplate="footer">
-      <div class="big-div" (click)="onCalendarHide()"></div>
-      <div class="popup-buttons">
-        <button type="button" pButton label="OK" icon="pi pi-check" class="p-button-sm p-button-raised ok-btn"
-          (click)="confirmSelection()"></button>
-
-        <button type="button" pButton label="Cancel" icon="pi pi-times" class="p-button-sm p-button-raised cancel-btn"
-          (click)="cancelSelection(true)"></button>
-      </div>
-    </ng-template>
-  </p-calendar>
-</div>
+<p-calendar
+  #calendar
+  [(ngModel)]="tempSelection"
+  selectionMode="multiple"
+  [disabledDates]="internalDisabledDates"
+  [minDate]="minDate"
+  [maxDate]="maxDate"
+  [showIcon]="true"
+  [appendTo]="'body'"
+  panelStyleClass="custom-calendar-panel"
+  (onShow)="onCalendarShow()"
+  (onHide)="onCalendarHide()"
+  styleClass="hidden-calendar"
+  placeholder="Select Dates"
+  inputId="datePickerInput"
+  dateFormat="dd M yy"
+  [readonlyInput]="true"
+>
+  <!-- Footer template -->
+  <ng-template pTemplate="footer">
+    <div class="popup-buttons">
+      <button
+        type="button"
+        pButton
+        label="OK"
+        icon="pi pi-check"
+        class="p-button-sm p-button-raised ok-btn"
+        (click)="confirmSelection()"
+      ></button>
+      <button
+        type="button"
+        pButton
+        label="Cancel"
+        icon="pi pi-times"
+        class="p-button-sm p-button-raised cancel-btn"
+        (click)="cancelSelection(true)"
+      ></button>
+    </div>
+  </ng-template>
+</p-calendar>

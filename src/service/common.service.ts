@@ -6,7 +6,7 @@ import { BehaviorSubject, Subject } from "rxjs";
   providedIn: "root",
 })
 export class CommonService {
-  header: string = "WFH Request Dashboard";
+  header: string = "WFH Request";
 
   // BehaviorSubjects hold latest values and auto emit to new subscribers
   private employeeIdSubject = new BehaviorSubject<string>("");

@@ -23,7 +23,7 @@
             style="width: 100%;"></app-common-select>
         </div>
 
-        <div class="form-row" *ngIf="commonService.currentView!=='self' ">
+        <div class="form-row" >
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Status</label>
           <app-common-select [options]="statusList" [(value)]="filters.status" placeholder="All"
             style="width: 100%;"></app-common-select>
@@ -79,11 +79,11 @@
           <th>Employee Name</th>
           <th>Designation</th>
           <th>Manager Name</th>
-          <th>Exception Date(s)</th>
+          <th>Exception Date</th>
           <th>Reason</th>
           <th>Submission date</th>
           <th>Status</th>
-          <th *ngIf="commonService.currentView=='self'">Delete</th>
+          <th *ngIf="commonService.currentView=='self'">Action</th>
         </tr>
       </ng-template>
 
@@ -128,10 +128,15 @@
   </div>
 
   <!-- BULK ACTION BUTTONS - Only show for resource view -->
-  <div class="action-buttons" style="display: flex; gap: 20px; margin-top: 20px;"
+  <div class="action-buttons" style="display: flex; gap: 20px; margin-top: 20px; justify-content: space-between;"
     *ngIf="commonService.currentView !== 'self'">
-    <button pButton label="Approve" class="p-button-success" (click)="bulkUpdate('APPROVED')"></button>
+   <div>
+     <input type="text" placeholder="Remarks">
+   </div>
+    <div>
+      <button pButton label="Approve" class="p-button-success" (click)="bulkUpdate('APPROVED')"></button>
 
     <button pButton label="Reject" class="p-button-danger" (click)="bulkUpdate('REJECTED')"></button>
+    </div>
   </div>
 </div>

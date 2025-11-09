@@ -109,10 +109,19 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
     }
   }
 
-  get displayText(): string {
-    if (!this.range?.length) return "";
-    return this.range.map((d) => d.toISOString().split("T")[0]).join("\n");
-  }
+get displayText(): string {
+  if (!this.range?.length) return "";
+  
+  return this.range
+    .map((d) => {
+      const day = d.getDate();
+      const month = d.toLocaleDateString("en-GB", { month: "short" }); // Use "short" for abbreviated month
+      const year = d.getFullYear();
+      return `${day} ${month} ${year}`;
+    })
+    .join(", ");
+}
+
 
   openCalendar() {
     if (this.calendar?.show) {
@@ -121,4 +130,5 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
       this.calendar.overlayVisible = true;
     }
   }
+  
 }

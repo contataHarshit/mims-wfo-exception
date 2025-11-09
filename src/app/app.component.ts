@@ -34,7 +34,7 @@ export class AppComponent implements DoCheck, OnInit {
   title = "Mims-exception-wfo";
 
   tabs = [
-    { label: "Create WFO Exception Request", path: "", isActive: false },
+    { label: "Create WFH Request", path: "", isActive: false },
     { label: "WFH Dashboard", path: "dashboard", isActive: false },
   ];
 
