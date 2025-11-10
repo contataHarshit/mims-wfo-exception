@@ -136,7 +136,7 @@ export class AppComponent implements DoCheck, OnInit {
         // Store auth-related data FIRST
         localStorage.setItem("jwtToken", this.jwtToken || "");
         localStorage.setItem("role", this.role);
-
+        localStorage.setItem("department", employee.department || "");
         this.commonService.setRole(this.role);
 
         // Load saved view or set default
@@ -164,11 +164,18 @@ export class AppComponent implements DoCheck, OnInit {
   setDefaultViewByRole(role: string) {
     // Ensure no duplicate "All" option
     const hasAll = this.viewOptions.some((o) => o.value === "all");
+    console.log("11111111111111");
 
     if (role === "EMPLOYEE" || role === "HR" || role === "MANAGER") {
+      console.log("222222222222");
+
       // Check if department is MANAGEMENT (from service, not localStorage)
-      const department = this.commonService.department;
+      const department = localStorage.getItem("department") || "";
+      console.log("department:", department);
+
       if (department === "MANAGEMENT" && role !== "EMPLOYEE") {
+        console.log("sssssssssssss");
+
         if (!hasAll) {
           this.viewOptions = [
             { label: "All", value: "all" },

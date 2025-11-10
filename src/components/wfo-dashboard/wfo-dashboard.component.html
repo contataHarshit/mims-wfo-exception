@@ -13,7 +13,7 @@
         <div class="form-row">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Manager</label>
           <app-common-select [options]="managerList" [(value)]="filters.managerName" placeholder="Select Manager"
-            style="width: 100%;"></app-common-select>
+            [disabled]="selectedView==='self' ||selectedView==='resource'  " style="width: 100%;"></app-common-select>
 
         </div>
 

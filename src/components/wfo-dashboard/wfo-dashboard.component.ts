@@ -222,6 +222,10 @@ export class WfoDashboardComponent implements OnInit {
       this.commonService.projectManager$.subscribe((manager: any) => {
         this.filters.managerName = manager;
       });
+    } else if (this.selectedView === "resource") {
+      this.commonService.employeeName$.subscribe((emp: any) => {
+        this.filters.managerName = emp;
+      });
     } else {
       this.filters.managerName = null;
     }
