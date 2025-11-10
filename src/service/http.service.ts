@@ -40,4 +40,7 @@ export class HttpService {
   getData(url: string): Observable<any> {
     return this.http.get(url);
   }
+  deleteData(url: string): Observable<any> {
+    return this.http.delete(url);
+  }
 }

@@ -3,34 +3,24 @@
   <!-- FILTER SECTION -->
   <div class="filter-card">
     <div class="filter-grid-container">
-      
+
       <!-- Row 1: Employee name, Manager name, Status (3 columns) -->
       <div class="filter-row-3">
         <div class="form-row">
           <label>Employee name</label>
-          <app-common-select
-            [options]="employeeList"
-            [(value)]="filters.employeeName"
-            placeholder="Select Employee"
-          ></app-common-select>
+          <app-common-select [options]="employeeList" [(value)]="filters.employeeName"
+            placeholder="Select Employee"></app-common-select>
         </div>
 
         <div class="form-row">
           <label>Manager name</label>
-          <app-common-select
-            [options]="managerList"
-            [(value)]="filters.managerName"
-            placeholder="Select Manager"
-          ></app-common-select>
+          <app-common-select [options]="managerList" [(value)]="filters.managerName"
+            placeholder="Manager"></app-common-select>
         </div>
 
         <div class="form-row">
           <label>Status</label>
-          <app-common-select
-            [options]="statusList"
-            [(value)]="filters.status"
-            placeholder="All"
-          ></app-common-select>
+          <app-common-select [options]="statusList" [(value)]="filters.status" placeholder="All"></app-common-select>
         </div>
       </div>
 
@@ -38,73 +28,38 @@
       <div class="filter-row-3">
         <div class="form-row">
           <label>From date</label>
-          <input
-            type="date"
-            [(ngModel)]="filters.fromDate"
-            class="date-input"
-            (change)="onDateChange()"
-          />
+          <input type="date" [(ngModel)]="filters.fromDate" class="date-input" (change)="onDateChange()" />
         </div>
 
         <div class="form-row">
           <label>To date</label>
-          <input
-            type="date"
-            [(ngModel)]="filters.toDate"
-            class="date-input"
-            (change)="onDateChange()"
-          />
+          <input type="date" [(ngModel)]="filters.toDate" class="date-input" (change)="onDateChange()" />
         </div>
 
         <div class="form-row">
           <label>Reason</label>
-          <app-common-select
-            [options]="reasonList"
-            [(value)]="filters.reason"
-            placeholder="All"
-          ></app-common-select>
+          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="All"></app-common-select>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="button-row">
-        <button
-          pButton
-          label="Apply"
-          class="p-button-success"
-          (click)="applyFilters()"
-        ></button>
-        <button
-          pButton
-          label="Reset"
-          class="p-button-secondary"
-          (click)="resetFilters()"
-        ></button>
+        <button pButton label="Apply" class="p-button-success" (click)="applyFilters()"></button>
+        <button pButton label="Reset" class="p-button-secondary" (click)="resetFilters()"></button>
       </div>
     </div>
 
     <!-- Export Button -->
     <div class="export-row">
-      <button
-        pButton
-        label="Export to Excel"
-        icon="pi pi-file-excel"
-        class="p-button-info"
-        (click)="exportToExcel()"
-      ></button>
+      <button pButton label="Export to Excel" icon="pi pi-file-excel" class="p-button-info"
+        (click)="exportToExcel()"></button>
     </div>
   </div>
 
   <!-- TABLE SECTION -->
   <div class="table-card">
-    <p-table
-      [value]="hrData"
-      class="p-datatable-gridlines"
-      [paginator]="true"
-      [rows]="10"
-      [rowsPerPageOptions]="[5, 10, 20]"
-      [responsiveLayout]="'scroll'"
-    >
+    <p-table [value]="hrData" class="p-datatable-gridlines" [paginator]="true" [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20]" [responsiveLayout]="'scroll'">
       <ng-template pTemplate="header">
         <tr>
           <th>Employee ID</th>

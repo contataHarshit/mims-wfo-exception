@@ -96,7 +96,7 @@ export class HrAdminDashboardComponent implements OnInit {
 
   /** Fetch HR Admin Summary Data */
   getHrAdminData() {
-    this.commonService.loading = true;
+    this.commonService.setLoading(true);
 
     const url = this.constants.hrSummary; // API endpoint
     this.http.getData(url).subscribe({
@@ -151,11 +151,11 @@ export class HrAdminDashboardComponent implements OnInit {
           this.hrData = [];
         }
 
-        this.commonService.loading = false;
+        this.commonService.setLoading(false);
       },
       error: (err) => {
         console.error("Error fetching HR Admin data:", err);
-        this.commonService.loading = false;
+        this.commonService.setLoading(false);
         this.toastr.error("Failed to fetch HR Admin data");
       },
     });
@@ -163,7 +163,7 @@ export class HrAdminDashboardComponent implements OnInit {
 
   /** Apply Filters */
   applyFilters() {
-    this.commonService.loading = true;
+    this.commonService.setLoading(true);
 
     // Start with all data
     let filteredData = [...this.allHrData];
@@ -219,7 +219,7 @@ export class HrAdminDashboardComponent implements OnInit {
     this.hrData = filteredData;
 
     setTimeout(() => {
-      this.commonService.loading = false;
+      this.commonService.setLoading(false);
       const count = this.hrData.length;
       this.toastr.success(`Found ${count} record${count !== 1 ? "s" : ""}`);
     }, 200);

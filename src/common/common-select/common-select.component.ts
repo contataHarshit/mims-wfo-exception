@@ -14,9 +14,10 @@ export class CommonSelectComponent {
   @Input() options: any[] = [];
   @Input() placeholder: string = "Select";
   @Input() searchKey: string = "label";
+  @Input() bindValue: string = "";
   @Input() value: any = null;
-  @Input() appendTo: string = "body"; // <-- new input
-
+  @Input() appendTo: string = "body";
+  @Input() disabled: boolean = false;
   @Output() valueChange = new EventEmitter<any>();
 
   onChange(event: any) {

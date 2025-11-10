@@ -1,5 +1,4 @@
-// Fixed wfo-dashboard.component.ts
-
+// FILE: wfo-dashboard.component.ts
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
@@ -19,18 +18,20 @@ import { MatCheckboxModule } from "@angular/material/checkbox";
 import { ConfirmPopupComponent } from "../../popup/confirm-popup/confirm-popup.component";
 
 interface ExceptionRequest {
+  exceptionId: string;
   employeeId: string;
   employeeName: string;
   designation: string;
-  projectName: string;
+  projectName?: string;
   exceptionDate: string;
   primaryReason: string;
   submissionDate: string | null;
   exceptionRequestedDays: number | null;
   exceptionApprovedDays: number | null;
-  status: string;
+  status: string; // PENDING | APPROVED | REJECTED | PARTIALLY_APPROVED
   managerRemarks: string | null;
-  exceptionId: string;
+  managerName: string | null;
+  updatedBy: string | null; // who approved / rejected
   checked?: boolean;
 }
 
@@ -94,14 +95,15 @@ export class WfoDashboardComponent implements OnInit {
     { label: "Manager", value: "manager" },
   ];
 
-  filters = {
+  filters: any = {
     managerName: null,
     employeeName: null,
-    status: "PENDING",
+    status: "PENDING", // Keep this as a string, not an object
     fromDate: null as Date | null,
     toDate: null as Date | null,
     reason: null,
   };
+
   showSubmit = false;
   role = "";
   disableSelectAll = false;
@@ -109,18 +111,13 @@ export class WfoDashboardComponent implements OnInit {
   limit: number = 10;
   totalRecords: number = 0;
   managerList: any[] = [{ label: "All", value: "" }];
+
   ngOnInit(): void {
-    this.commonService.loading = true;
+    this.commonService.setLoading(true);
 
-    // ✅ Get current view from localStorage and commonService
+    // Get current view from localStorage and commonService
     this.selectedView = localStorage.getItem("selectedView") || "self";
-    this.commonService.currentView = this.selectedView;
-
-    console.log("Dashboard Init - selectedView:", this.selectedView);
-    console.log(
-      "Dashboard Init - commonService.currentView:",
-      this.commonService.currentView
-    );
+    // this.selectedView = this.selectedView;
 
     const storedData =
       localStorage.getItem("role") === "MANAGER"
@@ -134,29 +131,42 @@ export class WfoDashboardComponent implements OnInit {
         }))
       : [];
 
-    // Fetch initially
-    this.getExceptionRequest();
-
-    // ✅ Subscribe to view changes
+    // Subscribe to view changes
     this.commonService.viewChange$.subscribe(() => {
-      // Update local view state
       this.selectedView = localStorage.getItem("selectedView") || "self";
-      this.commonService.currentView = this.selectedView;
-
-      console.log("View changed - selectedView:", this.selectedView);
-      console.log(
-        "View changed - commonService.currentView:",
-        this.commonService.currentView
-      );
+      // this.selectedView = this.selectedView;
       this.commonService.managerList$.subscribe((list) => {
         this.managerList = list;
       });
-      // Refresh data
       this.getExceptionRequest();
     });
   }
+
+  // Utility to safely get status value whether filters.status is string or object
+  getStatusValue(status: any): string {
+    if (!status) return "";
+    return typeof status === "string" ? status : status.value || "";
+  }
+
+  // Exposed methods used in template to decide whether to show Approved/Rejected columns
+  showApprovedColumn(): boolean {
+    const s = this.getStatusValue(this.filters.status);
+    return (
+      s === "APPROVED" ||
+      this.exceptionRequests.some((r) => r.status === "APPROVED")
+    );
+  }
+
+  showRejectedColumn(): boolean {
+    const s = this.getStatusValue(this.filters.status);
+    return (
+      s === "REJECTED" ||
+      this.exceptionRequests.some((r) => r.status === "REJECTED")
+    );
+  }
+
   getExceptionRequest() {
-    this.commonService.loading = true;
+    this.commonService.setLoading(true);
 
     const params = new URLSearchParams();
 
@@ -167,15 +177,15 @@ export class WfoDashboardComponent implements OnInit {
     // Date filters
     if (this.filters.fromDate) {
       const fromDate = new Date(this.filters.fromDate);
-      params.set("fromDate", fromDate.toISOString().split("T")[0]); // Format: YYYY-MM-DD
+      params.set("fromDate", fromDate.toISOString().split("T")[0]);
     }
 
     if (this.filters.toDate) {
       const toDate = new Date(this.filters.toDate);
-      params.set("toDate", toDate.toISOString().split("T")[0]); // Format: YYYY-MM-DD
+      params.set("toDate", toDate.toISOString().split("T")[0]);
     }
 
-    // Employee filter - handle both object and string formats
+    // Employee filter - handle object and string
     if (this.filters.employeeName) {
       const employeeNumber =
         typeof this.filters.employeeName === "object"
@@ -202,22 +212,36 @@ export class WfoDashboardComponent implements OnInit {
         params.set("reason", reason);
       }
     }
+
+    // Manager for self view
     if (
-      this.commonService.currentView == "self" &&
+      this.selectedView == "self" &&
       (this.role == "MANAGER" || this.role == "HR")
     ) {
       params.set("isSelf", "true");
+      this.commonService.projectManager$.subscribe((manager: any) => {
+        this.filters.managerName = manager;
+      });
+    } else {
+      this.filters.managerName = null;
     }
-    // Status filter - handle both object and string formats
-    const status = this.filters.status
-      ? typeof this.filters.status === "object"
-        ? (this.filters.status as any).value
-        : this.filters.status
-      : "PENDING";
 
-    params.set("status", status);
-    let addedVal =
-      this.commonService.currentView == "self" ? "isSelf=true" : "";
+    // Status filter - normalize
+    // Status filter - send only when valid
+    const status = this.getStatusValue(this.filters.status);
+
+    if (status) {
+      params.set("status", status);
+    }
+
+    if (this.selectedView === "self") {
+      params.set("isSelf", "true");
+    }
+
+    if (this.selectedView && this.selectedView.trim() === "all") {
+      params.set("isAll", "true");
+    }
+
     const url = `${
       this.constants.exceptionRequest
     }/paginated?${params.toString()}`;
@@ -227,30 +251,35 @@ export class WfoDashboardComponent implements OnInit {
         if (res.success) {
           const exceptions = res.data.exceptions || [];
 
+          // Reset disableSelectAll then compute based on entire list
+          this.disableSelectAll = false;
+
           // Map backend response to frontend table format
           this.exceptionRequests = exceptions.map((item: any) => {
-            if (item.currentStatus !== "PENDING") {
-              console.log("item", item);
-
-              this.disableSelectAll = true;
-            }
-
             return {
               exceptionId: item.id,
               employeeId: item.employeeNumber,
               employeeName: item.employee,
               designation: item.designation || "-",
-              exceptionDate: item.selectedDate,
-              primaryReason: item.primaryReason,
-              submissionDate: this.formatDate(item.submissionDate),
+              exceptionDate: this.formatDate(item.selectedDate),
+              primaryReason: item.primaryReason || "-",
+              submissionDate: item.submissionDate
+                ? this.formatDate(item.submissionDate)
+                : null,
               exceptionRequestedDays: item.requestedDays || null,
               exceptionApprovedDays: item.approvedDays || null,
-              status: item.currentStatus,
+              status: item.currentStatus || "PENDING",
+              updatedBy: item.updatedBy || "-",
               managerName: item?.manager || "-",
               managerRemarks: item.managerRemarks || null,
-              checked: false, // Reset checkbox state
-            };
+              checked: false,
+            } as ExceptionRequest;
           });
+
+          // If every item is non-pending, disable select all; else keep enabled
+          this.disableSelectAll =
+            this.exceptionRequests.length > 0 &&
+            this.exceptionRequests.every((i) => i.status !== "PENDING");
 
           this.totalRecords = res.data.pagination?.total || exceptions.length;
 
@@ -261,30 +290,33 @@ export class WfoDashboardComponent implements OnInit {
           this.totalRecords = 0;
           this.toastr.warning("No records found");
         }
-        this.commonService.loading = false;
+        this.commonService.setLoading(false);
       },
       error: (err: any) => {
         console.error("Error fetching exception requests:", err);
         this.exceptionRequests = [];
         this.totalRecords = 0;
-        this.commonService.loading = false;
+        this.commonService.setLoading(false);
         this.toastr.error("Failed to fetch data. Please try again.");
       },
     });
   }
+
   onPageChange(event: any) {
-    this.page = Math.floor(event.first / event.rows) + 1;
+    this.page = event.first / event.rows + 1;
     this.limit = event.rows;
-    this.selectedRequests = []; // Clear selections on page change
     this.getExceptionRequest();
   }
+
   formatDate(date: string): string {
+    if (!date) return "-";
     return new Date(date).toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
   }
+
   onDateChange() {
     console.log("Date changed:", {
       from: this.filters.fromDate,
@@ -293,13 +325,9 @@ export class WfoDashboardComponent implements OnInit {
   }
 
   applyFilter() {
-    // Reset to first page when applying filters
     this.page = 1;
-
-    // Fetch data with current filters
     this.getExceptionRequest();
 
-    // Show success message after data loads
     setTimeout(() => {
       const count = this.exceptionRequests.length;
       this.toastr.success(
@@ -307,24 +335,20 @@ export class WfoDashboardComponent implements OnInit {
       );
     }, 300);
   }
+
+  // Your resetFilters is also correct:
   resetFilters() {
-    // Reset all filter values to defaults
     this.filters = {
       managerName: null,
       employeeName: null,
-      status: "PENDING",
+      status: "PENDING", // Reset to string value
       fromDate: null,
       toDate: null,
       reason: null,
     };
 
-    // Reset pagination to first page
     this.page = 1;
-
-    // Fetch fresh data with reset filters
     this.getExceptionRequest();
-
-    // Show reset confirmation
     this.toastr.info("Filters reset successfully");
   }
 
@@ -355,8 +379,6 @@ export class WfoDashboardComponent implements OnInit {
 
     const ids = this.selectedRequests.map((r) => r.exceptionId);
     const payload = { ids, status };
-
-    console.log("Bulk Update Payload:", payload);
 
     this.http.putData(this.constants.exceptionRequest, payload).subscribe({
       next: (res: any) => {
@@ -427,6 +449,7 @@ export class WfoDashboardComponent implements OnInit {
       }
     });
   }
+
   deleteRow(req?: any) {
     const dialogRef = this.dialog.open(ConfirmPopupComponent, {
       width: "400px",
@@ -435,19 +458,45 @@ export class WfoDashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        console.log("✅ Delete confirmed for record:", req);
-        // Here you can call your API when ready
+        this.http
+          .deleteData(`${this.constants.exceptionRequest}/${req.exceptionId}`)
+          .subscribe({
+            next: (res: any) => {
+              if (res.success) {
+                this.toastr.success("Record deleted successfully");
+                this.getExceptionRequest();
+              }
+            },
+            error: (err: any) => {
+              this.toastr.error("Error deleting record. Please try again.");
+              console.error("DELETE API Error:", err);
+            },
+          });
       } else {
         console.log("❌ Delete canceled");
       }
     });
   }
+
   selectAllChange(e: any) {
-    this.exceptionRequests = this.exceptionRequests.map((item: any) => {
-      return {
-        ...item,
-        checked: e.target.checked ? true : false,
-      };
-    });
+    this.exceptionRequests = this.exceptionRequests.map((item: any) => ({
+      ...item,
+      checked: e.target.checked ? true : false,
+    }));
+
+    // Update selectedRequests array
+    if (e.target.checked) {
+      this.selectedRequests = [
+        ...this.exceptionRequests.filter((i) => i.status === "PENDING"),
+      ];
+    } else {
+      this.selectedRequests = [];
+    }
+  }
+  onStatusChange(value: any) {
+    // ng-select with bindValue will return just the string value
+    this.filters.status = value;
+    this.page = 1;
+    this.getExceptionRequest();
   }
 }

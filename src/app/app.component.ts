@@ -4,7 +4,6 @@ import {
   RouterOutlet,
   ActivatedRoute,
   NavigationEnd,
-  Event as RouterEvent,
 } from "@angular/router";
 import { HeaderComponent } from "../components/header/header.component";
 import { CommonService } from "../service/common.service";
@@ -41,8 +40,18 @@ export class AppComponent implements DoCheck, OnInit {
   jwtToken: string | null = null;
   role = "";
   isDashboardPage = false;
-  selectedView: "self" | "resource" = "self";
-
+  selectedView: "all" | "self" | "resource" = "self";
+  viewOptions = [
+    {
+      label: "Self",
+      value: "self",
+    },
+    {
+      label: "Resource",
+      value: "resource",
+    },
+  ];
+  employeeNumber: string = "";
   constructor(
     public commonService: CommonService,
     private router: Router,
@@ -52,7 +61,7 @@ export class AppComponent implements DoCheck, OnInit {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
     this.commonService.setLoading(true);
@@ -66,9 +75,6 @@ export class AppComponent implements DoCheck, OnInit {
       )
       .subscribe((event) => {
         const url = event.urlAfterRedirects;
-        console.log("url---------", url);
-        console.log("rrrrrrrrrrrrrrrr", this.router.url);
-
         this.isDashboardPage = url
           .split("?")[0]
           .split("-")[0]
@@ -76,119 +82,158 @@ export class AppComponent implements DoCheck, OnInit {
         this.updateActiveTabs(url);
       });
 
-    // 👇 Detect current route immediately
+    // Detect current route immediately
     const currentUrl = this.router.url;
     this.isDashboardPage = currentUrl.includes("dashboard");
-    console.log("Initial page check:", this.isDashboardPage);
 
-    // Load stored token & role
+    // Load stored token & role ONLY
     const storedToken = localStorage.getItem("jwtToken");
     const storedRole = localStorage.getItem("role");
 
     if (storedToken && storedRole) {
       this.jwtToken = storedToken;
       this.role = storedRole;
-      if (storedRole == "ADMIN") {
+
+      this.commonService.setRole(storedRole);
+
+      if (storedRole === "ADMIN") {
         this.tabs.splice(0, 1);
       }
-      // Load stored view
 
       this.setDefaultViewByRole(this.role);
+      this.commonService.viewChange$.next(this.selectedView);
 
-      // ✅ Set commonService.currentView here
-      this.commonService.currentView = this.selectedView;
+      this.loadRoleSpecificData(this.role).finally(() => {
+        this.commonService.setLoading(false);
+      });
 
-      await this.loadRoleSpecificData(this.role);
-      this.commonService.userDataLoaded$.next();
-      this.commonService.setLoading(false);
       return;
     }
 
     // If sessionid login
-    this.route.queryParams.subscribe(async (params) => {
+    this.route.queryParams.subscribe((params) => {
       const sessionId = params["sessionid"];
       if (!sessionId) {
         this.commonService.setLoading(false);
+        this.commonService.userDataLoaded$.next(false); // No auth data available
         return;
       }
 
-      try {
-        const response: any = await firstValueFrom(
-          this.http.auth(this.constants.auth, { sessionid: sessionId })
-        );
+      this.authenticateWithSession(sessionId);
+    });
+  }
 
+  /** Extracted async logic to separate function */
+  private authenticateWithSession(sessionId: string) {
+    firstValueFrom(
+      this.http.auth(this.constants.auth, { sessionid: sessionId })
+    )
+      .then((response: any) => {
         const employee = response?.data?.employee || {};
         this.jwtToken = response?.data?.token || null;
-
-        localStorage.setItem("jwtToken", this.jwtToken || "");
-        localStorage.setItem("role", employee.role || "");
-        localStorage.setItem("name", employee.name || "");
-        localStorage.setItem("employeeNumber", employee.employeeNumber || "");
-        localStorage.setItem("email", employee.email || "");
-
         this.role = employee.role || "";
+        this.employeeNumber = employee.employeeNumber || "";
+        // Store auth-related data FIRST
+        localStorage.setItem("jwtToken", this.jwtToken || "");
+        localStorage.setItem("role", this.role);
 
-        // Set selectedView based on role if not stored
+        this.commonService.setRole(this.role);
+
+        // Load saved view or set default
         const savedView = localStorage.getItem("selectedView");
         if (savedView) {
-          this.selectedView = savedView as "self" | "resource";
+          this.selectedView = savedView as "self" | "resource" | "all";
         } else {
           this.setDefaultViewByRole(this.role);
         }
 
-        // ✅ Set commonService.currentView here
-        this.commonService.currentView = this.selectedView;
+        this.commonService.viewChange$.next(this.selectedView);
 
-        await this.loadRoleSpecificData(this.role);
-        this.commonService.userDataLoaded$.next();
-      } catch (err) {
+        // Load all role-specific data
+        return this.loadRoleSpecificData(this.role);
+      })
+      .catch((err) => {
         console.error("Auth API Error:", err);
-      } finally {
+        this.commonService.userDataLoaded$.next(false); // Auth failed
+      })
+      .finally(() => {
         this.commonService.setLoading(false);
-      }
-    });
+      });
   }
 
   setDefaultViewByRole(role: string) {
+    // Ensure no duplicate "All" option
+    const hasAll = this.viewOptions.some((o) => o.value === "all");
+
     if (role === "EMPLOYEE" || role === "HR" || role === "MANAGER") {
+      // Check if department is MANAGEMENT (from service, not localStorage)
+      const department = this.commonService.department;
+      if (department === "MANAGEMENT" && role !== "EMPLOYEE") {
+        if (!hasAll) {
+          this.viewOptions = [
+            { label: "All", value: "all" },
+            ...this.viewOptions,
+          ];
+        }
+        return;
+      }
       this.selectedView = "self";
+      localStorage.setItem("selectedView", "self");
     } else if (role === "ADMIN") {
       this.selectedView = "resource";
+      localStorage.setItem("selectedView", "resource");
+    } else {
+      // Fallback
+      const savedView = localStorage.getItem("selectedView") as
+        | "self"
+        | "resource"
+        | "all"
+        | null;
+      this.selectedView = savedView ?? "self";
+      localStorage.setItem("selectedView", this.selectedView);
     }
-    localStorage.setItem("selectedView", this.selectedView);
   }
 
   async loadRoleSpecificData(role: string) {
-    // Load employee data
-    this.http.getData(this.constants.employeeData).subscribe((res: any) => {
-      if (res?.success && res.data?.employee) {
-        this.commonService.setEmployeeData(res.data.employee);
-        this.http
-          .getData(this.constants.managerList)
-          .subscribe((response: any) => {
-            this.commonService.setManagerList(response.data.managers);
-            console.log(
-              "Manager list stored in CommonService:",
-              response.data.managers
-            );
-          });
-        this.commonService.userDataLoaded$.next();
-      }
-    });
+    try {
+      // Load employee data first (contains basic info for all roles)
+      const empRes: any = await firstValueFrom(
+        this.http.getData(this.constants.employeeData)
+      );
 
-    if (role === "EMPLOYEE") {
-      return;
-    } else if (role === "MANAGER") {
-      await this.loadManagerData();
-    } else if (role === "HR" || role === "ADMIN") {
-      await this.loadAllEmployeeData();
-      this.tabs.push({
-        label: "HR Admin Dashboard",
-        path: "hr-admin-dashboard",
-        isActive: false,
-      });
-    } else if (role === "ADMIN") {
-      // Admin logic if needed
+      if (empRes?.success && empRes.data?.employee) {
+        // Store in service (not localStorage)
+        this.commonService.setEmployeeData({
+          ...empRes.data.employee,
+          employeeNumber: this.employeeNumber,
+        });
+
+        // Load manager list
+        const managerRes: any = await firstValueFrom(
+          this.http.getData(this.constants.managerList)
+        );
+        if (managerRes?.success && managerRes.data?.managers) {
+          this.commonService.setManagerList(managerRes.data.managers);
+        }
+      }
+
+      // Load role-specific data
+      if (role === "MANAGER") {
+        await this.loadManagerData();
+      } else if (role === "HR" || role === "ADMIN") {
+        await this.loadAllEmployeeData();
+        this.tabs.push({
+          label: "HR Admin Dashboard",
+          path: "hr-admin-dashboard",
+          isActive: false,
+        });
+      }
+
+      // Notify that data is loaded - THIS IS CRITICAL
+      this.commonService.userDataLoaded$.next(true);
+    } catch (err) {
+      console.error("Error loading role-specific data:", err);
+      this.commonService.userDataLoaded$.next(false);
     }
   }
 
@@ -197,10 +242,10 @@ export class AppComponent implements DoCheck, OnInit {
       const res: any = await firstValueFrom(
         this.http.getData(this.constants.allEmployeeData)
       );
-      localStorage.setItem(
-        "allEmployeeData",
-        JSON.stringify(res.data.employees || [])
-      );
+      if (res?.success && res.data?.employees) {
+        // Store in service instead of localStorage
+        this.commonService.setAllEmployeeData(res.data.employees);
+      }
     } catch (err) {
       console.error("All Employee Data API Error:", err);
     }
@@ -211,10 +256,10 @@ export class AppComponent implements DoCheck, OnInit {
       const res: any = await firstValueFrom(
         this.http.getData(this.constants.mangerEmployeeData)
       );
-      localStorage.setItem(
-        "managerEmployeeData",
-        JSON.stringify(res.data.employees || [])
-      );
+      if (res?.success && res.data?.employees) {
+        // Store in service instead of localStorage
+        this.commonService.setManagerEmployeeData(res.data.employees);
+      }
     } catch (err) {
       console.error("Manager Employee Data API Error:", err);
     }
@@ -256,17 +301,7 @@ export class AppComponent implements DoCheck, OnInit {
 
   onViewChange(event: any) {
     this.selectedView = event.target.value;
-
-    // ✅ Update localStorage
     localStorage.setItem("selectedView", this.selectedView);
-
-    // ✅ Update commonService.currentView BEFORE triggering the change
-    this.commonService.currentView = this.selectedView;
-
-    console.log("View changed to:", this.selectedView);
-    console.log("commonService.currentView:", this.commonService.currentView);
-
-    // ✅ Now trigger the viewChange event
-    this.commonService.viewChange(event);
+    this.commonService.viewChange$.next(this.selectedView);
   }
 }
