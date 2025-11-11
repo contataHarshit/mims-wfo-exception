@@ -97,12 +97,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   apiDisabledDates: Date[] = [];
   projectList: any[] = [];
 
-  reasonList = [
-    { label: "Health Issue", value: "Health Issue" },
-    { label: "Personal Work", value: "Personal Work" },
-    { label: "Travel", value: "Travel" },
-    { label: "Other", value: "other" },
-  ];
+  reasonList: any = [];
   maxSelectableDate: any;
   minSelectableDate: any;
 
@@ -128,12 +123,14 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         this.formData.employeeName = name;
         this.cdr.detectChanges();
       });
-
+    this.formData.employeeNumber = localStorage.getItem("employeeNumber");
     this.commonService.employeeNumber$
       .pipe(takeUntil(this.destroy$))
       .subscribe((number) => {
-        this.formData.employeeNumber = number;
-        this.cdr.detectChanges();
+        if (!this.formData.employeeNumber) {
+          this.formData.employeeNumber = number;
+          this.cdr.detectChanges();
+        }
       });
 
     this.commonService.projectManager$
@@ -160,6 +157,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
 
     // Populate employee info from the service
     this.populateEmployeeInfo();
+    this.reasonList = this.commonService.config.reasonList || [];
+    console.log("this.comm", this.commonService.config);
   }
 
   ngOnDestroy(): void {
@@ -291,7 +290,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const exists = this.reasonList.some((r) => (r.value ?? r) === entered);
+    const exists = this.reasonList.some((r: any) => (r.value ?? r) === entered);
     if (!exists) {
       this.reasonList.push({ label: entered, value: entered });
     }

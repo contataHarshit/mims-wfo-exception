@@ -1,12 +1,15 @@
 import { Injectable, Inject, PLATFORM_ID } from "@angular/core";
 import { isPlatformBrowser } from "@angular/common";
 import { BehaviorSubject } from "rxjs";
+import { firstValueFrom } from "rxjs";
+import { HttpClient } from "@angular/common/http";
 
 @Injectable({
   providedIn: "root",
 })
 export class CommonService {
   header: string = "WFH Request";
+  public config: any; // store config globally
 
   // ============================================
   // Employee Data BehaviorSubjects
@@ -50,9 +53,7 @@ export class CommonService {
   // ============================================
   // Manager List
   // ============================================
-  private managerListSubject = new BehaviorSubject<any[]>([
-   
-  ]);
+  private managerListSubject = new BehaviorSubject<any[]>([]);
   managerList$ = this.managerListSubject.asObservable();
 
   // ============================================
@@ -67,7 +68,10 @@ export class CommonService {
   private managerEmployeeDataSubject = new BehaviorSubject<any[]>([]);
   managerEmployeeData$ = this.managerEmployeeDataSubject.asObservable();
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private http: HttpClient
+  ) {}
 
   // ============================================
   // LOADING STATE METHODS
@@ -203,13 +207,13 @@ export class CommonService {
   // ============================================
 
   /** Update manager list */
-setManagerList(list: { EmployeeNumber: string; FullName: string }[]) {
-  const formattedList = list.map((m) => ({
-    label: `${m.FullName} (${m.EmployeeNumber})`,
-    value: m.EmployeeNumber,
-  }));
-  this.managerListSubject.next(formattedList);
-}
+  setManagerList(list: { EmployeeNumber: string; FullName: string }[]) {
+    const formattedList = list.map((m) => ({
+      label: `${m.FullName} (${m.EmployeeNumber})`,
+      value: m.EmployeeNumber,
+    }));
+    this.managerListSubject.next(formattedList);
+  }
 
   /** Get manager list */
   get managerList() {
@@ -234,5 +238,10 @@ setManagerList(list: { EmployeeNumber: string; FullName: string }[]) {
   /** Mark user data as loaded */
   setUserDataLoaded(loaded: boolean = true) {
     this.userDataLoaded$.next(loaded);
+  }
+  async loadConfig() {
+    this.config = await firstValueFrom(
+      this.http.get("/assets/config/config.json")
+    );
   }
 }

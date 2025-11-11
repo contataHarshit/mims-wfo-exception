@@ -61,11 +61,12 @@ export class AppComponent implements DoCheck, OnInit {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  ngOnInit(): void {
+  ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.commonService.loadConfig();
 
     this.commonService.setLoading(true);
-
+    this.loadConfig();
     // Track navigation
     this.router.events
       .pipe(
@@ -137,6 +138,7 @@ export class AppComponent implements DoCheck, OnInit {
         localStorage.setItem("jwtToken", this.jwtToken || "");
         localStorage.setItem("role", this.role);
         localStorage.setItem("department", employee.department || "");
+        localStorage.setItem("employeeNumber", this.employeeNumber);
         this.commonService.setRole(this.role);
 
         // Load saved view or set default
@@ -310,5 +312,8 @@ export class AppComponent implements DoCheck, OnInit {
     this.selectedView = event.target.value;
     localStorage.setItem("selectedView", this.selectedView);
     this.commonService.viewChange$.next(this.selectedView);
+  }
+  async loadConfig() {
+    await this.commonService.loadConfig();
   }
 }

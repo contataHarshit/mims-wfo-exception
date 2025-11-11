@@ -183,10 +183,9 @@ export class WfoDashboardComponent implements OnInit {
       const toDate = new Date(this.filters.toDate);
       params.set("toDate", toDate.toISOString().split("T")[0]);
     }
-    if(this.filters.managerName){ 
+    if (this.filters.managerName && this.filters.managerName.value) {
       params.set("managerEmployeeNumber", this.filters.managerName.value);
     }
-    // Employee filter - handle object and string
     if (this.filters.employeeName) {
       const employeeNumber =
         typeof this.filters.employeeName === "object"
@@ -198,7 +197,6 @@ export class WfoDashboardComponent implements OnInit {
       }
     }
 
-    // Reason filter - skip if "All" or empty
     if (
       this.filters.reason &&
       this.filters.reason !== "All" &&
@@ -331,10 +329,10 @@ export class WfoDashboardComponent implements OnInit {
 
   applyFilter() {
     this.page = 1;
-        console.log("this is manager filter", this.filters.managerName);
+    console.log("this is manager filter", this.filters.managerName);
 
     this.getExceptionRequest();
-    
+
     setTimeout(() => {
       const count = this.exceptionRequests.length;
       this.toastr.success(
