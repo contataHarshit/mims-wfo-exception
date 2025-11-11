@@ -83,7 +83,6 @@ export class WfoDashboardComponent implements OnInit {
   ];
 
   reasonList = [
-    { label: "All", value: "" },
     { label: "Health", value: "Health" },
     { label: "Personal Work", value: "Personal Work" },
     { label: "Travel", value: "Travel" },
@@ -110,7 +109,7 @@ export class WfoDashboardComponent implements OnInit {
   page: number = 1;
   limit: number = 10;
   totalRecords: number = 0;
-  managerList: any[] = [{ label: "All", value: "" }];
+  managerList: any[] = [];
 
   ngOnInit(): void {
     this.commonService.setLoading(true);
@@ -184,7 +183,9 @@ export class WfoDashboardComponent implements OnInit {
       const toDate = new Date(this.filters.toDate);
       params.set("toDate", toDate.toISOString().split("T")[0]);
     }
-
+    if(this.filters.managerName){ 
+      params.set("managerEmployeeNumber", this.filters.managerName.value);
+    }
     // Employee filter - handle object and string
     if (this.filters.employeeName) {
       const employeeNumber =
@@ -330,8 +331,10 @@ export class WfoDashboardComponent implements OnInit {
 
   applyFilter() {
     this.page = 1;
-    this.getExceptionRequest();
+        console.log("this is manager filter", this.filters.managerName);
 
+    this.getExceptionRequest();
+    
     setTimeout(() => {
       const count = this.exceptionRequests.length;
       this.toastr.success(

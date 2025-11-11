@@ -26,7 +26,7 @@
         <div class="form-row">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Status</label>
           <app-common-select [options]="statusList" [value]="filters.status" (valueChange)="onStatusChange($event)"
-            [placeholder]="'Select Status'" [bindValue]="'value'">
+            [placeholder]="'Select Status'">
           </app-common-select>
         </div>
       </div>
@@ -47,7 +47,7 @@
 
         <div class="form-row" *ngIf="selectedView!=='self' ">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Reason</label>
-          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="All"
+          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
             style="width: 100%;"></app-common-select>
         </div>
       </div>

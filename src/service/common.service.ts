@@ -51,7 +51,7 @@ export class CommonService {
   // Manager List
   // ============================================
   private managerListSubject = new BehaviorSubject<any[]>([
-    { label: "All", value: "" },
+   
   ]);
   managerList$ = this.managerListSubject.asObservable();
 
@@ -203,16 +203,13 @@ export class CommonService {
   // ============================================
 
   /** Update manager list */
-  setManagerList(list: { EmployeeNumber: string; FullName: string }[]) {
-    const formattedList = [
-      { label: "All", value: "" },
-      ...list.map((m) => ({
-        label: `${m.FullName} (${m.EmployeeNumber})`,
-        value: m.EmployeeNumber,
-      })),
-    ];
-    this.managerListSubject.next(formattedList);
-  }
+setManagerList(list: { EmployeeNumber: string; FullName: string }[]) {
+  const formattedList = list.map((m) => ({
+    label: `${m.FullName} (${m.EmployeeNumber})`,
+    value: m.EmployeeNumber,
+  }));
+  this.managerListSubject.next(formattedList);
+}
 
   /** Get manager list */
   get managerList() {
