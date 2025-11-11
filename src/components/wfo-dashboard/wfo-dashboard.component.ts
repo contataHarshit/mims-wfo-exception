@@ -31,7 +31,8 @@ interface ExceptionRequest {
   status: string; // PENDING | APPROVED | REJECTED | PARTIALLY_APPROVED
   managerRemarks: string | null;
   managerName: string | null;
-  updatedBy: string | null; // who approved / rejected
+  approvedBy: string | null;
+  rejectedBy: string | null;
   checked?: boolean;
 }
 
@@ -268,7 +269,8 @@ export class WfoDashboardComponent implements OnInit {
               exceptionRequestedDays: item.requestedDays || null,
               exceptionApprovedDays: item.approvedDays || null,
               status: item.currentStatus || "PENDING",
-              updatedBy: item.updatedBy || "-",
+              approvedBy: item.approvedBy || "-",
+              rejectedBy: item.rejectedBy || "-",
               managerName: item?.manager || "-",
               managerRemarks: item.managerRemarks || null,
               checked: false,
