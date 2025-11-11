@@ -111,8 +111,8 @@
           <td>{{ req.managerName }}</td>
 
 
-          <td *ngIf="showApprovedColumn()">{{ req.status === 'APPROVED' ? req.updatedBy : '-' }}</td>
-          <td *ngIf="showRejectedColumn()">{{ req.status === 'REJECTED' ? req.updatedBy : '-' }}</td>
+          <td *ngIf="showApprovedColumn()">{{ req.status === 'APPROVED' ? req.approvedBy : '-' }}</td>
+          <td *ngIf="showRejectedColumn()">{{ req.status === 'REJECTED' ? req.rejectedBy : '-' }}</td>
 
 
           <td>{{ req.exceptionDate }}</td>
