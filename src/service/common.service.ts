@@ -47,7 +47,7 @@ export class CommonService {
   // ============================================
   // Loading State
   // ============================================
-  private loadingSubject = new BehaviorSubject<boolean>(false);
+  private loadingSubject = new BehaviorSubject<boolean>( true);
   loading$ = this.loadingSubject.asObservable();
 
   // ============================================

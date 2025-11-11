@@ -1,3 +1,4 @@
+// FILE: app.component.ts
 import { Component, DoCheck, OnInit, Inject, PLATFORM_ID } from "@angular/core";
 import {
   Router,
@@ -52,6 +53,8 @@ export class AppComponent implements DoCheck, OnInit {
     },
   ];
   employeeNumber: string = "";
+  pageLoading: boolean = true;
+  department:string=""
   constructor(
     public commonService: CommonService,
     private router: Router,
@@ -61,71 +64,51 @@ export class AppComponent implements DoCheck, OnInit {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  ngOnInit() {
-    if (!isPlatformBrowser(this.platformId)) return;
-    this.commonService.loadConfig();
+ngOnInit() {
+  this.selectedView = "self";
 
-    this.commonService.setLoading(true);
-    this.loadConfig();
-    // Track navigation
-    this.router.events
-      .pipe(
-        filter(
-          (event): event is NavigationEnd => event instanceof NavigationEnd
-        )
-      )
-      .subscribe((event) => {
-        const url = event.urlAfterRedirects;
-        this.isDashboardPage = url
-          .split("?")[0]
-          .split("-")[0]
-          .includes("dashboard");
-        this.updateActiveTabs(url);
-      });
+  if (!isPlatformBrowser(this.platformId)) return;
 
-    // Detect current route immediately
-    const currentUrl = this.router.url;
-    this.isDashboardPage = currentUrl.includes("dashboard");
+  this.commonService.loadConfig().finally(() => {});
 
-    // Load stored token & role ONLY
-    const storedToken = localStorage.getItem("jwtToken");
-    const storedRole = localStorage.getItem("role");
+  // Track navigation for tabs
+this.router.events
+  .pipe(filter(e => e instanceof NavigationEnd))
+  .subscribe((event) => {
+    const navEnd = event as NavigationEnd; // assert type
+    const url = navEnd.urlAfterRedirects;
+    this.isDashboardPage = url.split("?")[0].includes("dashboard");
+    this.updateActiveTabs(url);
+  });
 
-    if (storedToken && storedRole) {
-      this.jwtToken = storedToken;
-      this.role = storedRole;
 
-      this.commonService.setRole(storedRole);
-
-      if (storedRole === "ADMIN") {
-        this.tabs.splice(0, 1);
-      }
-
-      this.setDefaultViewByRole(this.role);
-      this.commonService.viewChange$.next(this.selectedView);
-
-      this.loadRoleSpecificData(this.role).finally(() => {
-        this.commonService.setLoading(false);
-      });
-
-      return;
-    }
-
-    // If sessionid login
-    this.route.queryParams.subscribe((params) => {
-      const sessionId = params["sessionid"];
-      if (!sessionId) {
-        this.commonService.setLoading(false);
-        this.commonService.userDataLoaded$.next(false); // No auth data available
-        return;
-      }
-
-      this.authenticateWithSession(sessionId);
-    });
+  // ✅ Simply get query param from the full URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionId = urlParams.get("sessionid");
+  if (sessionId) {
+    console.log("Session ID from URL:", sessionId); // <-- WILL LOG
+    this.authenticateWithSession(sessionId);
   }
 
-  /** Extracted async logic to separate function */
+  // Load stored token & role if available
+  const storedToken = localStorage.getItem("jwtToken");
+  const storedRole = localStorage.getItem("role");
+  if (storedToken && storedRole) {
+    this.jwtToken = storedToken;
+    this.role = storedRole;
+    this.commonService.setRole(storedRole);
+    this.setDefaultViewByRole(this.role);
+    this.commonService.viewChange$.next(this.selectedView);
+    console.log("23333333333333333");
+    
+    this.loadRoleSpecificData(this.role).finally(() => {});
+  }
+}
+
+
   private authenticateWithSession(sessionId: string) {
+    console.log("222222222222222222222222");
+    
     firstValueFrom(
       this.http.auth(this.constants.auth, { sessionid: sessionId })
     )
@@ -134,7 +117,8 @@ export class AppComponent implements DoCheck, OnInit {
         this.jwtToken = response?.data?.token || null;
         this.role = employee.role || "";
         this.employeeNumber = employee.employeeNumber || "";
-        // Store auth-related data FIRST
+        this.department=employee.department||""
+        // Store auth-related data
         localStorage.setItem("jwtToken", this.jwtToken || "");
         localStorage.setItem("role", this.role);
         localStorage.setItem("department", employee.department || "");
@@ -148,7 +132,7 @@ export class AppComponent implements DoCheck, OnInit {
         } else {
           this.setDefaultViewByRole(this.role);
         }
-
+        
         this.commonService.viewChange$.next(this.selectedView);
 
         // Load all role-specific data
@@ -156,92 +140,134 @@ export class AppComponent implements DoCheck, OnInit {
       })
       .catch((err) => {
         console.error("Auth API Error:", err);
-        this.commonService.userDataLoaded$.next(false); // Auth failed
+        this.commonService.userDataLoaded$.next(false);
       })
       .finally(() => {
-        this.commonService.setLoading(false);
+        
       });
   }
 
   setDefaultViewByRole(role: string) {
-    // Ensure no duplicate "All" option
-    const hasAll = this.viewOptions.some((o) => o.value === "all");
-    console.log("11111111111111");
+    const department = localStorage.getItem("department") || "";
 
-    if (role === "EMPLOYEE" || role === "HR" || role === "MANAGER") {
-      console.log("222222222222");
+    // Step 1: Start with default base options
+    this.viewOptions = [
+      { label: "Self", value: "self" },
+      { label: "Resource", value: "resource" },
+    ];
 
-      // Check if department is MANAGEMENT (from service, not localStorage)
-      const department = localStorage.getItem("department") || "";
-      console.log("department:", department);
+    // Step 2: Handle ADMIN
+    if (role === "ADMIN") {
+      this.addAllOption();
+      this.selectedView = "all";
+      localStorage.setItem("selectedView", "all");
+      return;
+    }
 
-      if (department === "MANAGEMENT" && role !== "EMPLOYEE") {
-        console.log("sssssssssssss");
+    // Step 3: Handle HR + Manager / Employee
+    if (department === "HR") {
+      this.addAllOption();
+      this.selectedView = "all";
+      localStorage.setItem("selectedView", "all");
 
-        if (!hasAll) {
-          this.viewOptions = [
-            { label: "All", value: "all" },
-            ...this.viewOptions,
-          ];
-        }
-        return;
+      // EMPLOYEE in HR should not see "resource"
+      if (role === "EMPLOYEE") {
+        this.viewOptions = this.viewOptions.filter(o => o.value !== "resource");
       }
+      return;
+    }
+
+    // Step 4: Normal Manager (not HR)
+    if (role === "MANAGER") {
       this.selectedView = "self";
       localStorage.setItem("selectedView", "self");
-    } else if (role === "ADMIN") {
-      this.selectedView = "resource";
-      localStorage.setItem("selectedView", "resource");
+      return;
+    }
+
+    // Step 5: Normal Employee
+    if (role === "EMPLOYEE") {
+      this.viewOptions = this.viewOptions.filter(o => o.value === "self");
+      this.selectedView = "self";
+      localStorage.setItem("selectedView", "self");
+      return;
+    }
+
+    // Step 6: Fallback
+    const savedView = localStorage.getItem("selectedView");
+    if (savedView === "all" || savedView === "self" || savedView === "resource") {
+      this.selectedView = savedView;
     } else {
-      // Fallback
-      const savedView = localStorage.getItem("selectedView") as
-        | "self"
-        | "resource"
-        | "all"
-        | null;
-      this.selectedView = savedView ?? "self";
-      localStorage.setItem("selectedView", this.selectedView);
+      this.selectedView = "self";
+    }
+  }
+
+  private addAllOption() {
+    if (!this.viewOptions.some(o => o.value === "all")) {
+      this.viewOptions.unshift({ label: "All", value: "all" });
     }
   }
 
   async loadRoleSpecificData(role: string) {
     try {
-      // Load employee data first (contains basic info for all roles)
+      // Load employee data first
       const empRes: any = await firstValueFrom(
         this.http.getData(this.constants.employeeData)
       );
 
       if (empRes?.success && empRes.data?.employee) {
-        // Store in service (not localStorage)
-        this.commonService.setEmployeeData({
+        console.log("llllllllllll");
+        
+        // Store in both service AND localStorage
+        const employeeData = {
           ...empRes.data.employee,
           employeeNumber: this.employeeNumber,
-        });
+        };
+        this.commonService.setEmployeeData(employeeData);
+        localStorage.setItem("employeeData", JSON.stringify(employeeData));
+      console.log("ssssssssssssssssssssssss",localStorage.getItem("department"),role);
 
         // Load manager list
-        const managerRes: any = await firstValueFrom(
+        if(role!=="EMPLOYEE" || localStorage.getItem("department")==="HR"){
+          const managerRes: any = await firstValueFrom(
           this.http.getData(this.constants.managerList)
         );
         if (managerRes?.success && managerRes.data?.managers) {
           this.commonService.setManagerList(managerRes.data.managers);
         }
+        }
       }
 
-      // Load role-specific data
+      // Load role-specific data and modify tabs
+      console.log("ssssssssssssssssssssssss",localStorage.getItem("department"),role);
+      
       if (role === "MANAGER") {
         await this.loadManagerData();
-      } else if (role === "HR" || role === "ADMIN") {
+      }
+      if (localStorage.getItem("department") === "HR" || role === "ADMIN") {
         await this.loadAllEmployeeData();
-        this.tabs.push({
-          label: "HR Admin Dashboard",
-          path: "hr-admin-dashboard",
-          isActive: false,
-        });
+        console.log("11111111111111111");
+        
+        // For ADMIN: Remove "Create WFH Request" tab
+        if (role === "ADMIN") {
+          this.tabs = this.tabs.filter(t => t.label !== "Create WFH Request");
+        }
+        
+        // Add HR Admin Dashboard tab if not already present
+        if (!this.tabs.some(t => t.label === "HR Admin Dashboard")) {
+          this.tabs.push({
+            label: "HR Admin Dashboard",
+            path: "hr-admin-dashboard",
+            isActive: false,
+          });
+        }
+        
+        // Update active tabs after all modifications
+        this.updateActiveTabs(this.router.url);
       }
 
-      // Notify that data is loaded - THIS IS CRITICAL
       this.commonService.userDataLoaded$.next(true);
     } catch (err) {
-      console.error("Error loading role-specific data:", err);
+    console.error("Error loading role-specific data:", err);
       this.commonService.userDataLoaded$.next(false);
     }
   }
@@ -252,8 +278,9 @@ export class AppComponent implements DoCheck, OnInit {
         this.http.getData(this.constants.allEmployeeData)
       );
       if (res?.success && res.data?.employees) {
-        // Store in service instead of localStorage
+        // Store in BOTH service and localStorage
         this.commonService.setAllEmployeeData(res.data.employees);
+        localStorage.setItem("allEmployeeData", JSON.stringify(res.data.employees));
       }
     } catch (err) {
       console.error("All Employee Data API Error:", err);
@@ -266,8 +293,9 @@ export class AppComponent implements DoCheck, OnInit {
         this.http.getData(this.constants.mangerEmployeeData)
       );
       if (res?.success && res.data?.employees) {
-        // Store in service instead of localStorage
+        // Store in BOTH service and localStorage
         this.commonService.setManagerEmployeeData(res.data.employees);
+        localStorage.setItem("managerEmployeeData", JSON.stringify(res.data.employees));
       }
     } catch (err) {
       console.error("Manager Employee Data API Error:", err);
@@ -275,7 +303,13 @@ export class AppComponent implements DoCheck, OnInit {
   }
 
   ngDoCheck(): void {
-    this.tabs.forEach((tab) => (tab.isActive = this.isActive(tab.path)));
+    
+    this.tabs.forEach((tab) => {
+      const shouldBeActive = this.isActive(tab.path);
+      if (tab.isActive !== shouldBeActive) {
+        tab.isActive = shouldBeActive;
+      }
+    });
   }
 
   navigateTo(path: string) {
@@ -285,12 +319,14 @@ export class AppComponent implements DoCheck, OnInit {
   isActive(path: string): boolean {
     const currentUrl = this.router.url.split("?")[0].replace(/^\/+/, "");
     const cleanedPath = path.replace(/^\/+/, "");
+    
     if (cleanedPath === "") {
       return (
         currentUrl === "" ||
         currentUrl.startsWith("create-wfo-exception-request")
       );
     }
+    
     return (
       currentUrl === cleanedPath || currentUrl.startsWith(cleanedPath + "/")
     );
@@ -298,22 +334,24 @@ export class AppComponent implements DoCheck, OnInit {
 
   updateActiveTabs(url: string) {
     const currentUrl = url.split("?")[0].replace(/^\/+/, "");
+    
     this.tabs.forEach((tab) => {
       const path = tab.path.replace(/^\/+/, "");
-      tab.isActive =
-        path === ""
-          ? currentUrl === "" ||
-            currentUrl.startsWith("create-wfo-exception-request")
-          : currentUrl === path || currentUrl.startsWith(path + "/");
+      
+      if (path === "") {
+        tab.isActive = currentUrl === "" || 
+                       currentUrl.startsWith("create-wfo-exception-request");
+      } else {
+        tab.isActive = currentUrl === path || 
+                       currentUrl.startsWith(path + "/");
+      }
     });
+    this.pageLoading = false;
   }
 
   onViewChange(event: any) {
     this.selectedView = event.target.value;
     localStorage.setItem("selectedView", this.selectedView);
     this.commonService.viewChange$.next(this.selectedView);
-  }
-  async loadConfig() {
-    await this.commonService.loadConfig();
   }
 }

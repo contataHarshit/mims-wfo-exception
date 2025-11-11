@@ -1,6 +1,6 @@
-// FILE: wfo-dashboard.component.ts
+// FILE: wfo-dashboard.component.ts - FIXED VERSION
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, NgZone } from "@angular/core";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { FormsModule } from "@angular/forms";
 import { WfoActionPopupComponent } from "../../popup/wfo-action-popup/wfo-action-popup.component";
@@ -28,7 +28,7 @@ interface ExceptionRequest {
   submissionDate: string | null;
   exceptionRequestedDays: number | null;
   exceptionApprovedDays: number | null;
-  status: string; // PENDING | APPROVED | REJECTED | PARTIALLY_APPROVED
+  status: string;
   managerRemarks: string | null;
   managerName: string | null;
   approvedBy: string | null;
@@ -62,19 +62,13 @@ export class WfoDashboardComponent implements OnInit {
     public commonService: CommonService,
     private http: HttpService,
     private constants: ConstantService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private ngZone: NgZone
   ) {}
 
-  // Store original unfiltered data
   private allExceptionRequests: ExceptionRequest[] = [];
-
-  // Exception Request Data
   exceptionRequests: ExceptionRequest[] = [];
-
-  // selection for bulk actions
   selectedRequests: ExceptionRequest[] = [];
-
-  // Dropdown data
   employeeList: any[] = [];
 
   statusList = [
@@ -83,7 +77,7 @@ export class WfoDashboardComponent implements OnInit {
     { label: "Rejected", value: "REJECTED" },
   ];
 
-  reasonList = []
+  reasonList = [];
 
   reportTypeList = [
     { label: "Employee", value: "employee" },
@@ -93,7 +87,7 @@ export class WfoDashboardComponent implements OnInit {
   filters: any = {
     managerName: null,
     employeeName: null,
-    status: "PENDING", // Keep this as a string, not an object
+    status: "PENDING",
     fromDate: null as Date | null,
     toDate: null as Date | null,
     reason: null,
@@ -106,19 +100,21 @@ export class WfoDashboardComponent implements OnInit {
   limit: number = 10;
   totalRecords: number = 0;
   managerList: any[] = [];
+  remarks: string = "";
 
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
-    // Get current view from localStorage and commonService
+    // Get current view and role
     this.selectedView = localStorage.getItem("selectedView") || "self";
-    // this.selectedView = this.selectedView;
+    this.role = localStorage.getItem("role") || "";
 
+    // Load employee list from localStorage
     const storedData =
-      localStorage.getItem("role") === "MANAGER"
+      this.role === "MANAGER"
         ? localStorage.getItem("managerEmployeeData")
         : localStorage.getItem("allEmployeeData");
-    this.role = localStorage.getItem("role") || "";
+    
     this.employeeList = storedData
       ? JSON.parse(storedData).map((item: any) => ({
           label: `${item.FullName}(${item.EmployeeNumber})`,
@@ -126,25 +122,75 @@ export class WfoDashboardComponent implements OnInit {
         }))
       : [];
 
+    // Also subscribe to service updates
+    this.commonService.allEmployeeData$.subscribe((data: any[]) => {
+      if (data && data.length > 0) {
+        this.employeeList = data.map((item: any) => ({
+          label: `${item.FullName}(${item.EmployeeNumber})`,
+          value: item.EmployeeNumber,
+        }));
+      }
+    });
+
+    // Subscribe to manager list
+    this.commonService.managerList$.subscribe((list) => {
+      this.managerList = list;
+    });
+
+    // Set manager name for self view
+    if (this.selectedView === "self") {
+      this.setManagerForSelfView();
+    }
+
     // Subscribe to view changes
     this.commonService.viewChange$.subscribe(() => {
       this.selectedView = localStorage.getItem("selectedView") || "self";
-      // this.selectedView = this.selectedView;
-      this.commonService.managerList$.subscribe((list) => {
-        this.managerList = list;
-      });
+      
+      // Reset manager filter when view changes
+      if (this.selectedView === "self") {
+        this.setManagerForSelfView();
+      } else {
+        this.filters.managerName = null;
+      }
+      
       this.getExceptionRequest();
     });
-    this.reasonList=this.commonService.config.reasonList || [];
+
+    this.reasonList = this.commonService.config?.reasonList || [];
+    
+    // Initial data load
+    this.getExceptionRequest();
   }
 
-  // Utility to safely get status value whether filters.status is string or object
+  // Helper method to set manager for self view
+  private setManagerForSelfView() {
+    const employeeData = JSON.parse(localStorage.getItem("employeeData") || "null");
+    if (employeeData?.managerName) {
+      this.ngZone.run(() => {
+        this.filters.managerName = {
+          label: employeeData.managerName.name,
+          value: employeeData.managerName.EmployeeId
+        };
+      });
+    }
+  }
+
+  // Get display value for manager name in self view
+  get managerDisplayName(): string {
+    if (this.filters.managerName) {
+      if (typeof this.filters.managerName === 'object') {
+        return this.filters.managerName.label || '';
+      }
+      return this.filters.managerName;
+    }
+    return '';
+  }
+
   getStatusValue(status: any): string {
     if (!status) return "";
     return typeof status === "string" ? status : status.value || "";
   }
 
-  // Exposed methods used in template to decide whether to show Approved/Rejected columns
   showApprovedColumn(): boolean {
     const s = this.getStatusValue(this.filters.status);
     return (
@@ -166,11 +212,9 @@ export class WfoDashboardComponent implements OnInit {
 
     const params = new URLSearchParams();
 
-    // Pagination params
     params.set("page", this.page.toString());
     params.set("limit", this.limit.toString());
 
-    // Date filters
     if (this.filters.fromDate) {
       const fromDate = new Date(this.filters.fromDate);
       params.set("fromDate", fromDate.toISOString().split("T")[0]);
@@ -180,9 +224,11 @@ export class WfoDashboardComponent implements OnInit {
       const toDate = new Date(this.filters.toDate);
       params.set("toDate", toDate.toISOString().split("T")[0]);
     }
+
     if (this.filters.managerName && this.filters.managerName.value) {
       params.set("managerEmployeeNumber", this.filters.managerName.value);
     }
+
     if (this.filters.employeeName) {
       const employeeNumber =
         typeof this.filters.employeeName === "object"
@@ -209,27 +255,7 @@ export class WfoDashboardComponent implements OnInit {
       }
     }
 
-    // Manager for self view
-    if (
-      this.selectedView == "self" &&
-      (this.role == "MANAGER" || this.role == "HR")
-    ) {
-      params.set("isSelf", "true");
-      this.commonService.projectManager$.subscribe((manager: any) => {
-        this.filters.managerName = manager;
-      });
-    } else if (this.selectedView === "resource") {
-      this.commonService.employeeName$.subscribe((emp: any) => {
-        this.filters.managerName = emp;
-      });
-    } else {
-      this.filters.managerName = null;
-    }
-
-    // Status filter - normalize
-    // Status filter - send only when valid
     const status = this.getStatusValue(this.filters.status);
-
     if (status) {
       params.set("status", status);
     }
@@ -242,19 +268,15 @@ export class WfoDashboardComponent implements OnInit {
       params.set("isAll", "true");
     }
 
-    const url = `${
-      this.constants.exceptionRequest
-    }/paginated?${params.toString()}`;
+    const url = `${this.constants.exceptionRequest}/paginated?${params.toString()}`;
 
     this.http.getData(url).subscribe({
       next: (res: any) => {
         if (res.success) {
           const exceptions = res.data.exceptions || [];
 
-          // Reset disableSelectAll then compute based on entire list
           this.disableSelectAll = false;
 
-          // Map backend response to frontend table format
           this.exceptionRequests = exceptions.map((item: any) => {
             return {
               exceptionId: item.id,
@@ -277,14 +299,11 @@ export class WfoDashboardComponent implements OnInit {
             } as ExceptionRequest;
           });
 
-          // If every item is non-pending, disable select all; else keep enabled
           this.disableSelectAll =
             this.exceptionRequests.length > 0 &&
             this.exceptionRequests.every((i) => i.status !== "PENDING");
 
           this.totalRecords = res.data.pagination?.total || exceptions.length;
-
-          // Clear selections when data refreshes
           this.selectedRequests = [];
         } else {
           this.exceptionRequests = [];
@@ -327,8 +346,6 @@ export class WfoDashboardComponent implements OnInit {
 
   applyFilter() {
     this.page = 1;
-    console.log("this is manager filter", this.filters.managerName);
-
     this.getExceptionRequest();
 
     setTimeout(() => {
@@ -339,16 +356,20 @@ export class WfoDashboardComponent implements OnInit {
     }, 300);
   }
 
-  // Your resetFilters is also correct:
   resetFilters() {
     this.filters = {
       managerName: null,
       employeeName: null,
-      status: "PENDING", // Reset to string value
+      status: "PENDING",
       fromDate: null,
       toDate: null,
       reason: null,
     };
+
+    // Restore manager name for self view after reset
+    if (this.selectedView === "self") {
+      this.setManagerForSelfView();
+    }
 
     this.page = 1;
     this.getExceptionRequest();
@@ -381,17 +402,19 @@ export class WfoDashboardComponent implements OnInit {
     }
 
     const ids = this.selectedRequests.map((r) => r.exceptionId);
-    const payload = { ids, status };
+    const payload: any = { ids, status };
+    if (this.remarks) {
+      payload.remarks = this.remarks;
+    }
 
     this.http.putData(this.constants.exceptionRequest, payload).subscribe({
       next: (res: any) => {
         if (res.success) {
           this.toastr.success(
-            `${
-              this.selectedRequests.length
-            } requests ${status.toLowerCase()} successfully`
+            `${this.selectedRequests.length} requests ${status.toLowerCase()} successfully`
           );
           this.selectedRequests = [];
+          this.remarks = "";
           this.getExceptionRequest();
         } else {
           this.toastr.error("Bulk update failed");
@@ -475,8 +498,6 @@ export class WfoDashboardComponent implements OnInit {
               console.error("DELETE API Error:", err);
             },
           });
-      } else {
-        console.log("❌ Delete canceled");
       }
     });
   }
@@ -487,7 +508,6 @@ export class WfoDashboardComponent implements OnInit {
       checked: e.target.checked ? true : false,
     }));
 
-    // Update selectedRequests array
     if (e.target.checked) {
       this.selectedRequests = [
         ...this.exceptionRequests.filter((i) => i.status === "PENDING"),
@@ -496,8 +516,8 @@ export class WfoDashboardComponent implements OnInit {
       this.selectedRequests = [];
     }
   }
+
   onStatusChange(value: any) {
-    // ng-select with bindValue will return just the string value
     this.filters.status = value;
     this.page = 1;
     this.getExceptionRequest();
