@@ -82,12 +82,7 @@ export class WfoDashboardComponent implements OnInit {
     { label: "Rejected", value: "REJECTED" },
   ];
 
-  reasonList = [
-    { label: "Health", value: "Health" },
-    { label: "Personal Work", value: "Personal Work" },
-    { label: "Travel", value: "Travel" },
-    { label: "Other", value: "Other" },
-  ];
+  reasonList = []
 
   reportTypeList = [
     { label: "Employee", value: "employee" },
@@ -139,6 +134,7 @@ export class WfoDashboardComponent implements OnInit {
       });
       this.getExceptionRequest();
     });
+    this.reasonList=this.commonService.config.reasonList || [];
   }
 
   // Utility to safely get status value whether filters.status is string or object

@@ -67,11 +67,7 @@ export class HrAdminDashboardComponent implements OnInit {
     { label: "Inactive", value: "inactive" },
   ];
 
-  reasonList = [
-    { label: "All", value: "" },
-    { label: "Personal", value: "personal" },
-    { label: "Official", value: "official" },
-  ];
+  reasonList = [];
 
   // Filters
   filters = {
@@ -92,6 +88,7 @@ export class HrAdminDashboardComponent implements OnInit {
     // Fetch HR Admin data
     this.getHrAdminData();
     this.getHrAdminData();
+    this.reasonList=this.commonService.config.reasonList || [];
   }
 
   /** Fetch HR Admin Summary Data */
