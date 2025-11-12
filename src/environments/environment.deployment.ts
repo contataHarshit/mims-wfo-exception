@@ -1,4 +1,4 @@
 export const Environment= {
-    baseUrl: 'http://staging-dashboard/',
+    baseUrl: 'http://localhost:3000/',
     production: false
 } as const;
