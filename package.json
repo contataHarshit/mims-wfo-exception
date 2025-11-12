@@ -4,7 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:deployment": "ng serve --configuration deployment",
     "build": "ng build",
+    "build:deployment": "ng build --configuration deployment",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:Mims-exception-wfo": "node dist/mims-exception-wfo/server/server.mjs"

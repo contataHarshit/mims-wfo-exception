@@ -1,0 +1,8 @@
+{
+  "routes": [
+    "/",
+    "/create-wfo-exeption-request",
+    "/dashboard",
+    "/hr-admin-dashboard"
+  ]
+}
