@@ -94,7 +94,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       .subscribe((event) => {
         const navEnd = event as NavigationEnd;
         const url = navEnd.urlAfterRedirects;
-        this.isDashboardPage = url.split("?")[0].includes("dashboard");
+        this.isDashboardPage = url.split("?")[0].split("-")[0].includes("dashboard");
         this.updateActiveTabs(url);
       });
 
