@@ -134,6 +134,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((newView) => {
         const previousView = this.selectedView;
+        this.filters.status = "PENDING";
         this.selectedView = localStorage.getItem("selectedView") || "self";
         if (this.selectedView === "self") {
           this.setManagerForSelfView();
@@ -144,6 +145,10 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             label: temp?.employeeName,
             value: temp?.employeeNumber,
           };
+        }
+        if(this.selectedView === "all") {
+this.filters.managerName = null;
+
         }
         // Only reload if view actually changed
         if (previousView !== this.selectedView) {
