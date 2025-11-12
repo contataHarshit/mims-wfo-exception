@@ -380,9 +380,16 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
               } as ExceptionRequest;
             });
 
-            this.disableSelectAll =
-              this.exceptionRequests.length > 0 &&
-              this.exceptionRequests.every((i) => i.status !== "PENDING");
+           let tempHash:any={}
+           for(let i=0;i<this.exceptionRequests.length;i++){
+            if(!tempHash[this.exceptionRequests[i].status]){
+              tempHash[this.exceptionRequests[i].status]=true;
+            }
+
+           }
+           if(Object.keys(tempHash).length>1 ){
+            this.disableSelectAll = true
+           }
 
             this.totalRecords = res.data.pagination?.total || exceptions.length;
             this.selectedRequests = [];
@@ -608,4 +615,5 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.page = 1;
     this.getExceptionRequest();
   }
+  
 }

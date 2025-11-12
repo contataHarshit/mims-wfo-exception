@@ -96,7 +96,7 @@
       <ng-template pTemplate="body" let-req>
         <tr>
           <td style="text-align: center;" *ngIf="selectedView !== 'self'">
-            <input type="checkbox" [checked]="req.status === 'APPROVED' || req.checked"
+            <input type="checkbox" [checked]="req.checked"
               [disabled]="req.status !== 'PENDING' && (department!='HR' && role!= 'ADMIN')"
               (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
           </td>
