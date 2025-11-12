@@ -17,11 +17,11 @@
           <app-common-select [options]="managerList" [(value)]="filters.managerName"
             placeholder="Select Manager"></app-common-select>
         </div>
-
+<!-- 
         <div class="form-row">
           <label>Status</label>
           <app-common-select [options]="statusList" [(value)]="filters.status" placeholder="Select Status"></app-common-select>
-        </div>
+        </div> -->
       </div>
 
       <!-- Row 2: From date, To date, Reason (3 columns) -->
@@ -36,10 +36,10 @@
           <input type="date" [(ngModel)]="filters.toDate" class="date-input" (change)="onDateChange()" />
         </div>
 
-        <div class="form-row">
+        <!-- <div class="form-row">
           <label>Reason</label>
           <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"></app-common-select>
-        </div>
+        </div> -->
       </div>
 
       <!-- Action Buttons -->

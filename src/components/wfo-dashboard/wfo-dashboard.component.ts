@@ -433,12 +433,25 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  onDateChange() {
-    console.log("Date changed:", {
-      from: this.filters.fromDate,
-      to: this.filters.toDate,
+ onDateChange() {
+  const format = (date: Date | string | null): string => {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
-  }
+  };
+
+  this.formattedFromDate = format(this.filters.fromDate);
+  this.formattedToDate = format(this.filters.toDate);
+
+  console.log("Date changed:", {
+    from: this.formattedFromDate,
+    to: this.formattedToDate,
+  });
+}
+
 
   applyFilter() {
     this.page = 1;
