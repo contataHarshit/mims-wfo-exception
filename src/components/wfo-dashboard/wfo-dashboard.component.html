@@ -97,8 +97,8 @@
         <tr>
           <td style="text-align: center;" *ngIf="selectedView !== 'self'">
             <input type="checkbox" [checked]="req.status === 'APPROVED' || req.checked"
-              [disabled]="req.status !== 'PENDING' && role==='EMPLOYEE'" (change)="toggleSelection(req, $event)"
-              *ngIf="req.status !== 'REJECTED'" />
+              [disabled]="req.status !== 'PENDING' && (department!='HR' && role!= 'ADMIN')"
+              (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
           </td>
           <td>{{ req.employeeId }}</td>
           <td>{{ req.employeeName }}</td>

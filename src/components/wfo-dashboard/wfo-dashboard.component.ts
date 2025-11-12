@@ -104,14 +104,18 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   totalRecords: number = 0;
   managerList: any[] = [];
   remarks: string = "";
-
+  department: string = "";
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
     // Get current view and role
     this.selectedView = localStorage.getItem("selectedView") || "self";
     this.role = localStorage.getItem("role") || "";
-
+    this.department = localStorage.getItem("department") || "";
+    if (this.role == "ADMIN") {
+      this.selectedView = "all";
+      localStorage.setItem("selectedView", "all");
+    }
     // Load employee list from localStorage FIRST
     this.loadEmployeeListFromCache();
 
@@ -146,9 +150,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             value: temp?.employeeNumber,
           };
         }
-        if(this.selectedView === "all") {
-this.filters.managerName = null;
-
+        if (this.selectedView === "all") {
+          this.filters.managerName = null;
         }
         // Only reload if view actually changed
         if (previousView !== this.selectedView) {
