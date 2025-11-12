@@ -8,34 +8,18 @@
         <!-- MANAGER FIELD - FIXED -->
         <div class="form-row">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Manager</label>
-          
-          <!-- For SELF view: Show readonly input with manager name -->
-          <input 
-            *ngIf="selectedView === 'self'" 
-            type="text" 
-            class="form-control" 
-            [value]="managerDisplayName"
-            readonly
-            style="background-color: #f5f5f5; cursor: not-allowed;" />
-          
+
+
           <!-- For other views: Show select dropdown -->
-          <app-common-select 
-            *ngIf="selectedView !== 'self'" 
-            [options]="managerList" 
-            [(value)]="filters.managerName" 
-            placeholder="Select Manager"
-            [disabled]="selectedView === 'resource'"
-            style="width: 100%;">
+          <app-common-select [options]="managerList" [(value)]="filters.managerName" placeholder="Select Manager"
+            [disabled]="selectedView !== 'all'" style="width: 100%;">
           </app-common-select>
         </div>
 
         <!-- EMPLOYEE NAME -->
         <div class="form-row" *ngIf="selectedView !== 'self'">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Employee name</label>
-          <app-common-select 
-            [options]="employeeList" 
-            [(value)]="filters.employeeName" 
-            placeholder="Select Employee"
+          <app-common-select [options]="employeeList" [(value)]="filters.employeeName" placeholder="Select Employee"
             style="width: 100%;">
           </app-common-select>
         </div>
@@ -43,10 +27,7 @@
         <!-- STATUS -->
         <div class="form-row">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Status</label>
-          <app-common-select 
-            [options]="statusList" 
-            [value]="filters.status" 
-            (valueChange)="onStatusChange($event)"
+          <app-common-select [options]="statusList" [value]="filters.status" (valueChange)="onStatusChange($event)"
             [placeholder]="'Select Status'">
           </app-common-select>
         </div>
@@ -56,30 +37,19 @@
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
         <div class="form-row">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">From date</label>
-          <input 
-            type="date" 
-            [(ngModel)]="filters.fromDate" 
-            class="date-input"
-            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" 
-            (change)="onDateChange()" />
+          <input type="date" [(ngModel)]="filters.fromDate" class="date-input"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()" />
         </div>
 
         <div class="form-row">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">To date</label>
-          <input 
-            type="date" 
-            [(ngModel)]="filters.toDate" 
-            class="date-input"
-            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" 
-            (change)="onDateChange()" />
+          <input type="date" [(ngModel)]="filters.toDate" class="date-input"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()" />
         </div>
 
         <div class="form-row" *ngIf="selectedView !== 'self'">
           <label style="display: block; margin-bottom: 8px; font-weight: 500;">Reason</label>
-          <app-common-select 
-            [options]="reasonList" 
-            [(value)]="filters.reason" 
-            placeholder="Select Reason"
+          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
             style="width: 100%;">
           </app-common-select>
         </div>
@@ -102,15 +72,8 @@
 
   <!-- TABLE SECTION -->
   <div class="table-card" style="margin-top: 20px;">
-    <p-table 
-      [value]="exceptionRequests" 
-      [paginator]="true" 
-      [rows]="limit" 
-      [totalRecords]="totalRecords" 
-      [lazy]="true"
-      (onLazyLoad)="onPageChange($event)" 
-      class="p-datatable-gridlines" 
-      [responsiveLayout]="'scroll'">
+    <p-table [value]="exceptionRequests" [paginator]="true" [rows]="limit" [totalRecords]="totalRecords" [lazy]="true"
+      (onLazyLoad)="onPageChange($event)" class="p-datatable-gridlines" [responsiveLayout]="'scroll'">
       <ng-template pTemplate="header">
         <tr>
           <th style="width: 60px; text-align: center;" *ngIf="selectedView !== 'self'">
@@ -133,11 +96,8 @@
       <ng-template pTemplate="body" let-req>
         <tr>
           <td style="text-align: center;" *ngIf="selectedView !== 'self'">
-            <input 
-              type="checkbox" 
-              [checked]="req.status === 'APPROVED' || req.checked"
-              [disabled]="req.status !== 'PENDING' && role==='EMPLOYEE'" 
-              (change)="toggleSelection(req, $event)"
+            <input type="checkbox" [checked]="req.status === 'APPROVED' || req.checked"
+              [disabled]="req.status !== 'PENDING' && role==='EMPLOYEE'" (change)="toggleSelection(req, $event)"
               *ngIf="req.status !== 'REJECTED'" />
           </td>
           <td>{{ req.employeeId }}</td>
@@ -166,25 +126,23 @@
         </tr>
       </ng-template>
 
-     <ng-template pTemplate="paginatorleft">
-  <span>
-    Total Records: {{ totalRecords }}
-    <span >
-      | Selected: {{ selectedRequests.length }}
-    </span>
-  </span>
-</ng-template>
+      <ng-template pTemplate="paginatorleft">
+        <span>
+          Total Records: {{ totalRecords }}
+          <span>
+            | Selected: {{ selectedRequests.length }}
+          </span>
+        </span>
+      </ng-template>
 
     </p-table>
   </div>
 
   <!-- BULK ACTION BUTTONS -->
-  <div 
-    class="action-buttons" 
-    style="display: flex; gap: 20px; margin-top: 20px; justify-content: space-between;"
+  <div class="action-buttons" style="display: flex; gap: 20px; margin-top: 20px; justify-content: space-between;"
     *ngIf="selectedView !== 'self'">
     <div style="flex: 1;">
-      <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control">
+      <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
     </div>
     <div style="display: flex; gap: 10px;">
       <button pButton label="Approve" class="p-button-success" (click)="bulkUpdate('APPROVED')"></button>

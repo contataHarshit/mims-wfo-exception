@@ -1,5 +1,12 @@
-// FILE: app.component.ts
-import { Component, DoCheck, OnInit, Inject, PLATFORM_ID } from "@angular/core";
+// FILE: app.component.ts - FIXED VERSION
+import {
+  Component,
+  DoCheck,
+  OnInit,
+  Inject,
+  PLATFORM_ID,
+  OnDestroy,
+} from "@angular/core";
 import {
   Router,
   RouterOutlet,
@@ -13,7 +20,7 @@ import { HttpService } from "../service/http.service";
 import { ConstantService } from "../service/constant.service";
 import { HttpClientModule } from "@angular/common/http";
 import { CommonLoaderComponent } from "../common/common-loader/common-loader.component";
-import { filter, firstValueFrom } from "rxjs";
+import { filter, firstValueFrom, Subject, takeUntil } from "rxjs";
 import { FormsModule } from "@angular/forms";
 
 @Component({
@@ -30,7 +37,7 @@ import { FormsModule } from "@angular/forms";
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.scss"],
 })
-export class AppComponent implements DoCheck, OnInit {
+export class AppComponent implements DoCheck, OnInit, OnDestroy {
   title = "Mims-exception-wfo";
 
   tabs = [
@@ -54,7 +61,13 @@ export class AppComponent implements DoCheck, OnInit {
   ];
   employeeNumber: string = "";
   pageLoading: boolean = true;
-  department:string=""
+  department: string = "";
+
+  // Add destroy subject for cleanup
+  private destroy$ = new Subject<void>();
+  private isAuthenticating = false;
+  private hasLoadedData = false;
+
   constructor(
     public commonService: CommonService,
     private router: Router,
@@ -64,51 +77,75 @@ export class AppComponent implements DoCheck, OnInit {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-ngOnInit() {
-  this.selectedView = "self";
+  ngOnInit() {
+    this.selectedView = "self";
 
-  if (!isPlatformBrowser(this.platformId)) return;
+    if (!isPlatformBrowser(this.platformId)) return;
 
-  this.commonService.loadConfig().finally(() => {});
+    // Load config only once
+    this.commonService.loadConfig().finally(() => {});
 
-  // Track navigation for tabs
-this.router.events
-  .pipe(filter(e => e instanceof NavigationEnd))
-  .subscribe((event) => {
-    const navEnd = event as NavigationEnd; // assert type
-    const url = navEnd.urlAfterRedirects;
-    this.isDashboardPage = url.split("?")[0].includes("dashboard");
-    this.updateActiveTabs(url);
-  });
+    // Track navigation for tabs - use takeUntil to prevent memory leaks
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((event) => {
+        const navEnd = event as NavigationEnd;
+        const url = navEnd.urlAfterRedirects;
+        this.isDashboardPage = url.split("?")[0].includes("dashboard");
+        this.updateActiveTabs(url);
+      });
 
+    // Get session ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get("sessionid");
 
-  // ✅ Simply get query param from the full URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const sessionId = urlParams.get("sessionid");
-  if (sessionId) {
-    console.log("Session ID from URL:", sessionId); // <-- WILL LOG
-    this.authenticateWithSession(sessionId);
+    if (sessionId && !this.isAuthenticating) {
+      console.log("Session ID from URL:", sessionId);
+
+      if (localStorage.getItem("department") == "HR") {
+        this.viewOptions.unshift({ label: "All", value: "all" });
+      }
+      this.authenticateWithSession(sessionId);
+    } else {
+      // Load stored token & role if available
+      const storedToken = localStorage.getItem("jwtToken");
+      const storedRole = localStorage.getItem("role");
+
+      if (storedToken && storedRole && !this.hasLoadedData) {
+        this.jwtToken = storedToken;
+        this.role = storedRole;
+        this.employeeNumber = localStorage.getItem("employeeNumber") || "";
+        this.department = localStorage.getItem("department") || "";
+
+        this.commonService.setRole(storedRole);
+        this.setDefaultViewByRole(this.role);
+        this.commonService.viewChange$.next(this.selectedView);
+
+        // Mark as loaded to prevent duplicate calls
+        this.hasLoadedData = true;
+        this.loadRoleSpecificData(this.role).finally(() => {});
+      }
+    }
   }
 
-  // Load stored token & role if available
-  const storedToken = localStorage.getItem("jwtToken");
-  const storedRole = localStorage.getItem("role");
-  if (storedToken && storedRole) {
-    this.jwtToken = storedToken;
-    this.role = storedRole;
-    this.commonService.setRole(storedRole);
-    this.setDefaultViewByRole(this.role);
-    this.commonService.viewChange$.next(this.selectedView);
-    console.log("23333333333333333");
-    
-    this.loadRoleSpecificData(this.role).finally(() => {});
+  ngOnDestroy() {
+    // Cleanup subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
   }
-}
-
 
   private authenticateWithSession(sessionId: string) {
-    console.log("222222222222222222222222");
-    
+    if (this.isAuthenticating) {
+      console.log("Authentication already in progress, skipping...");
+      return;
+    }
+
+    this.isAuthenticating = true;
+    console.log("Starting authentication with session ID");
+
     firstValueFrom(
       this.http.auth(this.constants.auth, { sessionid: sessionId })
     )
@@ -117,11 +154,12 @@ this.router.events
         this.jwtToken = response?.data?.token || null;
         this.role = employee.role || "";
         this.employeeNumber = employee.employeeNumber || "";
-        this.department=employee.department||""
+        this.department = employee.department || "";
+
         // Store auth-related data
         localStorage.setItem("jwtToken", this.jwtToken || "");
         localStorage.setItem("role", this.role);
-        localStorage.setItem("department", employee.department || "");
+        localStorage.setItem("department", this.department);
         localStorage.setItem("employeeNumber", this.employeeNumber);
         this.commonService.setRole(this.role);
 
@@ -132,8 +170,11 @@ this.router.events
         } else {
           this.setDefaultViewByRole(this.role);
         }
-        
+
         this.commonService.viewChange$.next(this.selectedView);
+
+        // Mark as loaded before loading data
+        this.hasLoadedData = true;
 
         // Load all role-specific data
         return this.loadRoleSpecificData(this.role);
@@ -143,7 +184,7 @@ this.router.events
         this.commonService.userDataLoaded$.next(false);
       })
       .finally(() => {
-        
+        this.isAuthenticating = false;
       });
   }
 
@@ -159,20 +200,18 @@ this.router.events
     // Step 2: Handle ADMIN
     if (role === "ADMIN") {
       this.addAllOption();
-      this.selectedView = "all";
-      localStorage.setItem("selectedView", "all");
       return;
     }
 
     // Step 3: Handle HR + Manager / Employee
     if (department === "HR") {
       this.addAllOption();
-      this.selectedView = "all";
-      localStorage.setItem("selectedView", "all");
 
       // EMPLOYEE in HR should not see "resource"
       if (role === "EMPLOYEE") {
-        this.viewOptions = this.viewOptions.filter(o => o.value !== "resource");
+        this.viewOptions = this.viewOptions.filter(
+          (o) => o.value !== "resource"
+        );
       }
       return;
     }
@@ -186,7 +225,7 @@ this.router.events
 
     // Step 5: Normal Employee
     if (role === "EMPLOYEE") {
-      this.viewOptions = this.viewOptions.filter(o => o.value === "self");
+      this.viewOptions = this.viewOptions.filter((o) => o.value === "self");
       this.selectedView = "self";
       localStorage.setItem("selectedView", "self");
       return;
@@ -194,7 +233,11 @@ this.router.events
 
     // Step 6: Fallback
     const savedView = localStorage.getItem("selectedView");
-    if (savedView === "all" || savedView === "self" || savedView === "resource") {
+    if (
+      savedView === "all" ||
+      savedView === "self" ||
+      savedView === "resource"
+    ) {
       this.selectedView = savedView;
     } else {
       this.selectedView = "self";
@@ -202,12 +245,17 @@ this.router.events
   }
 
   private addAllOption() {
-    if (!this.viewOptions.some(o => o.value === "all")) {
+    if (!this.viewOptions.some((o) => o.value === "all")) {
       this.viewOptions.unshift({ label: "All", value: "all" });
     }
   }
 
   async loadRoleSpecificData(role: string) {
+    if (this.hasLoadedData && this.commonService.userDataLoaded$.value) {
+      console.log("Data already loaded, skipping duplicate load");
+      return;
+    }
+
     try {
       // Load employee data first
       const empRes: any = await firstValueFrom(
@@ -215,8 +263,8 @@ this.router.events
       );
 
       if (empRes?.success && empRes.data?.employee) {
-        console.log("llllllllllll");
-        
+        console.log("Employee data loaded successfully");
+
         // Store in both service AND localStorage
         const employeeData = {
           ...empRes.data.employee,
@@ -224,63 +272,73 @@ this.router.events
         };
         this.commonService.setEmployeeData(employeeData);
         localStorage.setItem("employeeData", JSON.stringify(employeeData));
-      console.log("ssssssssssssssssssssssss",localStorage.getItem("department"),role);
 
-        // Load manager list
-        if(role!=="EMPLOYEE" || localStorage.getItem("department")==="HR"){
+        // Load manager list conditionally
+        if (
+          role !== "EMPLOYEE" ||
+          localStorage.getItem("department") === "HR"
+        ) {
           const managerRes: any = await firstValueFrom(
-          this.http.getData(this.constants.managerList)
-        );
-        if (managerRes?.success && managerRes.data?.managers) {
-          this.commonService.setManagerList(managerRes.data.managers);
-        }
+            this.http.getData(this.constants.managerList)
+          );
+          if (managerRes?.success && managerRes.data?.managers) {
+            this.commonService.setManagerList(managerRes.data.managers);
+          }
         }
       }
 
       // Load role-specific data and modify tabs
-      console.log("ssssssssssssssssssssssss",localStorage.getItem("department"),role);
-      
       if (role === "MANAGER") {
         await this.loadManagerData();
       }
+
       if (localStorage.getItem("department") === "HR" || role === "ADMIN") {
         await this.loadAllEmployeeData();
-        console.log("11111111111111111");
-        
+        console.log("Loading HR/ADMIN specific data");
+
         // For ADMIN: Remove "Create WFH Request" tab
         if (role === "ADMIN") {
-          this.tabs = this.tabs.filter(t => t.label !== "Create WFH Request");
+          this.tabs = this.tabs.filter((t) => t.label !== "Create WFH Request");
         }
-        
+
         // Add HR Admin Dashboard tab if not already present
-        if (!this.tabs.some(t => t.label === "HR Admin Dashboard")) {
+        if (!this.tabs.some((t) => t.label === "HR Admin Dashboard")) {
           this.tabs.push({
             label: "HR Admin Dashboard",
             path: "hr-admin-dashboard",
             isActive: false,
           });
         }
-        
+
         // Update active tabs after all modifications
         this.updateActiveTabs(this.router.url);
       }
 
       this.commonService.userDataLoaded$.next(true);
+      this.hasLoadedData = true;
     } catch (err) {
-    console.error("Error loading role-specific data:", err);
+      console.error("Error loading role-specific data:", err);
       this.commonService.userDataLoaded$.next(false);
     }
   }
 
   async loadAllEmployeeData() {
+    // Check if already loaded
+    if (this.commonService.allEmployeeData.length > 0) {
+      console.log("All employee data already cached");
+      return;
+    }
+
     try {
       const res: any = await firstValueFrom(
         this.http.getData(this.constants.allEmployeeData)
       );
       if (res?.success && res.data?.employees) {
-        // Store in BOTH service and localStorage
         this.commonService.setAllEmployeeData(res.data.employees);
-        localStorage.setItem("allEmployeeData", JSON.stringify(res.data.employees));
+        localStorage.setItem(
+          "allEmployeeData",
+          JSON.stringify(res.data.employees)
+        );
       }
     } catch (err) {
       console.error("All Employee Data API Error:", err);
@@ -288,14 +346,22 @@ this.router.events
   }
 
   async loadManagerData() {
+    // Check if already loaded
+    if (this.commonService.managerEmployeeData.length > 0) {
+      console.log("Manager employee data already cached");
+      return;
+    }
+
     try {
       const res: any = await firstValueFrom(
         this.http.getData(this.constants.mangerEmployeeData)
       );
       if (res?.success && res.data?.employees) {
-        // Store in BOTH service and localStorage
         this.commonService.setManagerEmployeeData(res.data.employees);
-        localStorage.setItem("managerEmployeeData", JSON.stringify(res.data.employees));
+        localStorage.setItem(
+          "managerEmployeeData",
+          JSON.stringify(res.data.employees)
+        );
       }
     } catch (err) {
       console.error("Manager Employee Data API Error:", err);
@@ -303,7 +369,6 @@ this.router.events
   }
 
   ngDoCheck(): void {
-    
     this.tabs.forEach((tab) => {
       const shouldBeActive = this.isActive(tab.path);
       if (tab.isActive !== shouldBeActive) {
@@ -319,14 +384,14 @@ this.router.events
   isActive(path: string): boolean {
     const currentUrl = this.router.url.split("?")[0].replace(/^\/+/, "");
     const cleanedPath = path.replace(/^\/+/, "");
-    
+
     if (cleanedPath === "") {
       return (
         currentUrl === "" ||
         currentUrl.startsWith("create-wfo-exception-request")
       );
     }
-    
+
     return (
       currentUrl === cleanedPath || currentUrl.startsWith(cleanedPath + "/")
     );
@@ -334,16 +399,16 @@ this.router.events
 
   updateActiveTabs(url: string) {
     const currentUrl = url.split("?")[0].replace(/^\/+/, "");
-    
+
     this.tabs.forEach((tab) => {
       const path = tab.path.replace(/^\/+/, "");
-      
+
       if (path === "") {
-        tab.isActive = currentUrl === "" || 
-                       currentUrl.startsWith("create-wfo-exception-request");
+        tab.isActive =
+          currentUrl === "" ||
+          currentUrl.startsWith("create-wfo-exception-request");
       } else {
-        tab.isActive = currentUrl === path || 
-                       currentUrl.startsWith(path + "/");
+        tab.isActive = currentUrl === path || currentUrl.startsWith(path + "/");
       }
     });
     this.pageLoading = false;

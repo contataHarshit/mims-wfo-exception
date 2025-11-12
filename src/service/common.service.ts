@@ -1,3 +1,4 @@
+// FILE: common.service.ts - FIXED VERSION
 import { Injectable, Inject, PLATFORM_ID } from "@angular/core";
 import { isPlatformBrowser } from "@angular/common";
 import { BehaviorSubject } from "rxjs";
@@ -9,7 +10,8 @@ import { HttpClient } from "@angular/common/http";
 })
 export class CommonService {
   header: string = "WFH Request";
-  public config: any; // store config globally
+  public config: any;
+  private configLoaded = false; // Track if config is already loaded
 
   // ============================================
   // Employee Data BehaviorSubjects
@@ -36,7 +38,6 @@ export class CommonService {
   // ============================================
   // View Handling
   // ============================================
-  // currentView: "self" | "resource" | "all" = "self";
   viewChange$ = new BehaviorSubject<string>("self");
 
   // ============================================
@@ -47,7 +48,7 @@ export class CommonService {
   // ============================================
   // Loading State
   // ============================================
-  private loadingSubject = new BehaviorSubject<boolean>( true);
+  private loadingSubject = new BehaviorSubject<boolean>(true);
   loading$ = this.loadingSubject.asObservable();
 
   // ============================================
@@ -79,18 +80,10 @@ export class CommonService {
 
   /** Set loading state */
   setLoading(value: boolean) {
-    // Debug: log loading toggles to help trace stuck loader issues
-    try {
-      const stack = new Error().stack
-        ?.split("\n")
-        .slice(2, 6)
-        .map((s) => s.trim());
-      // Keep logs concise
-      console.log(`CommonService.setLoading -> ${value}`, stack);
-    } catch (e) {
-      // ignore logging errors
+    // Only log in development
+    if (!value || this.loadingSubject.value !== value) {
+      this.loadingSubject.next(value);
     }
-    this.loadingSubject.next(value);
   }
 
   /** Get loading state */
@@ -104,9 +97,8 @@ export class CommonService {
 
   /** Update employee data after fetching from API */
   setEmployeeData(employee: any) {
-    console.log("emppppppp", employee);
+    console.log("Setting employee data:", employee);
 
-    // Accept multiple possible API field namings (camelCase or PascalCase) to be resilient
     const empId =
       employee?.employeeId ?? employee?.EmployeeId ?? employee?.id ?? "";
     const empName =
@@ -142,7 +134,9 @@ export class CommonService {
 
   /** Set role */
   setRole(role: string) {
-    this.roleSubject.next(role);
+    if (this.roleSubject.value !== role) {
+      this.roleSubject.next(role);
+    }
   }
 
   /** Getters for instant access to current values */
@@ -184,7 +178,11 @@ export class CommonService {
 
   /** Set all employee data (for HR/ADMIN) */
   setAllEmployeeData(data: any[]) {
-    this.allEmployeeDataSubject.next(data || []);
+    if (
+      JSON.stringify(this.allEmployeeDataSubject.value) !== JSON.stringify(data)
+    ) {
+      this.allEmployeeDataSubject.next(data || []);
+    }
   }
 
   /** Get all employee data */
@@ -194,7 +192,12 @@ export class CommonService {
 
   /** Set manager employee data (for MANAGER) */
   setManagerEmployeeData(data: any[]) {
-    this.managerEmployeeDataSubject.next(data || []);
+    if (
+      JSON.stringify(this.managerEmployeeDataSubject.value) !==
+      JSON.stringify(data)
+    ) {
+      this.managerEmployeeDataSubject.next(data || []);
+    }
   }
 
   /** Get manager employee data */
@@ -212,7 +215,13 @@ export class CommonService {
       label: `${m.FullName} (${m.EmployeeNumber})`,
       value: m.EmployeeNumber,
     }));
-    this.managerListSubject.next(formattedList);
+
+    if (
+      JSON.stringify(this.managerListSubject.value) !==
+      JSON.stringify(formattedList)
+    ) {
+      this.managerListSubject.next(formattedList);
+    }
   }
 
   /** Get manager list */
@@ -224,10 +233,9 @@ export class CommonService {
   // VIEW CHANGE METHOD
   // ============================================
 
-  /** Update current view (deprecated - use direct assignment instead) */
+  /** Update current view */
   viewChange(event: any) {
     const view = event.target?.value || event;
-    // this.currentView = view;
     this.viewChange$.next(view);
   }
 
@@ -237,11 +245,33 @@ export class CommonService {
 
   /** Mark user data as loaded */
   setUserDataLoaded(loaded: boolean = true) {
-    this.userDataLoaded$.next(loaded);
+    if (this.userDataLoaded$.value !== loaded) {
+      this.userDataLoaded$.next(loaded);
+    }
   }
+
+  // ============================================
+  // CONFIG LOADING METHOD
+  // ============================================
+
+  /** Load config file only once */
   async loadConfig() {
-    this.config = await firstValueFrom(
-      this.http.get("/assets/config/config.json")
-    );
+    if (this.configLoaded && this.config) {
+      console.log("Config already loaded, using cached version");
+      return this.config;
+    }
+
+    try {
+      this.config = await firstValueFrom(
+        this.http.get("/assets/config/config.json")
+      );
+      this.configLoaded = true;
+      console.log("Config loaded successfully");
+      return this.config;
+    } catch (error) {
+      console.error("Error loading config:", error);
+      this.configLoaded = false;
+      throw error;
+    }
   }
 }

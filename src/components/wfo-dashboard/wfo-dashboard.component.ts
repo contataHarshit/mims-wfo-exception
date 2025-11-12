@@ -1,6 +1,6 @@
 // FILE: wfo-dashboard.component.ts - FIXED VERSION
 import { CommonModule } from "@angular/common";
-import { Component, OnInit, NgZone } from "@angular/core";
+import { Component, OnInit, NgZone, OnDestroy } from "@angular/core";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { FormsModule } from "@angular/forms";
 import { WfoActionPopupComponent } from "../../popup/wfo-action-popup/wfo-action-popup.component";
@@ -16,6 +16,7 @@ import { CommonSelectComponent } from "../../common/common-select/common-select.
 import { ToastrService } from "ngx-toastr";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { ConfirmPopupComponent } from "../../popup/confirm-popup/confirm-popup.component";
+import { Subject, takeUntil } from "rxjs";
 
 interface ExceptionRequest {
   exceptionId: string;
@@ -54,8 +55,10 @@ interface ExceptionRequest {
   templateUrl: "./wfo-dashboard.component.html",
   styleUrls: ["./wfo-dashboard.component.scss"],
 })
-export class WfoDashboardComponent implements OnInit {
+export class WfoDashboardComponent implements OnInit, OnDestroy {
   selectedView: string = "";
+  private destroy$ = new Subject<void>();
+  private isLoadingData = false;
 
   constructor(
     private dialog: MatDialog,
@@ -109,67 +112,125 @@ export class WfoDashboardComponent implements OnInit {
     this.selectedView = localStorage.getItem("selectedView") || "self";
     this.role = localStorage.getItem("role") || "";
 
-    // Load employee list from localStorage
-    const storedData =
-      this.role === "MANAGER"
-        ? localStorage.getItem("managerEmployeeData")
-        : localStorage.getItem("allEmployeeData");
-    
-    this.employeeList = storedData
-      ? JSON.parse(storedData).map((item: any) => ({
-          label: `${item.FullName}(${item.EmployeeNumber})`,
-          value: item.EmployeeNumber,
-        }))
-      : [];
+    // Load employee list from localStorage FIRST
+    this.loadEmployeeListFromCache();
 
-    // Also subscribe to service updates
-    this.commonService.allEmployeeData$.subscribe((data: any[]) => {
-      if (data && data.length > 0) {
-        this.employeeList = data.map((item: any) => ({
-          label: `${item.FullName}(${item.EmployeeNumber})`,
-          value: item.EmployeeNumber,
-        }));
-      }
-    });
-
-    // Subscribe to manager list
-    this.commonService.managerList$.subscribe((list) => {
-      this.managerList = list;
-    });
+    // Subscribe to manager list updates
+    this.commonService.managerList$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((list) => {
+        if (list && list.length > 0) {
+          this.managerList = list;
+        }
+      });
 
     // Set manager name for self view
     if (this.selectedView === "self") {
       this.setManagerForSelfView();
     }
 
-    // Subscribe to view changes
-    this.commonService.viewChange$.subscribe(() => {
-      this.selectedView = localStorage.getItem("selectedView") || "self";
-      
-      // Reset manager filter when view changes
-      if (this.selectedView === "self") {
-        this.setManagerForSelfView();
-      } else {
-        this.filters.managerName = null;
-      }
-      
-      this.getExceptionRequest();
-    });
+    // Subscribe to view changes - but prevent duplicate API calls
+    this.commonService.viewChange$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((newView) => {
+        const previousView = this.selectedView;
+        this.selectedView = localStorage.getItem("selectedView") || "self";
+        if (this.selectedView === "self") {
+          this.setManagerForSelfView();
+        }
+        if (this.selectedView === "resource") {
+          let temp = JSON.parse(localStorage.getItem("employeeData") || "null");
+          this.filters.managerName = {
+            label: temp?.employeeName,
+            value: temp?.employeeNumber,
+          };
+        }
+        // Only reload if view actually changed
+        if (previousView !== this.selectedView) {
+          console.log(
+            `View changed from ${previousView} to ${this.selectedView}`
+          );
+
+          // Reset manager filter when view changes
+          if (this.selectedView === "self") {
+            this.setManagerForSelfView();
+          }
+          if (this.selectedView === "resource") {
+            let temp = JSON.parse(
+              localStorage.getItem("employeeData") || "null"
+            );
+            this.filters.managerName = {
+              label: temp?.employeeName,
+              value: temp?.employeeNumber,
+            };
+          }
+
+          // Reset page and reload
+          this.page = 1;
+          this.getExceptionRequest();
+        }
+      });
+
+    // Subscribe to employee data updates (only once)
+    this.commonService.allEmployeeData$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any[]) => {
+        if (data && data.length > 0 && this.employeeList.length === 0) {
+          this.employeeList = data.map((item: any) => ({
+            label: `${item.FullName}(${item.EmployeeNumber})`,
+            value: item.EmployeeNumber,
+          }));
+        }
+      });
 
     this.reasonList = this.commonService.config?.reasonList || [];
-    
-    // Initial data load
-    this.getExceptionRequest();
+
+    // Initial data load - only if not already loading
+    if (!this.isLoadingData) {
+      this.getExceptionRequest();
+    }
+  }
+
+  ngOnDestroy() {
+    // Cleanup subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // Load employee list from localStorage cache
+  private loadEmployeeListFromCache() {
+    const storedData =
+      this.role === "MANAGER"
+        ? localStorage.getItem("managerEmployeeData")
+        : localStorage.getItem("allEmployeeData");
+
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        this.employeeList = parsedData.map((item: any) => ({
+          label: `${item.FullName}(${item.EmployeeNumber})`,
+          value: item.EmployeeNumber,
+        }));
+        console.log(
+          "Loaded employee list from cache:",
+          this.employeeList.length
+        );
+      } catch (e) {
+        console.error("Error parsing cached employee data:", e);
+      }
+    }
   }
 
   // Helper method to set manager for self view
   private setManagerForSelfView() {
-    const employeeData = JSON.parse(localStorage.getItem("employeeData") || "null");
+    const employeeData = JSON.parse(
+      localStorage.getItem("employeeData") || "null"
+    );
     if (employeeData?.managerName) {
       this.ngZone.run(() => {
         this.filters.managerName = {
           label: employeeData.managerName.name,
-          value: employeeData.managerName.EmployeeId
+          value: employeeData.managerName.EmployeeId,
         };
       });
     }
@@ -178,12 +239,12 @@ export class WfoDashboardComponent implements OnInit {
   // Get display value for manager name in self view
   get managerDisplayName(): string {
     if (this.filters.managerName) {
-      if (typeof this.filters.managerName === 'object') {
-        return this.filters.managerName.label || '';
+      if (typeof this.filters.managerName === "object") {
+        return this.filters.managerName.label || "";
       }
       return this.filters.managerName;
     }
-    return '';
+    return "";
   }
 
   getStatusValue(status: any): string {
@@ -208,6 +269,13 @@ export class WfoDashboardComponent implements OnInit {
   }
 
   getExceptionRequest() {
+    // Prevent multiple simultaneous calls
+    if (this.isLoadingData) {
+      console.log("Already loading data, skipping duplicate call");
+      return;
+    }
+
+    this.isLoadingData = true;
     this.commonService.setLoading(true);
 
     const params = new URLSearchParams();
@@ -268,58 +336,66 @@ export class WfoDashboardComponent implements OnInit {
       params.set("isAll", "true");
     }
 
-    const url = `${this.constants.exceptionRequest}/paginated?${params.toString()}`;
+    const url = `${
+      this.constants.exceptionRequest
+    }/paginated?${params.toString()}`;
 
-    this.http.getData(url).subscribe({
-      next: (res: any) => {
-        if (res.success) {
-          const exceptions = res.data.exceptions || [];
+    this.http
+      .getData(url)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          if (res.success) {
+            const exceptions = res.data.exceptions || [];
 
-          this.disableSelectAll = false;
+            this.disableSelectAll = false;
 
-          this.exceptionRequests = exceptions.map((item: any) => {
-            return {
-              exceptionId: item.id,
-              employeeId: item.employeeNumber,
-              employeeName: item.employee,
-              designation: item.designation || "-",
-              exceptionDate: this.formatDate(item.selectedDate),
-              primaryReason: item.primaryReason || "-",
-              submissionDate: item.submissionDate
-                ? this.formatDate(item.submissionDate)
-                : null,
-              exceptionRequestedDays: item.requestedDays || null,
-              exceptionApprovedDays: item.approvedDays || null,
-              status: item.currentStatus || "PENDING",
-              approvedBy: item.approvedBy || "-",
-              rejectedBy: item.rejectedBy || "-",
-              managerName: item?.manager || "-",
-              managerRemarks: item.managerRemarks || null,
-              checked: false,
-            } as ExceptionRequest;
-          });
+            this.exceptionRequests = exceptions.map((item: any) => {
+              return {
+                exceptionId: item.id,
+                employeeId: item.employeeNumber,
+                employeeName: item.employee,
+                designation: item.designation || "-",
+                exceptionDate: this.formatDate(item.selectedDate),
+                primaryReason: item.primaryReason || "-",
+                submissionDate: item.submissionDate
+                  ? this.formatDate(item.submissionDate)
+                  : null,
+                exceptionRequestedDays: item.requestedDays || null,
+                exceptionApprovedDays: item.approvedDays || null,
+                status: item.currentStatus || "PENDING",
+                approvedBy: item.approvedBy || "-",
+                rejectedBy: item.rejectedBy || "-",
+                managerName: item?.manager || "-",
+                managerRemarks: item.managerRemarks || null,
+                checked: false,
+              } as ExceptionRequest;
+            });
 
-          this.disableSelectAll =
-            this.exceptionRequests.length > 0 &&
-            this.exceptionRequests.every((i) => i.status !== "PENDING");
+            this.disableSelectAll =
+              this.exceptionRequests.length > 0 &&
+              this.exceptionRequests.every((i) => i.status !== "PENDING");
 
-          this.totalRecords = res.data.pagination?.total || exceptions.length;
-          this.selectedRequests = [];
-        } else {
+            this.totalRecords = res.data.pagination?.total || exceptions.length;
+            this.selectedRequests = [];
+          } else {
+            this.exceptionRequests = [];
+            this.totalRecords = 0;
+            this.toastr.warning("No records found");
+          }
+
+          this.commonService.setLoading(false);
+          this.isLoadingData = false;
+        },
+        error: (err: any) => {
+          console.error("Error fetching exception requests:", err);
           this.exceptionRequests = [];
           this.totalRecords = 0;
-          this.toastr.warning("No records found");
-        }
-        this.commonService.setLoading(false);
-      },
-      error: (err: any) => {
-        console.error("Error fetching exception requests:", err);
-        this.exceptionRequests = [];
-        this.totalRecords = 0;
-        this.commonService.setLoading(false);
-        this.toastr.error("Failed to fetch data. Please try again.");
-      },
-    });
+          this.commonService.setLoading(false);
+          this.isLoadingData = false;
+          this.toastr.error("Failed to fetch data. Please try again.");
+        },
+      });
   }
 
   onPageChange(event: any) {
@@ -411,7 +487,9 @@ export class WfoDashboardComponent implements OnInit {
       next: (res: any) => {
         if (res.success) {
           this.toastr.success(
-            `${this.selectedRequests.length} requests ${status.toLowerCase()} successfully`
+            `${
+              this.selectedRequests.length
+            } requests ${status.toLowerCase()} successfully`
           );
           this.selectedRequests = [];
           this.remarks = "";

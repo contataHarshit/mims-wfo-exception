@@ -1,6 +1,6 @@
-// hr-admin-dashboard.component.ts
+// FILE: hr-admin-dashboard.component.ts - FIXED VERSION
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, OnDestroy } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { TableModule } from "primeng/table";
 import { ButtonModule } from "primeng/button";
@@ -10,6 +10,7 @@ import { CommonSelectComponent } from "../../common/common-select/common-select.
 import { CommonService } from "../../service/common.service";
 import { HttpService } from "../../service/http.service";
 import { ConstantService } from "../../service/constant.service";
+import { Subject, takeUntil } from "rxjs";
 
 interface HrAdminRecord {
   employeeId: number;
@@ -37,7 +38,10 @@ interface HrAdminRecord {
   templateUrl: "./hr-admin-dashboard.component.html",
   styleUrls: ["./hr-admin-dashboard.component.scss"],
 })
-export class HrAdminDashboardComponent implements OnInit {
+export class HrAdminDashboardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private isLoadingData = false;
+
   constructor(
     private http: HttpService,
     private constants: ConstantService,
@@ -81,81 +85,108 @@ export class HrAdminDashboardComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    this.commonService.managerList$.subscribe((list) => {
-      this.managerList = list;
-    });
+    // Subscribe to manager list updates
+    this.commonService.managerList$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((list) => {
+        if (list && list.length > 0) {
+          this.managerList = [{ label: "All", value: "" }, ...list];
+        }
+      });
 
-    // Fetch HR Admin data
-    this.getHrAdminData();
-    this.getHrAdminData();
-    this.reasonList=this.commonService.config.reasonList || [];
+    // Get reason list from config
+    this.reasonList = this.commonService.config?.reasonList || [];
+
+    // Fetch HR Admin data only once
+    if (!this.isLoadingData) {
+      this.getHrAdminData();
+    }
+  }
+
+  ngOnDestroy() {
+    // Cleanup subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /** Fetch HR Admin Summary Data */
   getHrAdminData() {
+    // Prevent multiple simultaneous calls
+    if (this.isLoadingData) {
+      console.log("Already loading HR Admin data, skipping duplicate call");
+      return;
+    }
+
+    this.isLoadingData = true;
     this.commonService.setLoading(true);
 
-    const url = this.constants.hrSummary; // API endpoint
-    this.http.getData(url).subscribe({
-      next: (res: any) => {
-        console.log("HR Admin API Response:", res);
+    const url = this.constants.hrSummary;
 
-        if (res?.success && res?.data?.exceptions?.data) {
-          const apiData = res.data.exceptions.data;
+    this.http
+      .getData(url)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          console.log("HR Admin API Response:", res);
 
-          // Transform API response to table format
-          this.allHrData = apiData
-            .filter((item: any) => item.employeeNumber) // Filter out null/empty records
-            .map((item: any) => ({
-              employeeId: item.employeeId,
-              employeeNumber: item.employeeNumber || "N/A",
-              employeeName: item.employeeName || "N/A",
-              designation: item.designation || "N/A",
-              managerName: item.managerName || "N/A",
-              APPROVED: item.APPROVED || 0,
-              REJECTED: item.REJECTED || 0,
-              PENDING: item.PENDING || 0,
-              TOTAL: item.TOTAL || 0,
-            }));
+          if (res?.success && res?.data?.exceptions?.data) {
+            const apiData = res.data.exceptions.data;
 
-          this.hrData = [...this.allHrData];
+            // Transform API response to table format
+            this.allHrData = apiData
+              .filter((item: any) => item.employeeNumber)
+              .map((item: any) => ({
+                employeeId: item.employeeId,
+                employeeNumber: item.employeeNumber || "N/A",
+                employeeName: item.employeeName || "N/A",
+                designation: item.designation || "N/A",
+                managerName: item.managerName || "N/A",
+                APPROVED: item.APPROVED || 0,
+                REJECTED: item.REJECTED || 0,
+                PENDING: item.PENDING || 0,
+                TOTAL: item.TOTAL || 0,
+              }));
 
-          // Populate employee dropdown
-          this.employeeList = [
-            { label: "All", value: "" },
-            ...this.allHrData.map((item) => ({
-              label: `${item.employeeName} (${item.employeeNumber})`,
-              value: item.employeeNumber,
-            })),
-          ];
+            this.hrData = [...this.allHrData];
 
-          // Populate manager dropdown
-          const uniqueManagers = [
-            ...new Set(this.allHrData.map((item) => item.managerName)),
-          ].filter((m) => m && m !== "N/A" && m !== "NA");
+            // Populate employee dropdown
+            this.employeeList = [
+              { label: "All", value: "" },
+              ...this.allHrData.map((item) => ({
+                label: `${item.employeeName} (${item.employeeNumber})`,
+                value: item.employeeNumber,
+              })),
+            ];
 
-          this.managerList = [
-            { label: "All", value: "" },
-            ...uniqueManagers.map((manager) => ({
-              label: manager,
-              value: manager,
-            })),
-          ];
+            // Populate manager dropdown
+            const uniqueManagers = [
+              ...new Set(this.allHrData.map((item) => item.managerName)),
+            ].filter((m) => m && m !== "N/A" && m !== "NA");
 
-          console.log("Transformed HR Data:", this.hrData);
-        } else {
-          this.toastr.warning("No data found");
-          this.hrData = [];
-        }
+            this.managerList = [
+              { label: "All", value: "" },
+              ...uniqueManagers.map((manager) => ({
+                label: manager,
+                value: manager,
+              })),
+            ];
 
-        this.commonService.setLoading(false);
-      },
-      error: (err) => {
-        console.error("Error fetching HR Admin data:", err);
-        this.commonService.setLoading(false);
-        this.toastr.error("Failed to fetch HR Admin data");
-      },
-    });
+            console.log("Transformed HR Data:", this.hrData.length, "records");
+          } else {
+            this.toastr.warning("No data found");
+            this.hrData = [];
+          }
+
+          this.commonService.setLoading(false);
+          this.isLoadingData = false;
+        },
+        error: (err) => {
+          console.error("Error fetching HR Admin data:", err);
+          this.commonService.setLoading(false);
+          this.isLoadingData = false;
+          this.toastr.error("Failed to fetch HR Admin data");
+        },
+      });
   }
 
   /** Apply Filters */
@@ -199,7 +230,7 @@ export class HrAdminDashboardComponent implements OnInit {
       }
     }
 
-    // Apply Status filter (based on pending count for now)
+    // Apply Status filter
     if (this.filters.status) {
       const statusValue =
         typeof this.filters.status === "object"
