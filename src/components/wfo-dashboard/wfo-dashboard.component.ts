@@ -105,6 +105,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   managerList: any[] = [];
   remarks: string = "";
   department: string = "";
+  allSelected: boolean = false;
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
@@ -139,6 +140,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       .subscribe((newView) => {
         const previousView = this.selectedView;
         this.filters.status = "PENDING";
+        this.allSelected = false;
         this.selectedView = localStorage.getItem("selectedView") || "self";
         if (this.selectedView === "self") {
           this.setManagerForSelfView();
@@ -357,7 +359,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             const exceptions = res.data.exceptions || [];
 
             this.disableSelectAll = false;
-
+            this.allSelected = false;
             this.exceptionRequests = exceptions.map((item: any) => {
               return {
                 exceptionId: item.id,
@@ -380,21 +382,24 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
               } as ExceptionRequest;
             });
 
-           let tempHash:any={}
-           for(let i=0;i<this.exceptionRequests.length;i++){
-            if(!tempHash[this.exceptionRequests[i].status]){
-              tempHash[this.exceptionRequests[i].status]=true;
+            let tempHash: any = {};
+            for (let i = 0; i < this.exceptionRequests.length; i++) {
+              if (!tempHash[this.exceptionRequests[i].status]) {
+                tempHash[this.exceptionRequests[i].status] = true;
+              }
             }
-
-           }
-           if(Object.keys(tempHash).length>1  ){
-            this.disableSelectAll = true
-           }
-           if(Object.keys(tempHash).length==1){
-            if( Object.keys(tempHash)[0]=="REJECTED"){
-              this.disableSelectAll = true
+            //  if(Object.keys(tempHash).length>1  ){
+            //   this.disableSelectAll = true
+            //  }
+            if (Object.keys(tempHash).length == 1) {
+              if (
+                Object.keys(tempHash)[0] == "REJECTED" ||
+                (Object.keys(tempHash)[0] == "APPROVED" &&
+                  this.selectedView === "resource")
+              ) {
+                this.disableSelectAll = true;
+              }
             }
-           }
 
             this.totalRecords = res.data.pagination?.total || exceptions.length;
             this.selectedRequests = [];
@@ -421,6 +426,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   onPageChange(event: any) {
     this.page = event.first / event.rows + 1;
     this.limit = event.rows;
+
     this.getExceptionRequest();
   }
 
@@ -477,14 +483,24 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   }
 
   toggleSelection(req: ExceptionRequest, event: any) {
-    if (req.status === "APPROVED") return;
+    if (
+      req.status === "APPROVED" &&
+      this.role === "MANAGER" &&
+      this.selectedView === "resource"
+    ) {
+      return;
+    }
 
     const checked = event?.target?.checked ?? false;
     req.checked = checked;
 
     if (checked) {
+      console.log("1111");
+
       this.selectedRequests.push(req);
     } else {
+      console.log("122222");
+
       this.selectedRequests = this.selectedRequests.filter(
         (r) => r.exceptionId !== req.exceptionId
       );
@@ -608,7 +624,12 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
     if (e.target.checked) {
       this.selectedRequests = [
-        ...this.exceptionRequests.filter((i) => i.status === "PENDING"),
+        ...this.exceptionRequests.filter((i) => {
+          return (
+            i.status === "PENDING" ||
+            (i.status === "APPROVED" && this.selectedView !== "resource")
+          );
+        }),
       ];
     } else {
       this.selectedRequests = [];
@@ -620,5 +641,4 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.page = 1;
     this.getExceptionRequest();
   }
-  
 }

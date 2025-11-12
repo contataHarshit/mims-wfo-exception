@@ -76,8 +76,8 @@
       (onLazyLoad)="onPageChange($event)" class="p-datatable-gridlines" [responsiveLayout]="'scroll'">
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 60px; text-align: center;" *ngIf="selectedView !== 'self'">
-            <input type="checkbox" *ngIf="!disableSelectAll" (change)="selectAllChange($event)">
+          <th style="width: 60px; text-align: center;" *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
+            <input type="checkbox" *ngIf="!disableSelectAll" (change)="selectAllChange($event)" [(ngModel)]="allSelected">
           </th>
           <th>Employee Id</th>
           <th>Employee Name</th>
@@ -95,9 +95,9 @@
 
       <ng-template pTemplate="body" let-req>
         <tr>
-          <td style="text-align: center;" *ngIf="selectedView !== 'self'">
+          <td style="text-align: center;" *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
             <input type="checkbox" [checked]="req.checked"
-              [disabled]="req.status !== 'PENDING' && (department!='HR' && role!= 'ADMIN')"
+              [disabled]="(req.status === 'APPROVED' && role!='ADMIN') || (department!=='HR' && role!= 'ADMIN' && selectedView!=='resource')"
               (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
           </td>
           <td>{{ req.employeeId }}</td>
@@ -129,7 +129,7 @@
       <ng-template pTemplate="paginatorleft">
         <span>
           Total Records: {{ totalRecords }}
-          <span>
+          <span *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
             | Selected: {{ selectedRequests.length }}
           </span>
         </span>
@@ -140,7 +140,7 @@
 
   <!-- BULK ACTION BUTTONS -->
   <div class="action-buttons" style="display: flex; gap: 20px; margin-top: 20px; justify-content: space-between;"
-    *ngIf="selectedView !== 'self'">
+   *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
     <div style="flex: 1;">
       <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
     </div>

@@ -6,7 +6,7 @@
       {{ item.label }}
     </button>
 
-    <div class="select-wrapper" *ngIf="(role == 'MANAGER') && isDashboardPage">
+    <div class="select-wrapper" *ngIf="((role == 'MANAGER'|| department ==='HR') && role !=='ADMIN') && isDashboardPage">
       <select [(ngModel)]="selectedView" (change)="onViewChange($event)" class="styled-select">
         <option value="all" *ngFor="let option of viewOptions" [value]="option.value">{{option.label}}</option>
       </select>
