@@ -402,6 +402,13 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  convertToISODate(date: Date | string): string | Date {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, "0");
+    const day = d.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
   updateDisabledDates() {
     const combined: Date[] = [];
 
@@ -452,12 +459,12 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         this.toastr.warning(`Please enter remarks for row ${i + 1}.`);
         return false;
       }
-
-      const dateStr = ex.dateRange[0].toISOString().split("T")[0];
+      const dateStr = this.convertToISODate(ex.dateRange[0]);
       const duplicateCount = this.formData.exceptions.filter(
         (e) =>
           e.dateRange.length > 0 &&
-          e.dateRange[0].toISOString().split("T")[0] === dateStr
+          this.convertToISODate(e.dateRange[0].toISOString().split("T")[0]) ===
+            dateStr
       ).length;
 
       if (duplicateCount > 1) {
