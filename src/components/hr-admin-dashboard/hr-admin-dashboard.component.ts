@@ -61,14 +61,13 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     { label: "Summary", value: "summary" },
   ];
 
-  employeeList: any[] = [{ label: "All", value: "" }];
-
-  managerList: any[] = [{ label: "All", value: "" }];
+  employeeList: any[] = [];
+  managerList: any[] = [];
 
   statusList = [
-    { label: "All", value: "" },
-    { label: "Active", value: "active" },
-    { label: "Inactive", value: "inactive" },
+    { label: "Pending", value: "PENDING" },
+    { label: "Approved", value: "APPROVED" },
+    { label: "Rejected", value: "REJECTED" },
   ];
 
   reasonList = [];
@@ -85,12 +84,27 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
-    // Subscribe to manager list updates
+    // Load employee list from localStorage cache FIRST (same as WFO Dashboard)
+    this.loadEmployeeListFromCache();
+
+    // Subscribe to manager list updates from common service (same as WFO Dashboard)
     this.commonService.managerList$
       .pipe(takeUntil(this.destroy$))
       .subscribe((list) => {
         if (list && list.length > 0) {
-          this.managerList = [{ label: "All", value: "" }, ...list];
+          this.managerList = list; // No "All" option
+        }
+      });
+
+    // Subscribe to employee data updates (same as WFO Dashboard)
+    this.commonService.allEmployeeData$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any[]) => {
+        if (data && data.length > 0) {
+          this.employeeList = data.map((item: any) => ({
+            label: `${item.FullName}(${item.EmployeeNumber})`,
+            value: item.EmployeeNumber,
+          }));
         }
       });
 
@@ -107,6 +121,27 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     // Cleanup subscriptions
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // Load employee list from localStorage cache (same as WFO Dashboard)
+  private loadEmployeeListFromCache() {
+    const storedData = localStorage.getItem("allEmployeeData");
+
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        this.employeeList = parsedData.map((item: any) => ({
+          label: `${item.FullName}(${item.EmployeeNumber})`,
+          value: item.EmployeeNumber,
+        }));
+        console.log(
+          "HR Admin - Loaded employee list from cache:",
+          this.employeeList.length
+        );
+      } catch (e) {
+        console.error("Error parsing cached employee data:", e);
+      }
+    }
   }
 
   /** Fetch HR Admin Summary Data */
@@ -149,28 +184,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
 
             this.hrData = [...this.allHrData];
 
-            // Populate employee dropdown
-            this.employeeList = [
-              { label: "All", value: "" },
-              ...this.allHrData.map((item) => ({
-                label: `${item.employeeName} (${item.employeeNumber})`,
-                value: item.employeeNumber,
-              })),
-            ];
-
-            // Populate manager dropdown
-            const uniqueManagers = [
-              ...new Set(this.allHrData.map((item) => item.managerName)),
-            ].filter((m) => m && m !== "N/A" && m !== "NA");
-
-            this.managerList = [
-              { label: "All", value: "" },
-              ...uniqueManagers.map((manager) => ({
-                label: manager,
-                value: manager,
-              })),
-            ];
-
             console.log("Transformed HR Data:", this.hrData.length, "records");
           } else {
             this.toastr.warning("No data found");
@@ -205,11 +218,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
 
       if (employeeValue) {
         filteredData = filteredData.filter(
-          (item) =>
-            item.employeeNumber === employeeValue ||
-            item.employeeName
-              .toLowerCase()
-              .includes(String(employeeValue).toLowerCase())
+          (item) => item.employeeNumber === employeeValue
         );
       }
     }
@@ -222,11 +231,21 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
           : this.filters.managerName;
 
       if (managerValue) {
-        filteredData = filteredData.filter((item) =>
-          item.managerName
-            .toLowerCase()
-            .includes(String(managerValue).toLowerCase())
-        );
+        // Match by manager employee number from common service
+        filteredData = filteredData.filter((item) => {
+          // Find the manager in managerList to get their employee number
+          const manager = this.managerList.find(
+            (m) => m.value === managerValue
+          );
+          if (manager) {
+            // Extract name from manager label format "Name (EmployeeNumber)"
+            const managerName = manager.label.split("(")[0].trim();
+            return item.managerName
+              .toLowerCase()
+              .includes(managerName.toLowerCase());
+          }
+          return false;
+        });
       }
     }
 

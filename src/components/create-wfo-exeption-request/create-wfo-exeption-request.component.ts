@@ -224,8 +224,12 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadFormData() {
-    if (this.formDataLoadedOnce) return; // prevent duplicate loads
+  private loadFormData(
+    month: number = new Date().getMonth() + 1,
+    year: number = new Date().getFullYear(),
+    sendRequest = false
+  ): void {
+    if (this.formDataLoadedOnce && !sendRequest) return; // prevent duplicate loads
     this.formDataLoadedOnce = true;
 
     console.log("Loading form data (disabled dates)...");
@@ -234,10 +238,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     const { minDate, maxDate } = this.getAllowedDateRange();
     this.minSelectableDate = minDate;
     this.maxSelectableDate = maxDate;
-
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
 
     // Fetch disabled dates
     this.http
@@ -546,5 +546,10 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     }
 
     return dates;
+  }
+  onMonthYearChanged(event: { month: number; year: number }) {
+    console.log("qqqqqqqqqqq");
+
+    this.loadFormData(event.month, event.year, true);
   }
 }

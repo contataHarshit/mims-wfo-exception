@@ -14,6 +14,10 @@ import { CalendarModule } from "primeng/calendar";
 import { FormsModule } from "@angular/forms";
 import { ButtonModule } from "primeng/button";
 import { InputTextareaModule } from "primeng/inputtextarea";
+import {
+  CalendarMonthChangeEvent,
+  CalendarYearChangeEvent,
+} from "primeng/calendar";
 
 @Component({
   selector: "app-date-range-picker",
@@ -109,19 +113,18 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
     }
   }
 
-get displayText(): string {
-  if (!this.range?.length) return "";
-  
-  return this.range
-    .map((d) => {
-      const day = d.getDate();
-      const month = d.toLocaleDateString("en-GB", { month: "short" }); // Use "short" for abbreviated month
-      const year = d.getFullYear();
-      return `${day} ${month} ${year}`;
-    })
-    .join(", ");
-}
+  get displayText(): string {
+    if (!this.range?.length) return "";
 
+    return this.range
+      .map((d) => {
+        const day = d.getDate();
+        const month = d.toLocaleDateString("en-GB", { month: "short" }); // Use "short" for abbreviated month
+        const year = d.getFullYear();
+        return `${day} ${month} ${year}`;
+      })
+      .join(", ");
+  }
 
   openCalendar() {
     if (this.calendar?.show) {
@@ -130,5 +133,19 @@ get displayText(): string {
       this.calendar.overlayVisible = true;
     }
   }
-  
+  @Output() monthYearChange = new EventEmitter<{
+    month: number;
+    year: number;
+  }>();
+
+  onMonthOrYearChange(
+    event: CalendarMonthChangeEvent | CalendarYearChangeEvent
+  ) {
+    // Safely extract values (PrimeNG marks them as optional)
+    const month = event.month ?? new Date().getMonth();
+    const year = event.year ?? new Date().getFullYear();
+
+    console.log("Child: Month or Year changed =>", { month, year });
+    this.monthYearChange.emit({ month, year });
+  }
 }

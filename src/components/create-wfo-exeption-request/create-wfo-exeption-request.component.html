@@ -37,8 +37,8 @@
             <td>{{ i + 1 }}</td>
             <td>
               <app-date-range-picker [(range)]="e.dateRange" [disabledDates]="disabledDates"
-                [minDate]="minSelectableDate" [maxDate]="maxSelectableDate"
-                (okClick)="onMultiDateConfirm($event, i)"></app-date-range-picker>
+                [minDate]="minSelectableDate" [maxDate]="maxSelectableDate" (okClick)="onMultiDateConfirm($event, i)"
+                (monthYearChange)="onMonthYearChanged($event)"></app-date-range-picker>
             </td>
 
             <td>
