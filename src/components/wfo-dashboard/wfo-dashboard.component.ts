@@ -387,8 +387,13 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             }
 
            }
-           if(Object.keys(tempHash).length>1 ){
+           if(Object.keys(tempHash).length>1  ){
             this.disableSelectAll = true
+           }
+           if(Object.keys(tempHash).length==1){
+            if( Object.keys(tempHash)[0]=="REJECTED"){
+              this.disableSelectAll = true
+            }
            }
 
             this.totalRecords = res.data.pagination?.total || exceptions.length;
