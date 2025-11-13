@@ -402,7 +402,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  convertToISODate(date: Date | string): string | Date {
+  convertToISODate(date: Date | string): string {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = (d.getMonth() + 1).toString().padStart(2, "0");
@@ -444,6 +444,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   }
 
   validateForm(): boolean {
+    const seenDates = new Set<string>();
+
     for (const [i, ex] of this.formData.exceptions.entries()) {
       if (!ex.dateRange?.length) {
         this.toastr.warning(`Please select a date for row ${i + 1}.`);
@@ -459,22 +461,19 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         this.toastr.warning(`Please enter remarks for row ${i + 1}.`);
         return false;
       }
-      const dateStr = this.convertToISODate(ex.dateRange[0]);
-      const duplicateCount = this.formData.exceptions.filter(
-        (e) =>
-          e.dateRange.length > 0 &&
-          this.convertToISODate(e.dateRange[0].toISOString().split("T")[0]) ===
-            dateStr
-      ).length;
 
-      if (duplicateCount > 1) {
-        this.toastr.warning(`Duplicate date found in row ${i + 1}: ${dateStr}`);
+      const dateStr = this.convertToISODate(ex.dateRange[0]);
+
+      if (seenDates.has(dateStr)) {
+        this.toastr.warning(`Duplicate date found at row ${i + 1}: ${dateStr}`);
         return false;
       }
+
+      seenDates.add(dateStr);
     }
+
     return true;
   }
-
   onSubmit() {
     this.commonService.setLoading(true);
     if (!this.validateForm()) {
