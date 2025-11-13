@@ -24,7 +24,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
 
         // ✅ Clear token and redirect to login (same tab)
         localStorage.removeItem("jwtToken");
-        window.location.href = "http://mims/";
+        window.location.href = "http://mimsqa/";
       } else {
         console.error("❌ HTTP Error:", {
           status: error.status,

@@ -1,4 +1,4 @@
 export const Environment= {
-    baseUrl: 'http://localhost:3000/',
+    baseUrl: 'http://192.168.2.25:3000/',
     production: false
 } as const;

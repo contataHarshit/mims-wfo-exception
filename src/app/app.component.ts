@@ -65,7 +65,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
   // Add destroy subject for cleanup
   private destroy$ = new Subject<void>();
-  private isAuthenticating = false;
+   isAuthenticating = false;
   private hasLoadedData = false;
 
   constructor(
@@ -175,16 +175,17 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
         // Mark as loaded before loading data
         this.hasLoadedData = true;
-
+        this.isAuthenticating = false;
         // Load all role-specific data
         return this.loadRoleSpecificData(this.role);
+
       })
       .catch((err) => {
-        console.error("Auth API Error:", err);
-        this.commonService.userDataLoaded$.next(false);
+        // console.error("Auth API Error:", err);
+        // this.commonService.userDataLoaded$.next(false);
       })
       .finally(() => {
-        this.isAuthenticating = false;
+        // this.isAuthenticating = false;
       });
   }
 
