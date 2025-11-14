@@ -65,7 +65,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
   // Add destroy subject for cleanup
   private destroy$ = new Subject<void>();
-   isAuthenticating = false;
+  isAuthenticating = true;
   private hasLoadedData = false;
 
   constructor(
@@ -100,9 +100,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
     // Get session ID from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get("sessionid");
-
-    if (sessionId && !this.isAuthenticating) {
+    const sessionId = urlParams.get("sessionid") || urlParams.get("sessionId");
+      console.log("2222222222");
+      
+    if (sessionId && !this.jwtToken) {
       console.log("Session ID from URL:", sessionId);
 
       if (localStorage.getItem("department") == "HR") {
@@ -138,10 +139,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   }
 
   private authenticateWithSession(sessionId: string) {
-    if (this.isAuthenticating) {
-      console.log("Authentication already in progress, skipping...");
-      return;
-    }
+    // if (this.isAuthenticating) {
+    //   console.log("Authentication already in progress, skipping...");
+    //   return;
+    // }
 
     this.isAuthenticating = true;
     console.log("Starting authentication with session ID");
