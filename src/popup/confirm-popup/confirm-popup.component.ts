@@ -13,7 +13,7 @@ import { ButtonModule } from 'primeng/button';
 export class ConfirmPopupComponent {
   constructor(
     private dialogRef: MatDialogRef<ConfirmPopupComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { message: string, title?: string }
+    @Inject(MAT_DIALOG_DATA) public data: { message: string, title: string }
   ) {}
 
   onConfirm(): void {

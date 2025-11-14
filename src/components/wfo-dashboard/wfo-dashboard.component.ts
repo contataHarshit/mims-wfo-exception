@@ -593,7 +593,10 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   deleteRow(req?: any) {
     const dialogRef = this.dialog.open(ConfirmPopupComponent, {
       width: "400px",
-      data: { message: "Are you sure you want to delete this record?" },
+      data: {
+        message: "Are you sure you want to delete this record?",
+        title: "Confirm Delete",
+      },
     });
 
     dialogRef.afterClosed().subscribe((confirmed) => {
