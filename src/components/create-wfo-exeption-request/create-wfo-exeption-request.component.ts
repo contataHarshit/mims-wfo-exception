@@ -364,7 +364,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         otherReason: "",
       },
     ];
-    this.updateDisabledDates();
+    this.loadFormData();
     this.cdr.detectChanges();
     if (showToast) this.toastr.info("Form Reset Successfully");
   }
@@ -486,10 +486,15 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
         .map((ex) => {
           const date = new Date(ex.dateRange[0]);
-          const newDate = addDays(date, 1);
+          const formatted =
+            date.getFullYear() +
+            "-" +
+            String(date.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(date.getDate()).padStart(2, "0");
 
           return {
-            selectedDate: newDate.toISOString().split("T")[0],
+            selectedDate: formatted,
             primaryReason:
               typeof ex.primaryReason === "object"
                 ? ex.primaryReason?.value || ex.primaryReason?.label || ""
