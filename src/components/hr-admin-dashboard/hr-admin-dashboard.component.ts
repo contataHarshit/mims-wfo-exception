@@ -234,7 +234,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   /** Fetch HR Admin Summary Data with filters */
-  getHrAdminData(withFilters: boolean = false) {
+  getHrAdminData(withFilters: boolean = false,exporting: boolean = false) {
     if (this.isLoadingData) {
       console.log("Already loading HR Admin data, skipping duplicate call");
       return;
@@ -266,7 +266,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
 
           if (res?.success && res?.data?.exceptions?.data) {
             const apiData = res.data.exceptions.data;
-
+            
             // Transform API response to table format
             this.hrData = apiData
               .filter((item: any) => item.employeeNumber)
@@ -349,22 +349,9 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       this.toastr.warning("No data to export");
       return;
     }
+    this.toastr.info("Exporting...");
+    this.getHrAdminData(true,true);
 
-    this.toastr.info("Exporting data to Excel...");
-
-    // Build export params with current filters
-    const params = this.buildQueryParams();
-    params.export = true; // Add export flag if needed by backend
-
-    // Call export API endpoint
-    const exportUrl = `${this.constants.hrSummary}/export`; // Adjust based on your API
-
-    // You can either:
-    // 1. Call a separate export endpoint
-    // 2. Download the current data as CSV/Excel client-side
-
-    console.log("Export params:", params);
-    // Implement actual export logic based on your backend API
   }
 
   onDateChange() {

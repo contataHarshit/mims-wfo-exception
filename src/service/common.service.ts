@@ -68,7 +68,7 @@ export class CommonService {
   // ============================================
   private managerEmployeeDataSubject = new BehaviorSubject<any[]>([]);
   managerEmployeeData$ = this.managerEmployeeDataSubject.asObservable();
-
+  selectedView="self";
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private http: HttpClient
@@ -274,4 +274,41 @@ export class CommonService {
       throw error;
     }
   }
+  downloadCSV(data: any[]) {
+  if (!data || data.length === 0) {
+    // this.toastr.warning("No data available to export");
+    return;
+  }
+
+  // Convert JSON to CSV
+  const csvRows: string[] = [];
+  
+  // Extract headers
+  const headers = Object.keys(data[0]);
+  csvRows.push(headers.join(","));
+
+  // Extract rows
+  data.forEach(item => {
+    const values = headers.map(h => {
+      let val = item[h] ?? "";
+      if (typeof val === "string") {
+        val = val.replace(/,/g, " "); // remove commas
+        val = `"${val}"`; // wrap to avoid CSV breaking
+      }
+      return val;
+    });
+    csvRows.push(values.join(","));
+  });
+
+  // Create CSV blob
+  const csvString = csvRows.join("\n");
+  const blob = new Blob([csvString], { type: "text/csv" });
+
+  // Trigger download
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `exception_requests_${new Date().getTime()}.csv`;
+  a.click();
+}
+
 }

@@ -109,13 +109,18 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
-    // Get current view and role
-    this.selectedView = localStorage.getItem("selectedView") || "self";
     this.role = localStorage.getItem("role") || "";
     this.department = localStorage.getItem("department") || "";
     if (this.role == "ADMIN") {
       this.selectedView = "all";
+      this.commonService.selectedView = "all";
+      this.commonService.viewChange$.next("all");
       localStorage.setItem("selectedView", "all");
+    } else {
+      this.selectedView = "self";
+      this.commonService.selectedView = "self";
+      this.commonService.viewChange$.next("self");
+      localStorage.setItem("selectedView", "self");
     }
     // Load employee list from localStorage FIRST
     this.loadEmployeeListFromCache();
@@ -278,7 +283,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
-  getExceptionRequest() {
+  getExceptionRequest(exporting: boolean = false) {
     // Prevent multiple simultaneous calls
     if (this.isLoadingData) {
       console.log("Already loading data, skipping duplicate call");
@@ -354,10 +359,15 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       .getData(url)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res: any) => {
+        next: async (res: any) => {
           if (res.success) {
             const exceptions = res.data.exceptions || [];
-
+            if (exporting) {
+              await this.commonService.downloadCSV(exceptions);
+              this.commonService.setLoading(false);
+              this.isLoadingData = false;
+              return;
+            }
             this.disableSelectAll = false;
             this.allSelected = false;
             this.exceptionRequests = exceptions.map((item: any) => {
@@ -378,6 +388,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
                 rejectedBy: item.rejectedBy || "-",
                 managerName: item?.manager || "-",
                 managerRemarks: item.managerRemarks || null,
+                remarks: item.remarks || "-",
                 checked: false,
               } as ExceptionRequest;
             });
@@ -412,6 +423,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           this.commonService.setLoading(false);
           this.isLoadingData = false;
         },
+
         error: (err: any) => {
           console.error("Error fetching exception requests:", err);
           this.exceptionRequests = [];
@@ -479,7 +491,12 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   }
 
   export() {
+    if (!this.exceptionRequests.length) {
+      this.toastr.warning("No data available to export");
+      return;
+    }
     this.toastr.info("Exporting...");
+    this.getExceptionRequest(true);
   }
 
   toggleSelection(req: ExceptionRequest, event: any) {
@@ -640,6 +657,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   }
 
   onStatusChange(value: any) {
+    console.log("vallll", value);
+
     this.filters.status = value;
     this.page = 1;
     this.getExceptionRequest();

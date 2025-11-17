@@ -447,21 +447,10 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     const seenDates = new Set<string>();
 
     for (const [i, ex] of this.formData.exceptions.entries()) {
-      if (!ex.dateRange?.length) {
-        this.toastr.warning(`Please select a date for row ${i + 1}.`);
+      if (!ex.dateRange?.length || !ex.primaryReason || !ex.remarks || !ex.remarks.trim()) {
+        this.toastr.warning(`Please fill required fields.`);
         return false;
       }
-
-      if (!ex.primaryReason) {
-        this.toastr.warning(`Please select a reason for row ${i + 1}.`);
-        return false;
-      }
-
-      if (!ex.remarks || !ex.remarks.trim()) {
-        this.toastr.warning(`Please enter remarks for row ${i + 1}.`);
-        return false;
-      }
-
       const dateStr = this.convertToISODate(ex.dateRange[0]);
 
       if (seenDates.has(dateStr)) {

@@ -78,7 +78,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.selectedView = "self";
+    this.commonService.selectedView = "self";
 
     if (!isPlatformBrowser(this.platformId)) return;
 
@@ -123,7 +123,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
         this.commonService.setRole(storedRole);
         this.setDefaultViewByRole(this.role);
-        this.commonService.viewChange$.next(this.selectedView);
+        this.commonService.viewChange$.next(this.commonService.selectedView);
 
         // Mark as loaded to prevent duplicate calls
         this.hasLoadedData = true;
@@ -167,12 +167,12 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         // Load saved view or set default
         const savedView = localStorage.getItem("selectedView");
         if (savedView) {
-          this.selectedView = savedView as "self" | "resource" | "all";
+          this.commonService.selectedView = savedView as "self" | "resource" | "all";
         } else {
           this.setDefaultViewByRole(this.role);
         }
 
-        this.commonService.viewChange$.next(this.selectedView);
+        this.commonService.viewChange$.next(this.commonService.selectedView);
 
         // Mark as loaded before loading data
         this.hasLoadedData = true;
@@ -220,7 +220,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
     // Step 4: Normal Manager (not HR)
     if (role === "MANAGER") {
-      this.selectedView = "self";
+      this.commonService.selectedView = "self";
       localStorage.setItem("selectedView", "self");
       return;
     }
@@ -228,7 +228,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     // Step 5: Normal Employee
     if (role === "EMPLOYEE") {
       this.viewOptions = this.viewOptions.filter((o) => o.value === "self");
-      this.selectedView = "self";
+      this.commonService.selectedView = "self";
       localStorage.setItem("selectedView", "self");
       return;
     }
@@ -240,9 +240,9 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       savedView === "self" ||
       savedView === "resource"
     ) {
-      this.selectedView = savedView;
+      this.commonService.selectedView = savedView;
     } else {
-      this.selectedView = "self";
+      this.commonService.selectedView = "self";
     }
   }
 
@@ -417,8 +417,8 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   }
 
   onViewChange(event: any) {
-    this.selectedView = event.target.value;
-    localStorage.setItem("selectedView", this.selectedView);
-    this.commonService.viewChange$.next(this.selectedView);
+    this.commonService.selectedView = event.target.value;
+    localStorage.setItem("selectedView", this.commonService.selectedView);
+    this.commonService.viewChange$.next(this.commonService.selectedView);
   }
 }
