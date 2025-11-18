@@ -268,21 +268,21 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   }
 
   onPrimaryReasonChange(exception: ExceptionEntry, value: any) {
-    if (value.value === "other" || value.value === "Other") {
-      exception.showOtherReason = true;
-      exception.otherReason = "";
-      exception.primaryReason = null;
+    // if (value.value === "other" || value.value === "Other") {
+    //   exception.showOtherReason = true;
+    //   exception.otherReason = "";
+    //   exception.primaryReason = null;
 
-      setTimeout(() => {
-        exception.primaryReason = null;
-        this.cdr.detectChanges();
-      }, 0);
-    } else {
+    //   setTimeout(() => {
+    //     exception.primaryReason = null;
+    //     this.cdr.detectChanges();
+    //   }, 0);
+    // } else {
       exception.primaryReason = value;
       exception.showOtherReason = false;
       exception.otherReason = "";
       this.cdr.detectChanges();
-    }
+    // }
   }
 
   confirmOtherReason(exception: ExceptionEntry) {
