@@ -7,7 +7,7 @@
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
         <!-- MANAGER FIELD - FIXED -->
         <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Manager</label>
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Manager Name</label>
 
 
           <!-- For other views: Show select dropdown -->
@@ -92,7 +92,7 @@
           <th>Reason</th>
           <th>Submission date</th>
           <th>Status</th>
-          <th>Remarks</th>
+          <!-- <th>Remarks</th> -->
           <th *ngIf="selectedView === 'self'">Action</th>
         </tr>
       </ng-template>
@@ -122,7 +122,7 @@
               {{ req.status }}
             </span>
           </td>
-          <td>{{ req.remarks }}</td>
+          <!-- <td>{{ req.remarks }}</td> -->
           <td *ngIf="selectedView === 'self'">
             <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn">
               <i class="fa fa-trash"></i>
@@ -133,9 +133,9 @@
 
       <ng-template pTemplate="paginatorleft">
         <span>
-          Total Records: {{ totalRecords }}
+          <!-- Total Records: {{ totalRecords }} -->
           <span *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
-            | Selected: {{ selectedRequests.length }}
+            Selected Records: {{ selectedRequests.length }}
           </span>
         </span>
       </ng-template>

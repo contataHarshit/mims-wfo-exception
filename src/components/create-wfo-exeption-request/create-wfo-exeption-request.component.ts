@@ -260,7 +260,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         error: (err) => {
           console.error("Error fetching selected dates:", err);
           this.commonService.setLoading(false);
-          this.toastr.error("Failed to load disabled dates.");
+          this.toastr.error(
+            err?.error?.errors || "Failed to load disabled dates."
+          );
         },
       });
   }
@@ -447,7 +449,12 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     const seenDates = new Set<string>();
 
     for (const [i, ex] of this.formData.exceptions.entries()) {
-      if (!ex.dateRange?.length || !ex.primaryReason || !ex.remarks || !ex.remarks.trim()) {
+      if (
+        !ex.dateRange?.length ||
+        !ex.primaryReason ||
+        !ex.remarks ||
+        !ex.remarks.trim()
+      ) {
         this.toastr.warning(`Please fill required fields.`);
         return false;
       }
@@ -511,7 +518,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error("Submission Error:", err);
-          this.toastr.error("An error occurred during submission.");
+          this.toastr.error(
+            err?.error?.errors || "An error occurred during submission."
+          );
         },
       });
   }
