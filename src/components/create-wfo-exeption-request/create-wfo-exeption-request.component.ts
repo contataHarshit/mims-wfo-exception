@@ -261,7 +261,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
           console.error("Error fetching selected dates:", err);
           this.commonService.setLoading(false);
           this.toastr.error(
-            err?.error?.errors || "Failed to load disabled dates."
+            err?.error?.error || err?.error?.errors || "Failed to load disabled dates."
           );
         },
       });
@@ -519,7 +519,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         error: (err) => {
           console.error("Submission Error:", err);
           this.toastr.error(
-            err?.error?.errors || "An error occurred during submission."
+            err?.error?.error || err?.error?.errors || "An error occurred during submission."
           );
         },
       });
