@@ -351,6 +351,10 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       params.set("isAll", "true");
     }
 
+    if (exporting) {
+      params.set("exportAll", "true");
+    }
+
     const url = `${
       this.constants.exceptionRequest
     }/paginated?${params.toString()}`;
@@ -362,12 +366,16 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         next: async (res: any) => {
           if (res.success) {
             const exceptions = res.data.exceptions || [];
+
+            // If exporting, just download CSV and return early
             if (exporting) {
               await this.commonService.downloadCSV(exceptions);
               this.commonService.setLoading(false);
               this.isLoadingData = false;
               return;
             }
+
+            // Only update UI state when NOT exporting
             this.disableSelectAll = false;
             this.allSelected = false;
             this.exceptionRequests = exceptions.map((item: any) => {
@@ -399,9 +407,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
                 tempHash[this.exceptionRequests[i].status] = true;
               }
             }
-            //  if(Object.keys(tempHash).length>1  ){
-            //   this.disableSelectAll = true
-            //  }
+
             if (Object.keys(tempHash).length == 1) {
               if (
                 Object.keys(tempHash)[0] == "REJECTED" ||
@@ -415,9 +421,11 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             this.totalRecords = res.data.pagination?.total || exceptions.length;
             this.selectedRequests = [];
           } else {
-            this.exceptionRequests = [];
-            this.totalRecords = 0;
-            this.toastr.warning("No records found");
+            if (!exporting) {
+              this.exceptionRequests = [];
+              this.totalRecords = 0;
+              this.toastr.warning("No records found");
+            }
           }
 
           this.commonService.setLoading(false);
@@ -426,15 +434,16 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
         error: (err: any) => {
           console.error("Error fetching exception requests:", err);
-          this.exceptionRequests = [];
-          this.totalRecords = 0;
+          if (!exporting) {
+            this.exceptionRequests = [];
+            this.totalRecords = 0;
+          }
           this.commonService.setLoading(false);
           this.isLoadingData = false;
           this.toastr.error("Failed to fetch data. Please try again.");
         },
       });
   }
-
   onPageChange(event: any) {
     this.page = event.first / event.rows + 1;
     this.limit = event.rows;

@@ -94,15 +94,16 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       .subscribe((event) => {
         const navEnd = event as NavigationEnd;
         const url = navEnd.urlAfterRedirects;
-        this.isDashboardPage = url.split("?")[0].split("-")[0].includes("dashboard");
+        this.isDashboardPage = url
+          .split("?")[0]
+          .split("-")[0]
+          .includes("dashboard");
         this.updateActiveTabs(url);
       });
 
     // Get session ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get("sessionid") || urlParams.get("sessionId");
-      console.log("2222222222");
-      
     if (sessionId && !this.jwtToken) {
       console.log("Session ID from URL:", sessionId);
 
@@ -167,7 +168,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         // Load saved view or set default
         const savedView = localStorage.getItem("selectedView");
         if (savedView) {
-          this.commonService.selectedView = savedView as "self" | "resource" | "all";
+          this.commonService.selectedView = savedView as
+            | "self"
+            | "resource"
+            | "all";
         } else {
           this.setDefaultViewByRole(this.role);
         }
@@ -179,7 +183,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         this.isAuthenticating = false;
         // Load all role-specific data
         return this.loadRoleSpecificData(this.role);
-
       })
       .catch((err) => {
         // console.error("Auth API Error:", err);

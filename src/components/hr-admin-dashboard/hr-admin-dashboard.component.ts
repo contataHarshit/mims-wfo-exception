@@ -234,7 +234,8 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   /** Fetch HR Admin Summary Data with filters */
-  getHrAdminData(withFilters: boolean = false,exporting: boolean = false) {
+  /** Fetch HR Admin Summary Data with filters */
+  getHrAdminData(withFilters: boolean = false, exporting: boolean = false) {
     if (this.isLoadingData) {
       console.log("Already loading HR Admin data, skipping duplicate call");
       return;
@@ -246,8 +247,14 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     // Build URL with query parameters
     let url = this.constants.hrSummary;
 
-    if (withFilters) {
+    if (withFilters || exporting) {
       const params = this.buildQueryParams();
+
+      // Add exportAll param when exporting
+      if (exporting) {
+        params.exportAll = "true";
+      }
+
       const queryString = this.buildQueryString(params);
 
       if (queryString) {
@@ -261,12 +268,21 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       .getData(url)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res: any) => {
+        next: async (res: any) => {
           console.log("HR Admin API Response:", res);
 
           if (res?.success && res?.data?.exceptions?.data) {
             const apiData = res.data.exceptions.data;
-            
+
+            // If exporting, just download and return early
+            if (exporting) {
+              await this.commonService.downloadCSV(apiData);
+              this.commonService.setLoading(false);
+              this.isLoadingData = false;
+              return;
+            }
+
+            // Only update UI state when NOT exporting
             // Transform API response to table format
             this.hrData = apiData
               .filter((item: any) => item.employeeNumber)
@@ -291,8 +307,10 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
               );
             }
           } else {
-            this.toastr.warning("No data found");
-            this.hrData = [];
+            if (!exporting) {
+              this.toastr.warning("No data found");
+              this.hrData = [];
+            }
           }
 
           this.commonService.setLoading(false);
@@ -300,6 +318,9 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error("Error fetching HR Admin data:", err);
+          if (!exporting) {
+            this.hrData = [];
+          }
           this.commonService.setLoading(false);
           this.isLoadingData = false;
           this.toastr.error("Failed to fetch HR Admin data");
@@ -350,8 +371,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     this.toastr.info("Exporting...");
-    this.getHrAdminData(true,true);
-
+    this.getHrAdminData(true, true);
   }
 
   onDateChange() {

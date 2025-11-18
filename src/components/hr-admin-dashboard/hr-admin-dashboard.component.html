@@ -17,7 +17,7 @@
           <app-common-select [options]="managerList" [(value)]="filters.managerName"
             placeholder="Select Manager"></app-common-select>
         </div>
-<!-- 
+        <!-- 
         <div class="form-row">
           <label>Status</label>
           <app-common-select [options]="statusList" [(value)]="filters.status" placeholder="Select Status"></app-common-select>
@@ -51,8 +51,7 @@
 
     <!-- Export Button -->
     <div class="export-row">
-      <button pButton label="Export to Excel" icon="pi pi-file-excel" class="p-button-info"
-        (click)="exportToExcel()"></button>
+      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()"></button>
     </div>
   </div>
 
