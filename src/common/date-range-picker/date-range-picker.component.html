@@ -2,7 +2,7 @@
   [minDate]="minDate" [maxDate]="maxDate" [showIcon]="true" [appendTo]="'body'" panelStyleClass="custom-calendar-panel"
   (onShow)="onCalendarShow()" (onHide)="onCalendarHide()" (onMonthChange)="onMonthOrYearChange($event)"
   (onYearChange)="onMonthOrYearChange($event)" styleClass="hidden-calendar" placeholder="Select Dates"
-  inputId="datePickerInput" dateFormat="dd M yy" [readonlyInput]="true">
+  inputId="datePickerInput" dateFormat="dd M yy" [readonlyInput]="true" (onClose)="cancelSelection()">
   <!-- Footer template -->
   <ng-template pTemplate="footer">
     <div class="popup-buttons">
