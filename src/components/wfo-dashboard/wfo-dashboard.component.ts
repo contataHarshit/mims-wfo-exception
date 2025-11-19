@@ -269,9 +269,12 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   showApprovedColumn(): boolean {
     const s = this.getStatusValue(this.filters.status);
+
     return (
       s === "APPROVED" ||
-      this.exceptionRequests.some((r) => r.status === "APPROVED")
+      this.exceptionRequests.some(
+        (r) => r.status === "APPROVED" || (r.approvedBy && r.approvedBy !== "-")
+      )
     );
   }
 
@@ -279,7 +282,9 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     const s = this.getStatusValue(this.filters.status);
     return (
       s === "REJECTED" ||
-      this.exceptionRequests.some((r) => r.status === "REJECTED")
+      this.exceptionRequests.some(
+        (r) => r.status === "REJECTED" || (r.rejectedBy && r.rejectedBy !== "-")
+      )
     );
   }
 
@@ -441,7 +446,9 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           this.commonService.setLoading(false);
           this.isLoadingData = false;
           this.toastr.error(
-            err?.error?.error || err?.error?.errors || "Failed to fetch data. Please try again."
+            err?.error?.error ||
+              err?.error?.errors ||
+              "Failed to fetch data. Please try again."
           );
         },
       });
@@ -564,7 +571,9 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         console.error("Bulk Update Error:", err);
-        this.toastr.error(err?.error?.error || err?.error?.errors || "Bulk update failed");
+        this.toastr.error(
+          err?.error?.error || err?.error?.errors || "Bulk update failed"
+        );
       },
     });
   }
@@ -640,7 +649,9 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             },
             error: (err: any) => {
               this.toastr.error(
-                err?.error?.error || err?.error?.errors || "Error deleting record. Please try again."
+                err?.error?.error ||
+                  err?.error?.errors ||
+                  "Error deleting record. Please try again."
               );
               console.error("DELETE API Error:", err);
             },

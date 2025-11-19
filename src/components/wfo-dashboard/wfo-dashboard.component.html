@@ -108,8 +108,8 @@
           <td>{{ req.employeeName }}</td>
           <td>{{ req.designation }}</td>
           <td>{{ req.managerName }}</td>
-          <td *ngIf="showApprovedColumn()">{{ req.status === 'APPROVED' ? req.approvedBy : '-' }}</td>
-          <td *ngIf="showRejectedColumn()">{{ req.status === 'REJECTED' ? req.rejectedBy : '-' }}</td>
+          <td *ngIf="showApprovedColumn()">{{ req.approvedBy || '-' }}</td>
+          <td *ngIf="showRejectedColumn()">{{ req.rejectedBy || '-' }}</td>
           <td>{{ req.exceptionDate }}</td>
           <td>{{ req.primaryReason }}</td>
           <td>{{ req.submissionDate }}</td>
