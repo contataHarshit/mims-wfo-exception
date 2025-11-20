@@ -105,8 +105,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get("sessionid") || urlParams.get("sessionId");
     if (sessionId && !this.jwtToken) {
-      console.log("Session ID from URL:", sessionId);
-
       if (localStorage.getItem("department") == "HR") {
         this.viewOptions.unshift({ label: "All", value: "all" });
       }
@@ -146,8 +144,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     // }
 
     this.isAuthenticating = true;
-    console.log("Starting authentication with session ID");
-
     firstValueFrom(
       this.http.auth(this.constants.auth, { sessionid: sessionId })
     )
@@ -164,6 +160,11 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         localStorage.setItem("department", this.department);
         localStorage.setItem("employeeNumber", this.employeeNumber);
         this.commonService.setRole(this.role);
+        if (this.role === "ADMIN") {
+          this.router.navigate(["/dashboard"], {
+            queryParamsHandling: "preserve",
+          });
+        }
 
         // Load saved view or set default
         const savedView = localStorage.getItem("selectedView");
@@ -257,7 +258,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
   async loadRoleSpecificData(role: string) {
     if (this.hasLoadedData && this.commonService.userDataLoaded$.value) {
-      console.log("Data already loaded, skipping duplicate load");
       return;
     }
 
@@ -268,8 +268,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       );
 
       if (empRes?.success && empRes.data?.employee) {
-        console.log("Employee data loaded successfully");
-
         // Store in both service AND localStorage
         const employeeData = {
           ...empRes.data.employee,
@@ -299,8 +297,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
       if (localStorage.getItem("department") === "HR" || role === "ADMIN") {
         await this.loadAllEmployeeData();
-        console.log("Loading HR/ADMIN specific data");
-
         // For ADMIN: Remove "Create WFH Request" tab
         if (role === "ADMIN") {
           this.tabs = this.tabs.filter((t) => t.label !== "Create WFH Request");
@@ -330,7 +326,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   async loadAllEmployeeData() {
     // Check if already loaded
     if (this.commonService.allEmployeeData.length > 0) {
-      console.log("All employee data already cached");
       return;
     }
 
@@ -353,7 +348,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   async loadManagerData() {
     // Check if already loaded
     if (this.commonService.managerEmployeeData.length > 0) {
-      console.log("Manager employee data already cached");
       return;
     }
 

@@ -127,10 +127,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
           label: `${item.FullName}(${item.EmployeeNumber})`,
           value: item.EmployeeNumber,
         }));
-        console.log(
-          "HR Admin - Loaded employee list from cache:",
-          this.employeeList.length
-        );
       } catch (e) {
         console.error("Error parsing cached employee data:", e);
       }
@@ -237,7 +233,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   /** Fetch HR Admin Summary Data with filters */
   getHrAdminData(withFilters: boolean = false, exporting: boolean = false) {
     if (this.isLoadingData) {
-      console.log("Already loading HR Admin data, skipping duplicate call");
       return;
     }
 
@@ -261,7 +256,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
         url = `${url}?${queryString}`;
       }
 
-      console.log("Fetching HR Admin data with URL:", url);
     }
 
     this.http
@@ -269,7 +263,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: async (res: any) => {
-          console.log("HR Admin API Response:", res);
 
           if (res?.success && res?.data?.exceptions?.data) {
             const apiData = res.data.exceptions.data;
@@ -298,7 +291,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
                 TOTAL: item.TOTAL || 0,
               }));
 
-            console.log("Transformed HR Data:", this.hrData.length, "records");
 
             if (withFilters) {
               const count = this.hrData.length;
@@ -330,7 +322,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
 
   /** Apply Filters - Fetch data from backend with filter params */
   applyFilters() {
-    console.log("Applying filters:", this.filters);
 
     // Validate date range
     if (this.filters.fromDate && this.filters.toDate) {
@@ -375,9 +366,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   onDateChange() {
-    console.log("Date changed:", {
-      from: this.filters.fromDate,
-      to: this.filters.toDate,
-    });
+   
   }
 }

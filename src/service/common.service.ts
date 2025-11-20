@@ -97,8 +97,6 @@ export class CommonService {
 
   /** Update employee data after fetching from API */
   setEmployeeData(employee: any) {
-    console.log("Setting employee data:", employee);
-
     const empId =
       employee?.employeeId ?? employee?.EmployeeId ?? employee?.id ?? "";
     const empName =
@@ -257,7 +255,6 @@ export class CommonService {
   /** Load config file only once */
   async loadConfig() {
     if (this.configLoaded && this.config) {
-      console.log("Config already loaded, using cached version");
       return this.config;
     }
 
@@ -266,7 +263,6 @@ export class CommonService {
         this.http.get("/assets/config/config.json")
       );
       this.configLoaded = true;
-      console.log("Config loaded successfully");
       return this.config;
     } catch (error) {
       console.error("Error loading config:", error);
@@ -289,7 +285,6 @@ export class CommonService {
       (h) => !removedKeys.includes(h)
     );
 
-    console.log("filtered headers --->", headers);
 
     csvRows.push(headers.join(","));
 

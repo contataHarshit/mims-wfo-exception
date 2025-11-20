@@ -145,7 +145,6 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
     const month = event.month ?? new Date().getMonth();
     const year = event.year ?? new Date().getFullYear();
 
-    console.log("Child: Month or Year changed =>", { month, year });
     this.monthYearChange.emit({ month, year });
   }
 }

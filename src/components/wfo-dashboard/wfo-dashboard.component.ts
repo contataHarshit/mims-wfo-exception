@@ -162,10 +162,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         }
         // Only reload if view actually changed
         if (previousView !== this.selectedView) {
-          console.log(
-            `View changed from ${previousView} to ${this.selectedView}`
-          );
-
+  
           // Reset manager filter when view changes
           if (this.selectedView === "self") {
             this.setManagerForSelfView();
@@ -226,10 +223,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           label: `${item.FullName}(${item.EmployeeNumber})`,
           value: item.EmployeeNumber,
         }));
-        console.log(
-          "Loaded employee list from cache:",
-          this.employeeList.length
-        );
+        
       } catch (e) {
         console.error("Error parsing cached employee data:", e);
       }
@@ -291,7 +285,6 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   getExceptionRequest(exporting: boolean = false) {
     // Prevent multiple simultaneous calls
     if (this.isLoadingData) {
-      console.log("Already loading data, skipping duplicate call");
       return;
     }
 
@@ -470,10 +463,6 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   }
 
   onDateChange() {
-    console.log("Date changed:", {
-      from: this.filters.fromDate,
-      to: this.filters.toDate,
-    });
   }
 
   applyFilter() {
@@ -530,12 +519,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     req.checked = checked;
 
     if (checked) {
-      console.log("1111");
-
       this.selectedRequests.push(req);
     } else {
-      console.log("122222");
-
       this.selectedRequests = this.selectedRequests.filter(
         (r) => r.exceptionId !== req.exceptionId
       );
@@ -681,8 +666,6 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   }
 
   onStatusChange(value: any) {
-    console.log("vallll", value);
-
     this.filters.status = value;
     this.page = 1;
     this.getExceptionRequest();

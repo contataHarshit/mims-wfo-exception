@@ -158,7 +158,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     // Populate employee info from the service
     this.populateEmployeeInfo();
     this.reasonList = this.commonService.config.reasonList || [];
-    console.log("this.comm", this.commonService.config);
   }
 
   ngOnDestroy(): void {
@@ -192,7 +191,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
           take(1) // Take only the first emission and unsubscribe
         )
         .subscribe(() => {
-          console.log("Auth complete, proceeding with form data load");
           this.isDataLoaded = true;
           resolve();
         });
@@ -232,7 +230,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     if (this.formDataLoadedOnce && !sendRequest) return; // prevent duplicate loads
     this.formDataLoadedOnce = true;
 
-    console.log("Loading form data (disabled dates)...");
 
     // Set date range
     const { minDate, maxDate } = this.getAllowedDateRange();
@@ -557,7 +554,6 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     return dates;
   }
   onMonthYearChanged(event: { month: number; year: number }) {
-    console.log("qqqqqqqqqqq");
 
     this.loadFormData(event.month, event.year, true);
   }
