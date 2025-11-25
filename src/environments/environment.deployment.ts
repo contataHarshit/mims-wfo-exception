@@ -1,4 +1,6 @@
-export const Environment= {
-    baseUrl: 'http://192.168.2.25:3000/',
-    production: false
-} as const;
+
+export const Environment = {
+  production: false,
+  baseUrl: "http://localhost:3000/",
+  redirectURL: "http://mims/"
+};

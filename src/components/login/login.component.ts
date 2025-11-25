@@ -21,7 +21,7 @@ export class LoginComponent implements OnInit {
     localStorage.clear();
 
     // Redirect if token exists
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('token');
     if (token) {
       this.router.navigate(['/dashboard']);
     }
@@ -29,7 +29,7 @@ export class LoginComponent implements OnInit {
 
   mockLogin() {
     // Example mock login
-    localStorage.setItem('jwtToken', 'mock-token');
+    localStorage.setItem('token', 'mock-token');
     this.router.navigate(['/dashboard']);
   }
 }

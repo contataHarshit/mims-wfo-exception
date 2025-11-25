@@ -45,7 +45,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     { label: "WFH Dashboard", path: "dashboard", isActive: false },
   ];
 
-  jwtToken: string | null = null;
+  token: string | null = null;
   role = "";
   isDashboardPage = false;
   selectedView: "all" | "self" | "resource" = "self";
@@ -104,18 +104,18 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     // Get session ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get("sessionid") || urlParams.get("sessionId");
-    if (sessionId && !this.jwtToken) {
+    if (sessionId && !this.token) {
       if (localStorage.getItem("department") == "HR") {
         this.viewOptions.unshift({ label: "All", value: "all" });
       }
       this.authenticateWithSession(sessionId);
     } else {
       // Load stored token & role if available
-      const storedToken = localStorage.getItem("jwtToken");
+      const storedToken = localStorage.getItem("token");
       const storedRole = localStorage.getItem("role");
 
       if (storedToken && storedRole && !this.hasLoadedData) {
-        this.jwtToken = storedToken;
+        this.token = storedToken;
         this.role = storedRole;
         this.employeeNumber = localStorage.getItem("employeeNumber") || "";
         this.department = localStorage.getItem("department") || "";
@@ -149,13 +149,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     )
       .then((response: any) => {
         const employee = response?.data?.employee || {};
-        this.jwtToken = response?.data?.token || null;
+        this.token = response?.data?.token || null;
         this.role = employee.role || "";
         this.employeeNumber = employee.employeeNumber || "";
         this.department = employee.department || "";
 
         // Store auth-related data
-        localStorage.setItem("jwtToken", this.jwtToken || "");
+        localStorage.setItem("token", this.token || "");
         localStorage.setItem("role", this.role);
         localStorage.setItem("department", this.department);
         localStorage.setItem("employeeNumber", this.employeeNumber);
