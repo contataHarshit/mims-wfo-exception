@@ -5,7 +5,6 @@ Visit package.json
 
 
 RUN LOCALLY- ng serve or npm start
-RUN DEPLOYEMENT BUILD LOCALLY -npm run start:deployment
 
 BUILD LOCAL -npm run build or ng build,
 BUILD DEPLOYMENT -npm run build:deployment or ng build --configuration deployment,
