@@ -1,0 +1,235 @@
+.page-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  background: #f2f3f7;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  width: 100%;
+}
+
+.main-form-card {
+  width: 100%;
+  /* full width */
+  padding: 2rem;
+  background-color: #ffffff !important;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.main-form-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.page-title {
+  color: #e65100;
+  font-weight: 700;
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.section-title {
+  color: #e65100;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #ffe0b2;
+  padding-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.2rem 2rem;
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+
+  label {
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    color: #555;
+  }
+
+  input,
+  p-dropdown,
+  app-common-select,
+  textarea {
+    width: 100%;
+    // padding: 0.55rem 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    background-color: #fafafa;
+  }
+
+  input:focus,
+  p-dropdown:focus,
+  app-common-select:focus,
+  textarea:focus {
+    border-color: #e65100;
+    box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.15);
+    outline: none;
+  }
+}
+
+.exception-section {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.p-datatable {
+  width: 100% !important;
+  /* full width table */
+}
+
+.p-datatable .p-datatable-thead>tr>th {
+  background: #f9f9f9;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+  padding: 0.8rem 0.5rem;
+}
+
+.p-datatable .p-datatable-tbody>tr>td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.6rem 0.5rem;
+  color: #555;
+}
+
+.p-datatable .p-datatable-tbody>tr:hover {
+  background-color: #fff3e0;
+  transition: background 0.3s ease;
+}
+
+textarea {
+  width: 100%;
+  resize: none;
+  min-height: 40px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  width: 100%;
+}
+
+.p-button-danger {
+  background: #fff;
+  color: dimgray;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1.2rem;
+  font-weight: 500;
+  box-shadow: -1px 0px 5px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.p-button-danger:hover {
+  background: #fbe9e7;
+  color: #d84315;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.p-button-success {
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.p-button-success:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .main-form-card {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-grid {
+    gap: 1rem 1rem;
+  }
+}
+
+/* Ensures both dropdown and input occupy same space */
+.stable-width {
+  width: 320px;
+  display: inline-block;
+}
+
+/* Wrapper for input with icons */
+.input-wrapper {
+  position: relative;
+}
+
+/* Keeps input size stable and leaves room for icons */
+.input-with-icons {
+  width: 100%;
+  padding-right: 55px;
+  /* space for icons */
+  box-sizing: border-box;
+}
+
+/* Icon positions */
+.inside-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.inside-icon.tick {
+  left: 252px;
+  color: #999;
+}
+
+.inside-icon.cross {
+  left: 280px;
+  color: #999;
+}
+
+.inside-icon.tick:hover {
+  color: #22c55e;
+}
+
+.inside-icon.cross:hover {
+  color: #ef4444;
+}
+
+/* Ensure consistent height between select and input */
+app-common-select,
+.input-with-icons {
+  min-height: 38px;
+  height: 38px;
+}
+
+.input-with-icons,
+::ng-deep ng-select {
+  width: 300px;
+}
+
+::ng-deep .custom-calendar-panel{
+     top: 520px !important;
+    position: revert-layer;
+}

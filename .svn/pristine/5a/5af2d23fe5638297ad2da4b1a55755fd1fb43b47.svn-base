@@ -1,0 +1,59 @@
+<h2 mat-dialog-title class="dialog-title">Exception Review</h2>
+
+<mat-dialog-content class="popup-content">
+  <!-- LEFT SIDE: ACTION SECTION -->
+  <div class="left">
+    <div class="section">
+      <label class="section-label">Select an Action *</label>
+      <mat-radio-group [(ngModel)]="selectedAction" class="radio-group">
+        <mat-radio-button value="approved">Accept with requested days</mat-radio-button>
+        <mat-radio-button value="partial">Change in requested days (Partial Approve)</mat-radio-button>
+        <mat-radio-button value="rejected">Reject</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <!-- Approved Days (Visible only for Partial) -->
+    <div *ngIf="selectedAction === 'partial'" class="section">
+      <label class="section-label">Approved Days *</label>
+      <input matInput type="number" min="1" [(ngModel)]="exceptionApprovedDays" placeholder="Enter approved days"
+        class="styled-input" />
+    </div>
+
+    <!-- Remarks -->
+    <div class="section remarks">
+      <label class="section-label">Manager Remarks</label>
+      <textarea matInput [(ngModel)]="managerRemarks" placeholder="Enter your comments here..."
+        class="styled-textarea"></textarea>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDE: SUMMARY SECTION -->
+  <div class="right">
+    <h3 class="summary-title">Request Summary</h3>
+    <div class="summary-item">
+      <span>Employee Name:</span>
+      <strong>{{ request.employeeName }}</strong>
+    </div>
+    <div class="summary-item">
+      <span>Requested Exceptions:</span>
+      <strong>{{ request.exceptionRequestedDays }} day(s)</strong>
+    </div>
+    <div class="summary-item">
+      <span>Reason:</span>
+      <strong>{{ request.primaryReason }}</strong>
+    </div>
+    <div class="summary-item">
+      <span>Remarks:</span>
+      <strong>{{ request.managerRemarks || '-' }}</strong>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<!-- ACTION BUTTONS -->
+<mat-dialog-actions align="end" class="action-buttons">
+  <button mat-stroked-button color="warn" (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSubmit()"
+    [disabled]="!selectedAction || (selectedAction === 'partial' && !exceptionApprovedDays)">
+    Submit
+  </button>
+</mat-dialog-actions>

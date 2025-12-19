@@ -1,0 +1,6 @@
+<div class="common-select">
+    <ng-select [items]="options" [bindLabel]="searchKey" [bindValue]="bindValue" [(ngModel)]="value"
+        [placeholder]="placeholder" [appendTo]="appendTo" [searchable]="true" [clearable]="true"
+        [notFoundText]="'No items found'" (change)="onChange($event)" [disabled]="disabled">
+    </ng-select>
+</div>

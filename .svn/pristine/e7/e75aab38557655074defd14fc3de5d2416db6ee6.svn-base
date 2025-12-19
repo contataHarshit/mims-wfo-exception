@@ -1,0 +1,8 @@
+{
+  "reasonList": [
+    { "label": "Health Issue", "value": "Health Issue" },
+    { "label": "Personal Work", "value": "Personal Work" },
+    { "label": "Travel", "value": "Travel" },
+    { "label": "Other", "value": "other" }
+  ]
+}

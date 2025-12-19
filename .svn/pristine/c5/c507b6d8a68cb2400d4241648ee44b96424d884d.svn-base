@@ -1,0 +1,158 @@
+<div class="page-container">
+  <!-- FILTER SECTION -->
+  <div class="filter-card">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+
+      <!-- Row 1: Manager, Employee name, Status -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <!-- MANAGER FIELD - FIXED -->
+        <div class="form-row">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Manager Name</label>
+
+
+          <!-- For other views: Show select dropdown -->
+          <app-common-select [options]="managerList" [(value)]="filters.managerName" placeholder="Select Manager"
+            [disabled]="selectedView !== 'all'" style="width: 100%;">
+          </app-common-select>
+        </div>
+
+        <!-- EMPLOYEE NAME -->
+        <div class="form-row" *ngIf="selectedView !== 'self'">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Employee name</label>
+          <app-common-select [options]="employeeList" [(value)]="filters.employeeName" placeholder="Select Employee"
+            style="width: 100%;">
+          </app-common-select>
+        </div>
+
+        <!-- STATUS -->
+        <div class="form-row">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Status</label>
+          <app-common-select [options]="statusList" [(value)]="filters.status" (valueChange)="onStatusChange($event)"
+            placeholder="Select Status">
+          </app-common-select>
+        </div>
+      </div>
+
+      <!-- Row 2: From date, To date, Reason -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <div class="form-row">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">From date</label>
+          <input type="date" [(ngModel)]="filters.fromDate" class="date-input"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()" />
+        </div>
+
+        <div class="form-row">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">To date</label>
+          <input type="date" [(ngModel)]="filters.toDate" class="date-input"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()" />
+        </div>
+
+        <div class="form-row" *ngIf="selectedView !== 'self'">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Reason</label>
+          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
+            style="width: 100%;">
+          </app-common-select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
+        <button pButton label="Apply" class="p-button-success" (click)="applyFilter()"
+          style="padding: 10px 30px;"></button>
+        <button pButton label="Reset" class="p-button-secondary" (click)="resetFilters()"
+          style="padding: 10px 30px;"></button>
+      </div>
+    </div>
+
+    <!-- Export Button -->
+    <div style="margin-top: 20px;">
+      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="export()"></button>
+    </div>
+  </div>
+
+  <!-- TABLE SECTION -->
+  <div class="table-card" style="margin-top: 20px;">
+    <p-table [value]="exceptionRequests" [paginator]="true" [rows]="limit" [totalRecords]="totalRecords" [lazy]="true"
+      (onLazyLoad)="onPageChange($event)" [rowsPerPageOptions]="[10, 20, 50]" class="p-datatable-gridlines"
+      [responsiveLayout]="'scroll'">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 60px; text-align: center;"
+            *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE') ">
+            <input type="checkbox"
+              *ngIf="!disableSelectAll && (selectedView!=='resource' || filters?.status?.value!=='APPROVED')"
+              (change)="selectAllChange($event)" [(ngModel)]="allSelected">
+          <th>Employee Id</th>
+          <th>Employee Name</th>
+          <th>Designation</th>
+          <th>Manager Name</th>
+          <th *ngIf="showApprovedColumn()">Approved By</th>
+          <th *ngIf="showRejectedColumn()">Rejected By</th>
+          <th>Exception Date</th>
+          <th>Reason</th>
+          <th>Submission date</th>
+          <th>Status</th>
+          <!-- <th>Remarks</th> -->
+          <th *ngIf="selectedView === 'self'">Action</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-req>
+        <tr>
+          <td style="text-align: center;" *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
+            <input type="checkbox" [checked]="req.checked"
+              [disabled]="((req.status === 'APPROVED' && role!='ADMIN' && role!=='MANAGER' && department !=='HR' ) || (department!=='HR' && role!= 'ADMIN' && selectedView!=='resource')) ||(selectedView=='resource' && req.status=='APPROVED') "
+              (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
+          </td>
+          <td>{{ req.employeeId }}</td>
+          <td>{{ req.employeeName }}</td>
+          <td>{{ req.designation }}</td>
+          <td>{{ req.managerName }}</td>
+          <td *ngIf="showApprovedColumn()">{{ req.approvedBy || '-' }}</td>
+          <td *ngIf="showRejectedColumn()">{{ req.rejectedBy || '-' }}</td>
+          <td>{{ req.exceptionDate }}</td>
+          <td>{{ req.primaryReason }}</td>
+          <td>{{ req.submissionDate }}</td>
+          <td>
+            <span [ngClass]="{
+              'status-pending': req.status === 'PENDING',
+              'status-approved': req.status === 'APPROVED',
+              'status-rejected': req.status === 'REJECTED'
+            }">
+              {{ req.status }}
+            </span>
+          </td>
+          <!-- <td>{{ req.remarks }}</td> -->
+          <td *ngIf="selectedView === 'self'">
+            <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn">
+              <i class="fa fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="paginatorleft">
+        <span>
+          <!-- Total Records: {{ totalRecords }} -->
+          <span *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
+            Selected Records: {{ selectedRequests.length }}
+          </span>
+        </span>
+      </ng-template>
+
+    </p-table>
+  </div>
+
+  <!-- BULK ACTION BUTTONS -->
+  <div class="action-buttons" style="display: flex; gap: 20px; margin-top: 20px; justify-content: space-between;"
+    *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all'))  ">
+    <div style="flex: 1;">
+      <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button pButton label="Approve" class="p-button-success" (click)="bulkUpdate('APPROVED')"
+        *ngIf="filters?.status?.value !=='APPROVED'"></button>
+      <button pButton label="Reject" class="p-button-danger" (click)="bulkUpdate('REJECTED')"></button>
+    </div>
+  </div>
+</div>
