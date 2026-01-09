@@ -71,6 +71,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       label: "View",
       value: "view",
     },
+    {
+      label:"Add",
+      value:"add"
+    }
   ];
   private destroy$ = new Subject<void>();
   isAuthenticating = true;

@@ -203,7 +203,10 @@
     </div>
 
   </div>
-  <ng-template #dashboardView>
+  <ng-template #dashboardView *ngIf="commonService.attendanceView==='view'; else addView">
     <app-attendance-view></app-attendance-view>
+  </ng-template>
+  <ng-template #addView>
+    <app-add-manual-attendance></app-add-manual-attendance>
   </ng-template>
 </div>

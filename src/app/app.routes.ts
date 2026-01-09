@@ -48,4 +48,11 @@ export const routes: Routes = [
         "../components/correction-dashboard/correction-dashboard.component"
       ).then((m) => m.CorrectionDashboardComponent),
   },
+  {
+    path: "add-manual-attendance",
+    loadComponent: () =>
+      import(
+        "../components/add-manual-attendance/add-manual-attendance.component"
+      ).then((m) => m.AddManualAttendanceComponent),
+  }
 ];

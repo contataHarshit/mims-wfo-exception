@@ -15,6 +15,7 @@ import { ConfirmPopupComponent } from "../../popup/confirm-popup/confirm-popup.c
 import { HttpService } from "../../service/http.service";
 import { ConstantService } from "../../service/constant.service";
 import { ToastrService } from "ngx-toastr";
+import { AddManualAttendanceComponent } from "../add-manual-attendance/add-manual-attendance.component";
 @Component({
   selector: "app-attendance-dashboard",
   standalone: true,
@@ -24,6 +25,7 @@ import { ToastrService } from "ngx-toastr";
     FormsModule,
     ButtonModule,
     AttendanceViewComponent,
+    AddManualAttendanceComponent
     // ToastrService
   ],
   templateUrl: "./attendance-dashboard.component.html",

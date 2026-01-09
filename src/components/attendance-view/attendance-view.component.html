@@ -8,18 +8,12 @@
 
         <div class="form-row">
           <label>Start Date</label>
-<input
-  type="date"
-  formControlName="startDate"
-  (change)="onStartDateChange($event)" />
+          <input type="date" formControlName="startDate" (change)="onStartDateChange($event)" />
         </div>
 
-       <app-manager-employee-filter
-  [(managerValue)]="selectedManager"
-  [(employeeValue)]="selectedEmployee"
-  (managerValueChange)="onManagerChange($event)"
-  (employeeValueChange)="onEmployeeChange($event)">
-</app-manager-employee-filter>
+        <app-manager-employee-filter [(managerValue)]="selectedManager" [(employeeValue)]="selectedEmployee"
+          (managerValueChange)="onManagerChange($event)" (employeeValueChange)="onEmployeeChange($event)">
+        </app-manager-employee-filter>
 
       </div>
 
@@ -45,8 +39,9 @@
         </button>
 
         <span class="week-range">
-          {{ tableColumns[3]?.label }} – {{ tableColumns[9]?.label }}
+          {{ weekRangeLabel }}
         </span>
+
 
         <button pButton type="button" icon="pi pi-angle-right" class="p-button-rounded p-button-text"
           (click)="nextWeek()">
