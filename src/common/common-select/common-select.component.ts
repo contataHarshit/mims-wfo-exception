@@ -1,4 +1,11 @@
-import { Component, Input, Output, EventEmitter } from "@angular/core";
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnChanges,
+  SimpleChanges,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { NgSelectModule } from "@ng-select/ng-select";
@@ -19,7 +26,8 @@ export class CommonSelectComponent {
   @Input() appendTo: string = "body";
   @Input() disabled: boolean = false;
   @Output() valueChange = new EventEmitter<any>();
-
+  @Input() showSubmit: boolean = true;
+  @Input() reset: boolean = true;
   onChange(event: any) {
     this.value = event;
     this.valueChange.emit(event);

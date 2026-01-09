@@ -39,6 +39,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   editedCells = new Set<string>();
   private destroy$ = new Subject<void>();
+  currentWeekStart!: string;
 
   filterForm = this.fb.group({
     startDate: [this.today()],
@@ -60,9 +61,15 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.generateColumns(this.filterForm.value.startDate!);
+    this.currentWeekStart = this.today();
+    this.generateColumns(this.currentWeekStart);
     this.fetchAttendance();
   }
+
+  editedMap = new Map<
+    string,
+    { email: string; date: string; value: string | undefined }
+  >();
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -86,28 +93,24 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   prevWeek() {
-    if (!this.canGoPrevious()) return;
-    this.weekOffset -= 7;
-    this.shiftWeek();
+    this.shiftWeek(-7);
   }
 
   nextWeek() {
-    if (!this.canGoNext()) return;
-    this.weekOffset += 7;
-    this.shiftWeek();
+    this.shiftWeek(7);
   }
 
-  private shiftWeek() {
-    const base = new Date(this.today());
-    base.setDate(base.getDate() + this.weekOffset);
+  private shiftWeek(days: number) {
+    const d = new Date(this.currentWeekStart);
+    d.setDate(d.getDate() + days);
 
-    const newStart = base.toISOString().split("T")[0];
+    this.currentWeekStart = d.toISOString().split("T")[0];
 
-    this.filterForm.patchValue({ startDate: newStart });
+    this.filterForm.patchValue({
+      startDate: this.currentWeekStart,
+    });
 
-    this.generateColumns(newStart);
-
-    // 🔥 re-hit API with new week + existing filters
+    this.generateColumns(this.currentWeekStart);
     this.fetchAttendance();
   }
 
@@ -353,5 +356,58 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     const d = new Date(date);
     d.setDate(d.getDate() + offset);
     return d.toISOString().split("T")[0];
+  }
+  markEdited(row: any, date: string) {
+    const key = `${row.email}-${date}`;
+
+    this.editedMap.set(key, {
+      email: row.email,
+      date,
+      value: row.attendance[date] || undefined,
+    });
+
+    this.editedCells.add(`${row.employeeId}-${date}`);
+  }
+  submitAttendance() {
+    if (!this.editedMap.size) {
+      this.toastr.info("No changes to submit");
+      return;
+    }
+
+    const payloadMap: Record<string, any> = {};
+
+    this.editedMap.forEach(({ email, date, value }) => {
+      if (!payloadMap[email]) {
+        payloadMap[email] = {
+          email,
+          dates: [],
+        };
+      }
+
+      payloadMap[email].dates.push({ date, value });
+    });
+
+    const payload = Object.values(payloadMap);
+
+    this.commonService.setLoading(true);
+
+    this.http.postData(payload, this.constants.officeAttendance).subscribe({
+      next: (res) => {
+        if (res?.success) {
+          this.toastr.success(res?.data?.message || "Attendance updated");
+          this.commonService.setLoading(false);
+          this.editedMap.clear();
+        } else {
+          this.toastr.error("Update failed");
+        }
+      },
+      error: () => {
+        this.toastr.error("Update failed");
+        this.commonService.setLoading(false);
+      },
+      complete: () => {
+        this.commonService.setLoading(false);
+      },
+    });
   }
 }

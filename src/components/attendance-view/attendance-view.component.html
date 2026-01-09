@@ -17,8 +17,9 @@
 
       </div>
 
-      <app-common-form-action (submit)="submit()" (reset)="reset()">
+      <app-common-form-action (reset)="reset()" [showSubmit]="false" [resetBtn]="true">
       </app-common-form-action>
+
 
     </form>
   </div>
@@ -33,20 +34,23 @@
       </div>
 
       <div class="header-right week-nav">
-
         <button pButton type="button" icon="pi pi-angle-left" class="p-button-rounded p-button-text"
-          (click)="prevWeek()" [disabled]="!canGoPrevious()">
+          (click)="prevWeek()">
         </button>
 
         <span class="week-range">
-          {{ rangeLabel }}
+          {{ tableColumns[3]?.label }} – {{ tableColumns[9]?.label }}
         </span>
 
         <button pButton type="button" icon="pi pi-angle-right" class="p-button-rounded p-button-text"
-          (click)="nextWeek()" [disabled]="!canGoNext()">
+          (click)="nextWeek()">
         </button>
 
+        <button pButton label="Submit" icon="pi pi-check" class="p-button-success" (click)="submitAttendance()">
+        </button>
       </div>
+
+
 
     </div>
 
@@ -70,9 +74,7 @@
               <!-- Editable attendance -->
               <input *ngIf="isEditable(col.key)" class="editable-cell" [class.edited-cell]="isEdited(row, col.key)"
                 [(ngModel)]="row.attendance[col.key]" [ngModelOptions]="{ standalone: true }"
-                (focus)="storeOriginalValue($event)" (blur)="onCellBlur(row, col.key, row.attendance[col.key], $event)"
-                (keydown.enter)="onCellEnter(row, col.key, row.attendance[col.key], $event)" />
-
+                (change)="markEdited(row, col.key)" />
 
             </td>
           </tr>
