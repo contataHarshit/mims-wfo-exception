@@ -71,9 +71,10 @@
       </p-table>
     </div>
 
-    <div class="form-actions">
+    <!-- <div class="form-actions">
       <button pButton label="Reset" class="p-button-danger" (click)="resetForm()"></button>
       <button pButton label="Submit" class="p-button-success" (click)="onSubmit()"></button>
-    </div>
+    </div> -->
+    <app-common-form-action (reset)="resetForm()" (submit)="onSubmit()"></app-common-form-action>
   </p-card>
 </div>

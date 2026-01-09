@@ -46,13 +46,8 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
-        <button pButton label="Apply" class="p-button-success" (click)="applyFilter()"
-          style="padding: 10px 30px;"></button>
-        <button pButton label="Reset" class="p-button-secondary" (click)="resetFilters()"
-          style="padding: 10px 30px;"></button>
-      </div>
+
+      <app-common-form-action (reset)="resetFilters()" (submit)="applyFilter()"></app-common-form-action>
     </div>
 
     <!-- Export Button -->

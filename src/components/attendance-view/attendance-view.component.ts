@@ -122,8 +122,6 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.fetchAttendance();
   }
   reset() {
-    this.weekOffset = 0;
-
     this.selectedManager = null;
     this.selectedEmployee = null;
 
@@ -131,6 +129,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       startDate: this.today(),
     });
 
+    this.currentWeekStart = this.today();
     this.generateColumns(this.today());
     this.fetchAttendance();
   }
@@ -398,16 +397,44 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
           this.commonService.setLoading(false);
           this.editedMap.clear();
         } else {
+          
           this.toastr.error("Update failed");
         }
       },
-      error: () => {
-        this.toastr.error("Update failed");
+      error: (e) => {
+        
+        
+        this.toastr.error(e.message || "Update failed");
         this.commonService.setLoading(false);
       },
       complete: () => {
         this.commonService.setLoading(false);
       },
     });
+  }
+  onStartDateChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    if (!value) return;
+
+    this.currentWeekStart = value;
+    this.generateColumns(value);
+    this.fetchAttendance();
+  }
+
+  onManagerChange(manager: any) {
+    this.selectedManager = manager;
+    this.onFilterChange();
+  }
+
+  onEmployeeChange(employee: any) {
+    this.selectedEmployee = employee;
+    this.onFilterChange();
+  }
+  private onFilterChange() {
+    const startDate = this.filterForm.value.startDate!;
+    this.currentWeekStart = startDate;
+
+    this.generateColumns(startDate);
+    this.fetchAttendance();
   }
 }

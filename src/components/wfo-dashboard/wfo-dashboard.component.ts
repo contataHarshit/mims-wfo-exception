@@ -18,6 +18,7 @@ import { MatCheckboxModule } from "@angular/material/checkbox";
 import { ConfirmPopupComponent } from "../../popup/confirm-popup/confirm-popup.component";
 import { Subject, takeUntil } from "rxjs";
 import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-filter/manager-employee-filter.component";
+import { CommonFormActionComponent } from "../../common/common-form-action/common-form-action.component";
 interface ExceptionRequest {
   exceptionId: string;
   employeeId: string;
@@ -52,6 +53,7 @@ interface ExceptionRequest {
     DateRangePickerComponent,
     CommonSelectComponent,
     ManagerEmployeeFilterComponent,
+    CommonFormActionComponent
   ],
   templateUrl: "./wfo-dashboard.component.html",
   styleUrl: "../../shared/dashboard-common.scss",

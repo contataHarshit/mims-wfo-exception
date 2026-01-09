@@ -30,7 +30,7 @@ import { ToastrService } from "ngx-toastr";
 import { addDays, endOfMonth } from "date-fns";
 import { finalize, takeUntil, filter, take } from "rxjs/operators";
 import { Subject } from "rxjs";
-
+import { CommonFormActionComponent } from "../../common/common-form-action/common-form-action.component";
 interface ExceptionEntry {
   dateRange: Date[];
   exceptionRequestedDays: string;
@@ -67,6 +67,7 @@ interface FormData {
     MultiSelectModule,
     DateRangePickerComponent,
     CommonSelectComponent,
+    CommonFormActionComponent
   ],
   providers: [MessageService],
 })

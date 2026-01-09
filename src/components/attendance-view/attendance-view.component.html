@@ -8,12 +8,18 @@
 
         <div class="form-row">
           <label>Start Date</label>
-          <input type="date" formControlName="startDate" />
+<input
+  type="date"
+  formControlName="startDate"
+  (change)="onStartDateChange($event)" />
         </div>
 
-        <app-manager-employee-filter [(managerValue)]="selectedManager" [(employeeValue)]="selectedEmployee">
-        </app-manager-employee-filter>
-
+       <app-manager-employee-filter
+  [(managerValue)]="selectedManager"
+  [(employeeValue)]="selectedEmployee"
+  (managerValueChange)="onManagerChange($event)"
+  (employeeValueChange)="onEmployeeChange($event)">
+</app-manager-employee-filter>
 
       </div>
 
