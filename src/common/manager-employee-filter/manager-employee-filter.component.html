@@ -1,0 +1,15 @@
+<div class="manager-employee-inline">
+    <div class="form-row">
+        <label>Manager</label>
+        <app-common-select [options]="managerList" [value]="managerValue" (valueChange)="onManagerChange($event)"
+            [disabled]="managerDisabled" placeholder="Select Manager">
+        </app-common-select>
+    </div>
+
+    <div class="form-row">
+        <label>Employee</label>
+        <app-common-select [options]="employeeList" [value]="employeeValue" (valueChange)="onEmployeeChange($event)"
+            placeholder="Select Employee">
+        </app-common-select>
+    </div>
+</div>

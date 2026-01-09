@@ -1,0 +1,58 @@
+.date-picker-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 300px;
+}
+
+.custom-date-input {
+  width: 100%;
+  resize: none;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  background-color: #fff;
+  color: #333;
+}
+
+.custom-date-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 4px rgba(25, 118, 210, 0.3);
+}
+
+.hidden-calendar {
+  display: none;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.ok-btn {
+  background-color: #1976d2;
+  color: white;
+}
+
+.cancel-btn {
+  background-color: #ccc;
+  color: #333;
+}
+
+.popup-buttons,::ng-deep .p-datepicker-group-container{
+  position: relative;
+    z-index: 3;
+}
+.big-div{
+  position: fixed;
+  z-index: 2;
+  top:0;
+  height: 100vh;
+  width: 100vw;
+  left: 0;
+
+}

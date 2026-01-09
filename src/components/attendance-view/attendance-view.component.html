@@ -1,0 +1,84 @@
+<div class="page-container">
+
+  <!-- FILTER CARD -->
+  <div class="filter-card">
+    <form [formGroup]="filterForm">
+
+      <div class="form-grid">
+
+        <div class="form-row">
+          <label>Start Date</label>
+          <input type="date" formControlName="startDate" />
+        </div>
+
+        <app-manager-employee-filter [(managerValue)]="selectedManager" [(employeeValue)]="selectedEmployee">
+        </app-manager-employee-filter>
+
+
+      </div>
+
+      <app-common-form-action (submit)="submit()" (reset)="reset()">
+      </app-common-form-action>
+
+    </form>
+  </div>
+
+  <!-- TABLE CARD -->
+  <div class="table-card">
+
+    <div class="table-header">
+      <div class="header-left">
+        <h3>Attendance View</h3>
+        <span class="subtitle">Weekly attendance</span>
+      </div>
+
+      <div class="header-right week-nav">
+
+        <button pButton type="button" icon="pi pi-angle-left" class="p-button-rounded p-button-text"
+          (click)="prevWeek()" [disabled]="!canGoPrevious()">
+        </button>
+
+        <span class="week-range">
+          {{ rangeLabel }}
+        </span>
+
+        <button pButton type="button" icon="pi pi-angle-right" class="p-button-rounded p-button-text"
+          (click)="nextWeek()" [disabled]="!canGoNext()">
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="table-wrapper">
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th *ngFor="let col of tableColumns">{{ col.label }}</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let row of tableData">
+            <td *ngFor="let col of tableColumns">
+
+              <!-- Static cells -->
+              <span *ngIf="!isEditable(col.key)">
+                {{ row[col.key] || '-' }}
+              </span>
+
+              <!-- Editable attendance -->
+              <input *ngIf="isEditable(col.key)" class="editable-cell" [class.edited-cell]="isEdited(row, col.key)"
+                [(ngModel)]="row.attendance[col.key]" [ngModelOptions]="{ standalone: true }"
+                (focus)="storeOriginalValue($event)" (blur)="onCellBlur(row, col.key, row.attendance[col.key], $event)"
+                (keydown.enter)="onCellEnter(row, col.key, row.attendance[col.key], $event)" />
+
+
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

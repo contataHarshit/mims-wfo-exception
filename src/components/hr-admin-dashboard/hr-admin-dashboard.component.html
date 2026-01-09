@@ -1,0 +1,126 @@
+<!-- hr-admin-dashboard.component.html -->
+<div class="page-container">
+  <!-- FILTER SECTION -->
+  <div class="filter-card">
+    <div class="filter-grid-container">
+
+      <!-- Row 1: Employee name, Manager name, Status (3 columns) -->
+      <div class="filter-row-3">
+        <app-manager-employee-filter [(managerValue)]="filters.managerName"
+          [(employeeValue)]="filters.employeeName"></app-manager-employee-filter>
+        <!-- 
+        <div class="form-row">
+          <label>Status</label>
+          <app-common-select [options]="statusList" [(value)]="filters.status" placeholder="Select Status"></app-common-select>
+        </div> -->
+      </div>
+
+      <!-- Row 2: From date, To date, Reason (3 columns) -->
+      <div class="filter-row-3">
+        <div class="form-row">
+          <label>From date</label>
+          <input type="date" [(ngModel)]="filters.fromDate" class="date-input" [max]="maxFromDate"
+            (change)="onDateChange()" />
+        </div>
+
+        <div class="form-row">
+          <label>To date</label>
+          <input type="date" [(ngModel)]="filters.toDate" class="date-input" [min]="minToDate"
+            (change)="onDateChange()" />
+        </div>
+
+        <!-- <div class="form-row">
+          <label>Reason</label>
+          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"></app-common-select>
+        </div> -->
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-row">
+        <button pButton label="Apply" class="p-button-success" (click)="applyFilters()"></button>
+        <button pButton label="Reset" class="p-button-secondary" (click)="resetFilters()"></button>
+      </div>
+    </div>
+
+    <!-- Export Button -->
+    <div class="export-row">
+      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()"></button>
+    </div>
+  </div>
+
+  <!-- TABLE SECTION -->
+  <div class="table-card">
+    <p-table [value]="hrData" class="p-datatable-gridlines" [paginator]="true" [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20]" [responsiveLayout]="'scroll'" #hrTable sortMode="multiple">
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="employeeNumber">
+            Employee ID
+            <p-sortIcon field="employeeNumber"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="employeeName">
+            Employee Name
+            <p-sortIcon field="employeeName"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="designation">
+            Designation
+            <p-sortIcon field="designation"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="managerName">
+            Manager Name
+            <p-sortIcon field="managerName"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="TOTAL">
+            Applied Exceptions
+            <p-sortIcon field="TOTAL"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="APPROVED">
+            Accepted Exceptions
+            <p-sortIcon field="APPROVED"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="REJECTED">
+            Rejected Exceptions
+            <p-sortIcon field="REJECTED"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="PENDING">
+            Pending Exceptions
+            <p-sortIcon field="PENDING"></p-sortIcon>
+          </th>
+        </tr>
+      </ng-template>
+
+
+      <ng-template pTemplate="body" let-rec>
+        <tr>
+          <td>{{ rec.employeeNumber }}</td>
+          <td>{{ rec.employeeName }}</td>
+          <td>{{ rec.designation }}</td>
+          <td>{{ rec.managerName }}</td>
+          <td style="text-align: center;">{{ rec.TOTAL }}</td>
+          <td style="text-align: center;">{{ rec.APPROVED }}</td>
+          <td style="text-align: center;">{{ rec.REJECTED }}</td>
+          <td style="text-align: center;">{{ rec.PENDING }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="paginatorleft">
+        <!-- <span>Total Records: {{ hrData.length }}</span> -->
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 20px;">
+            No records found
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

@@ -1,0 +1,193 @@
+/* =====================================================
+   🔁 COMMON DASHBOARD STYLES
+   WFO Dashboard + Correction Dashboard
+   ===================================================== */
+
+/* ================= PAGE ================= */
+
+.dashboard-page {
+  padding: 1.25rem 2rem;
+  background-color: #f4f6f8;
+  min-height: calc(100vh - 60px);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ================= FILTER CARD ================= */
+
+.dashboard-filter {
+  background: #ffffff;
+  padding: 1.25rem 1.75rem;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1rem;
+}
+
+.dashboard-filter .form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem 1.25rem;
+  align-items: end;
+}
+
+.dashboard-filter .form-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-filter label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #374151;
+}
+
+.dashboard-filter input,
+.dashboard-filter p-dropdown,
+.dashboard-filter p-calendar {
+  width: 100% !important;
+}
+
+/* ---- Filter Actions ---- */
+.dashboard-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+/* ================= TABLE CARD ================= */
+
+.dashboard-table-card {
+  background: #ffffff;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* ================= ACTION BAR ================= */
+
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+/* ================= PRIME TABLE ================= */
+
+::ng-deep .dashboard-table {
+
+  /* Header */
+  .p-datatable-thead > tr > th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 120;
+    background-color: #f1f1f1;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    padding: 10px;
+  }
+
+  /* Cells */
+  .p-datatable-tbody > tr > td {
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  /* Row colors */
+  .p-datatable-tbody > tr {
+    background-color: #ffffff !important;
+    transition: background-color 0.2s ease;
+  }
+
+  .p-datatable-tbody > tr:nth-child(even) {
+    background-color: #e3f2fd !important;
+  }
+
+  .p-datatable-tbody > tr.row-checked {
+    background-color: #ffebee !important;
+  }
+
+  .p-datatable-tbody > tr:hover:not(.row-checked) {
+    background-color: #bbdefb !important;
+  }
+}
+
+/* ================= TABLE HEIGHT (IMPORTANT) ================= */
+
+/* ✅ Fits more rows on one screen */
+::ng-deep .dashboard-table .p-datatable-wrapper {
+  max-height: 70vh !important;
+}
+
+::ng-deep .dashboard-table .p-datatable-scrollable-body {
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+}
+
+/* ================= STATUS TAGS ================= */
+
+.status-pending,
+.status-approved,
+.status-rejected {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ================= PAGINATOR ================= */
+
+::ng-deep .p-paginator {
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1200px) {
+  .dashboard-filter .form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-filter .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+.filter-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.span-2 {
+    max-width: 45vw;
+  }

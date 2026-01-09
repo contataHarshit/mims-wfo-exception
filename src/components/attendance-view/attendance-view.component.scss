@@ -1,0 +1,62 @@
+/* Reuse dashboard look */
+:host {
+    display: block;
+}
+
+/* Align buttons properly inside grid */
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+/* Match dashboard table icon color */
+.table-header i {
+    color: #4f46e5;
+}
+
+/* Reduce button size inside table */
+::ng-deep .p-button.p-button-text {
+    padding: 6px 8px;
+}
+
+/* Align filter buttons like dashboard */
+.action-row {
+    display: flex;
+    align-items: flex-end;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Remove weird center spacing */
+.form-grid {
+    align-items: end;
+}
+
+.p-button.p-button-success {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.header-right {
+    width: 30%;
+    display: flex;
+    gap: 8px;
+    justify-content: end;
+}
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.week-range {
+  font-weight: 600;
+  font-size: 14px;
+  color: #444;
+  min-width: 120px;
+  text-align: center;
+}

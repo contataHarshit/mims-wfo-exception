@@ -1,27 +1,49 @@
-# MimsExceptionWfo
+NODE VERSION -------------->20.19.5
+ANGULAR VERSION ------------>17
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
+Visit package.json
 
-## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+RUN LOCALLY- ng serve or npm start
 
-## Code scaffolding
+BUILD LOCAL -npm run build or ng build,
+BUILD DEPLOYMENT -npm run build:deployment or ng build --configuration deployment,
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
-## Build
+/**** FOR CHANGING BASE URL DURING DEPLOYMENT ,CHANGE IN environment.deployment.ts take reference from environment.ts ****/
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-## Running end-to-end tests
+***Step by Step guide from checkout to build ***
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+1. Checkout to svn repository
+svn checkout svn://svn.contata.com/MIMS/WFH/WFH-NEW/frontend-angular
+----------------------------------------------------------------------------
+2. Install dependencies
+npm install
+---------------------------------------------------------------------------
+3. Create a .env file in root directory of project where src ,package.json and other main files and folder are present 
+***structure ,take refrence from .env.example***
+    BASEURL=
+    REDIRECTURL=
+    PRODUCTION=
+----------------------------------------------------------------------------   
+4. For making a build run command 
+npm run build:deployment Or npm run build 
+*** This will create a dist folder ***
+-----------------------------------------------------------------------------
+5. For uploading the build for deployment
+inside dist folder there is a browser folder where your angular build files are present
+upload , copy the contents of this browser folder and paste it on the machine folder wherever you want to deploy
+*** Remember whenever you do any change in .env you need to run the build command again and upload the build for the changes to be applied ***
+-------------------------------------------------------------------------------
 
-## Further help
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+
+
+
+
+
+
+

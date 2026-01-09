@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject } from '@angular/core';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -16,25 +16,28 @@ import { MatButtonModule } from '@angular/material/button';
     MatDialogModule,
     MatRadioModule,
     MatInputModule,
-    MatButtonModule
+    MatButtonModule,
   ],
   templateUrl: './wfo-action-popup.component.html',
-  styleUrls: ['./wfo-action-popup.component.scss']
+  styleUrls: ['./wfo-action-popup.component.scss'],
 })
 export class WfoActionPopupComponent {
-  @Input() data: any; // Contains the selected request
-
   selectedAction: string = '';
   managerRemarks: string = '';
+  exceptionApprovedDays: number | null = null;
 
-  constructor(private dialogRef: MatDialogRef<WfoActionPopupComponent>) {}
+  constructor(
+    private dialogRef: MatDialogRef<WfoActionPopupComponent>,
+    @Inject(MAT_DIALOG_DATA) public request: any
+  ) {}
 
   onSubmit() {
     if (!this.selectedAction) return;
 
     const result = {
       action: this.selectedAction,
-      remarks: this.managerRemarks
+      remarks: this.managerRemarks,
+      approvedDays: this.exceptionApprovedDays,
     };
 
     this.dialogRef.close(result);
@@ -42,9 +45,5 @@ export class WfoActionPopupComponent {
 
   onCancel() {
     this.dialogRef.close();
-  }
-
-  get request() {
-    return this.data;
   }
 }

@@ -1,0 +1,209 @@
+<div class="page-container">
+  <div class="" *ngIf="commonService.attendanceView==='upload'; else dashboardView">
+    <div class="filter-card">
+      <form [formGroup]="form">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label>From Date</label>
+            <input type="date" formControlName="fromDate" class="date-input" [max]="form.value.toDate || null"
+              (change)="onDateChange()" />
+          </div>
+
+          <div class="form-row">
+            <label>To Date</label>
+            <input type="date" formControlName="toDate" class="date-input" [min]="form.value.fromDate || null"
+              (change)="onDateChange()" />
+          </div>
+
+          <div class="form-row">
+            <label>Selected Days</label>
+            <input type="text" class="date-input" [value]="dayCount ? dayCount + ' days' : '-'" disabled />
+          </div>
+
+          <!-- Enhanced Upload Section -->
+          <div class="form-row full-width">
+            <label>Upload CSV</label>
+
+            <!-- Hidden file input -->
+            <input type="file" id="csvFileInput" accept=".csv" style="display: none;" [disabled]="!dayCount"
+              (change)="onFileUpload($event)" />
+
+
+            <!-- Upload Button (shown when no file) -->
+            <div *ngIf="!uploadedFileName" class="upload-button-wrapper">
+              <button pButton type="button" icon="pi pi-upload" label="Choose CSV File"
+                class="p-button-outlined p-button-primary" [disabled]="!dayCount" (click)="triggerFileInput()">
+              </button>
+              <span class="upload-hint" *ngIf="dayCount">Supported format: CSV (Maximum 10MB)</span>
+              <span class="upload-hint upload-warning" *ngIf="!dayCount">Please select date range first</span>
+            </div>
+
+            <!-- File Info (shown after upload) -->
+            <div *ngIf="uploadedFileName" class="file-info-wrapper">
+              <div class="file-info">
+                <i class="pi pi-file-excel"></i>
+                <div class="file-details">
+                  <span class="file-name" (click)="togglePreview()" title="Click to toggle original file preview">
+                    {{ uploadedFileName }}
+                  </span>
+                  <span class="file-meta">{{ previewRows.length }} records • {{ dayCount }} days</span>
+                </div>
+                <button pButton type="button" icon="pi pi-times"
+                  class="p-button-rounded p-button-text p-button-danger p-button-sm" (click)="removeFile()"
+                  title="Remove file">
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+          <button pButton type="button" class="p-button-secondary" label="Reset" icon="pi pi-refresh"
+            (click)="reset()"></button>
+          <!-- <button pButton type="button" class="p-button-success" label="Submit" icon="pi pi-check" [disabled]="!convertedJson.length"
+            (click)="submit()"></button> -->
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Preview Container with Toggle -->
+    <div class="preview-container" *ngIf="previewRows.length">
+
+      <!-- Toggle Button -->
+      <div class="preview-toggle" *ngIf="uploadedFileName">
+        <button pButton type="button" [label]="showRawPreview ? 'Show Formatted Preview' : 'Show Original CSV'"
+          [icon]="showRawPreview ? 'pi pi-table' : 'pi pi-file'" class="p-button-sm p-button-outlined"
+          (click)="togglePreview()">
+        </button>
+      </div>
+
+      <!-- Formatted Preview -->
+      <!-- Formatted Preview -->
+      <div class="table-card" *ngIf="!showRawPreview">
+
+        <!-- HEADER -->
+        <div class="table-header formatted-header">
+          <div class="header-left">
+            <h3><i class="pi pi-table"></i> Formatted Preview</h3>
+            <span class="subtitle">Date range formatted data ready for submission</span>
+          </div>
+
+          <div class="table-info">
+            <span class="record-count">
+              <i class="pi pi-database"></i>
+              Total Records: {{ previewRows.length }}
+            </span>
+
+            <!-- ✅ SUBMIT BUTTON MOVED HERE -->
+            <button pButton type="button" class="p-button-success p-button-sm" icon="pi pi-check"
+              [disabled]="!convertedJson.length" (click)="submit()">
+              Submit
+            </button>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-wrapper">
+          <table class="preview-table">
+
+            <thead>
+              <tr>
+                <th class="sticky-col sticky-col-1 delete-col"></th>
+                <th class="sticky-col sticky-col-2">NAME</th>
+                <th *ngFor="let h of previewHeader.slice(1)">{{ h }}</th>
+              </tr>
+            </thead>
+
+
+    <tbody>
+  <tr *ngFor="let row of paginatedRows; let rIndex = index">
+
+    <!-- DELETE COLUMN -->
+    <td class="sticky-col sticky-col-1 delete-col" style="z-index: 9 !important;">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-trash"
+        class="delete-btn"
+        (click)="deleteRow((currentPage - 1) * pageSize + rIndex)">
+      </button>
+    </td>
+
+    <!-- NAME COLUMN -->
+    <td class="sticky-col sticky-col-2" style="z-index: 9 !important;">
+  <input
+    type="text"
+    [(ngModel)]="previewRows[(currentPage - 1) * pageSize + rIndex][0]"
+    [ngModelOptions]="{ standalone: true }"
+    class="editable-cell"
+    [class.edited-cell]="isCellEdited(
+      (currentPage - 1) * pageSize + rIndex,
+      0
+    )"
+    (focus)="storeOriginalValue($event)"
+    (ngModelChange)="onCellChange(
+      (currentPage - 1) * pageSize + rIndex,
+      0,
+      $event
+    )"
+  />
+</td>
+
+    <!-- REST SCROLLABLE CELLS -->
+    <td *ngFor="let h of previewHeader.slice(1); let cIndex = index">
+      <input
+        type="text"
+        [(ngModel)]="previewRows[(currentPage - 1) * pageSize + rIndex][cIndex + 1]"
+        [ngModelOptions]="{ standalone: true }"
+        class="editable-cell"
+        [class.edited-cell]="isCellEdited(
+          (currentPage - 1) * pageSize + rIndex,
+          cIndex + 1
+        )"
+        (focus)="storeOriginalValue($event)"
+        (ngModelChange)="onCellChange(
+          (currentPage - 1) * pageSize + rIndex,
+          cIndex + 1,
+          $event
+        )"
+      />
+    </td>
+
+  </tr>
+</tbody>
+
+
+          </table>
+        </div>
+      </div>
+
+      <!-- Raw CSV Preview -->
+      <div class="table-card raw-preview" *ngIf="showRawPreview">
+        <div class="table-header">
+          <div class="header-left">
+            <h3><i class="pi pi-file"></i> Original CSV</h3>
+            <span class="subtitle">Unprocessed uploaded file</span>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="preview-table">
+            <tbody>
+              <tr *ngFor="let row of rawCsvRows; let i = index" [class.header-row]="i === 0">
+                <td *ngFor="let cell of row">{{ cell }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <ng-template #dashboardView>
+    <app-attendance-view></app-attendance-view>
+  </ng-template>
+</div>

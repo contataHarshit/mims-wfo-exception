@@ -1,0 +1,25 @@
+.common-select {
+    width: 20vw;
+
+    ::ng-deep .ng-select {
+        .ng-select-container {
+            min-height: 38px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+
+            &:hover {
+                border-color: #e65100;
+            }
+        }
+
+        &.ng-select-focused .ng-select-container {
+            border-color: #e65100;
+            box-shadow: 0 0 0 0.2rem rgba(230, 81, 0, 0.2);
+        }
+
+        .ng-placeholder {
+            color: #6c757d;
+        }
+    }
+
+}

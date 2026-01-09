@@ -1,107 +1,202 @@
-<div class="container">
-  <h2>WFO Exception Dashboard</h2>
+<div class="dashboard-page">
+  <!-- FILTER SECTION -->
+  <div class="dashboard-filter">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
 
-  <div class="form-grid">
-    <div class="form-group">
-      <label>Employee ID</label>
-      <input type="text" placeholder="Enter Employee ID">
+      <!-- Row 1: Manager, Employee name, Status -->
+      <div style="    display: flex;
+    gap: 1em;
+">
+        <!-- Manager + Employee (takes 2 columns) -->
+        <div class="span-2">
+          <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
+            [managerDisabled]="selectedView !== 'all'">
+          </app-manager-employee-filter>
+        </div>
+
+        <!-- Status -->
+        <div class="form-row">
+          <label>Status</label>
+          <app-common-select [options]="statusList" [(value)]="filters.status" (valueChange)="onStatusChange($event)"
+            placeholder="Select Status">
+          </app-common-select>
+        </div>
+      </div>
+
+      <!-- Row 2: From date, To date, Reason -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <div class="form-row">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">From date</label>
+          <input type="date" [(ngModel)]="filters.fromDate" class="date-input"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()"
+            [max]="filters.toDate" />
+        </div>
+
+        <div class="form-row">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">To date</label>
+          <input type="date" [(ngModel)]="filters.toDate" class="date-input" [min]="filters.fromDate"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()" />
+        </div>
+
+        <div class="form-row" *ngIf="selectedView !== 'self'">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Reason</label>
+          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
+            style="width: 100%;">
+          </app-common-select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
+        <button pButton label="Apply" class="p-button-success" (click)="applyFilter()"
+          style="padding: 10px 30px;"></button>
+        <button pButton label="Reset" class="p-button-secondary" (click)="resetFilters()"
+          style="padding: 10px 30px;"></button>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>Employee Name</label>
-      <input type="text" placeholder="Enter Employee Name">
-    </div>
-
-    <div class="form-group">
-      <label>Project Name</label>
-      <select>
-        <option>Select Project</option>
-        <option>Project Alpha</option>
-        <option>Project Beta</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Exception Requested (Days)</label>
-      <select>
-        <option>Select Requested Days</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Exception Date From</label>
-      <input type="date">
-    </div>
-
-    <div class="form-group">
-      <label>Exception Date To</label>
-      <input type="date">
-    </div>
-
-    <div class="form-group">
-      <label>Exception Approved (Days)</label>
-      <select>
-        <option>Select Approved Days</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Status</label>
-      <select>
-        <option>Select Status</option>
-        <option>Approved</option>
-        <option>Partial Approved</option>
-        <option>Rejected</option>
-      </select>
+    <!-- Export Button -->
+    <div style="margin-top: 20px;">
+      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="export()"></button>
     </div>
   </div>
 
-  <div class="action-buttons">
-    <button class="btn btn-primary">Search</button>
-    <button class="btn btn-secondary">Reset</button>
+  <!-- TABLE SECTION -->
+  <div class="dashboard-table-card" style="margin-top: 20px;">
+    <p-table #dt [value]="exceptionRequests" [paginator]="true" [rows]="limit" [totalRecords]="totalRecords"
+      [rowsPerPageOptions]="[10, 20, 50]" scrollable="true" scrollHeight="50vh" class="dashboard-table"
+      [responsiveLayout]="'scroll'" class="dashboard-table" sortMode="multiple">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 60px;" *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
+            <input type="checkbox"
+              *ngIf="!disableSelectAll && (selectedView!=='resource' || filters?.status?.value!=='APPROVED')"
+              (change)="selectAllChange($event)" [(ngModel)]="allSelected">
+          </th>
+
+          <th pSortableColumn="employeeId">
+            Employee Id
+            <p-sortIcon field="employeeId"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="employeeName">
+            Employee Name
+            <p-sortIcon field="employeeName"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="designation">
+            Designation
+            <p-sortIcon field="designation"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="managerName">
+            Manager Name
+            <p-sortIcon field="managerName" *ngIf="selectedView==='all'"></p-sortIcon>
+          </th>
+
+          <th *ngIf="showApprovedColumn()" pSortableColumn="approvedBy">
+            Approved By
+            <p-sortIcon field="approvedBy"></p-sortIcon>
+          </th>
+
+          <th *ngIf="showRejectedColumn()" pSortableColumn="rejectedBy">
+            Rejected By
+            <p-sortIcon field="rejectedBy"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="exceptionDate">
+            Exception Date
+            <p-sortIcon field="exceptionDate"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="primaryReason">
+            Reason
+            <p-sortIcon field="primaryReason"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="submissionDate">
+            Submission Date
+            <p-sortIcon field="submissionDate"></p-sortIcon>
+          </th>
+
+          <th pSortableColumn="status">
+            Status
+            <p-sortIcon field="status"></p-sortIcon>
+          </th>
+
+          <th *ngIf="selectedView === 'self'">Action</th>
+        </tr>
+      </ng-template>
+
+
+      <ng-template pTemplate="body" let-req>
+        <tr [ngClass]="req.checked ? 'row-checked' : ''">
+          <td style="text-align: center;" *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
+            <input type="checkbox" [checked]="req.checked"
+              [disabled]="((req.status === 'APPROVED' && role!='ADMIN' && role!=='MANAGER' && department !=='HR' ) || (department!=='HR' && role!= 'ADMIN' && selectedView!=='resource')) ||(selectedView=='resource' && req.status=='APPROVED') "
+              (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
+          </td>
+          <td>{{ req.employeeId }}</td>
+          <td>{{ req.employeeName }}</td>
+          <td>{{ req.designation }}</td>
+          <td>{{ req.managerName }}</td>
+          <td *ngIf="showApprovedColumn()">{{ req.approvedBy || '-' }}</td>
+          <td *ngIf="showRejectedColumn()">{{ req.rejectedBy || '-' }}</td>
+          <td>{{ req.exceptionDate }}</td>
+          <td>{{ req.primaryReason }}</td>
+          <td>{{ req.submissionDate }}</td>
+          <td>
+            <span [ngClass]="{
+              'status-pending': req.status === 'PENDING',
+              'status-approved': req.status === 'APPROVED',
+              'status-rejected': req.status === 'REJECTED'
+            }">
+              {{ req.status }}
+            </span>
+          </td>
+          <!-- <td>{{ req.remarks }}</td> -->
+          <td *ngIf="selectedView === 'self'">
+            <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn" icon="pi pi-trash"
+              class="delete-btn" pButton type="button">
+
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="paginatorleft">
+        <span>
+          <!-- Total Records: {{ totalRecords }} -->
+          <span *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
+            Selected Records: {{ selectedRequests.length }}
+          </span>
+        </span>
+      </ng-template>
+
+    </p-table>
   </div>
 
-  <div class="table-container">
-<table>
-  <thead>
-    <tr>
-      <th>Employee ID</th>
-      <th>Employee Name</th>
-      <th>Designation</th>
-      <th>Project Name</th>
-      <th>Exception Date</th>
-      <th>Primary Reason</th>
-      <th>Submission Date</th>
-      <th>Exception Requested (Days)</th>
-      <th>Exception Approved (Days)</th>
-      <th>Status</th>
-      <th>Manager Remarks</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let req of exceptionRequests">
-      <td>{{ req.employeeId }}</td>
-      <td>{{ req.employeeName }}</td>
-      <td>{{ req.designation }}</td>
-      <td>{{ req.projectName }}</td>
-      <td>{{ req.exceptionDate }}</td>
-      <td>{{ req.primaryReason }}</td>
-      <td>{{ req.submissionDate }}</td>
-      <td>{{ req.exceptionRequestedDays }}</td>
-      <td>{{ req.exceptionApprovedDays }}</td>
-      <td>{{ req.status }}</td>
-      <td>{{ req.managerRemarks }}</td>
-      <td><i class="fa fa-expand" aria-hidden="true" style=" cursor: pointer;" (click)="openActionDialog(req)"></i></td>
-    </tr>
-  </tbody>
-</table>
-
+  <!-- BULK ACTION BUTTONS -->
+  <div class="action-buttons" style="display: flex; gap: 20px; margin-top: 20px; justify-content: space-between;"
+    *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all'))  ">
+    <div style="flex: 1;">
+      <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button pButton label="Approve" class="p-button-success" (click)="bulkUpdate('APPROVED')"
+        *ngIf="filters?.status?.value !=='APPROVED'"></button>
+      <button pButton label="Reject" class="p-button-danger" (click)="bulkUpdate('REJECTED')"></button>
+    </div>
   </div>
 </div>
+<style>
+  .delete-btn {
+    background: #ff4d4f !important;
+    border: none;
+    color: #fff;
+
+    &:hover {
+      background: #d9363e !important;
+    }
+  }
+</style>
