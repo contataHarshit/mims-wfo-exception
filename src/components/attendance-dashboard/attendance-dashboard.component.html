@@ -119,62 +119,44 @@
             </thead>
 
 
-    <tbody>
-  <tr *ngFor="let row of paginatedRows; let rIndex = index">
+            <tbody>
+              <tr *ngFor="let row of paginatedRows; let rIndex = index">
 
-    <!-- DELETE COLUMN -->
-    <td class="sticky-col sticky-col-1 delete-col" style="z-index: 9 !important;">
-      <button
-        pButton
-        type="button"
-        icon="pi pi-trash"
-        class="delete-btn"
-        (click)="deleteRow((currentPage - 1) * pageSize + rIndex)">
-      </button>
-    </td>
+                <!-- DELETE COLUMN -->
+                <td class="sticky-col sticky-col-1 delete-col" style="z-index: 9 !important;">
+                  <button pButton type="button" icon="pi pi-trash" class="delete-btn"
+                    (click)="deleteRow((currentPage - 1) * pageSize + rIndex)">
+                  </button>
+                </td>
 
-    <!-- NAME COLUMN -->
-    <td class="sticky-col sticky-col-2" style="z-index: 9 !important;">
-  <input
-    type="text"
-    [(ngModel)]="previewRows[(currentPage - 1) * pageSize + rIndex][0]"
-    [ngModelOptions]="{ standalone: true }"
-    class="editable-cell"
-    [class.edited-cell]="isCellEdited(
+                <!-- NAME COLUMN -->
+                <td class="sticky-col sticky-col-2" style="z-index: 9 !important;">
+                  <input type="text" [(ngModel)]="previewRows[(currentPage - 1) * pageSize + rIndex][0]"
+                    [ngModelOptions]="{ standalone: true }" class="editable-cell" [class.edited-cell]="isCellEdited(
       (currentPage - 1) * pageSize + rIndex,
       0
-    )"
-    (focus)="storeOriginalValue($event)"
-    (ngModelChange)="onCellChange(
+    )" (focus)="storeOriginalValue($event)" (ngModelChange)="onCellChange(
       (currentPage - 1) * pageSize + rIndex,
       0,
       $event
-    )"
-  />
-</td>
+    )" />
+                </td>
 
-    <!-- REST SCROLLABLE CELLS -->
-    <td *ngFor="let h of previewHeader.slice(1); let cIndex = index">
-      <input
-        type="text"
-        [(ngModel)]="previewRows[(currentPage - 1) * pageSize + rIndex][cIndex + 1]"
-        [ngModelOptions]="{ standalone: true }"
-        class="editable-cell"
-        [class.edited-cell]="isCellEdited(
+                <!-- REST SCROLLABLE CELLS -->
+                <td *ngFor="let h of previewHeader.slice(1); let cIndex = index">
+                  <input type="text" [(ngModel)]="previewRows[(currentPage - 1) * pageSize + rIndex][cIndex + 1]"
+                    [ngModelOptions]="{ standalone: true }" class="editable-cell" [class.edited-cell]="isCellEdited(
           (currentPage - 1) * pageSize + rIndex,
           cIndex + 1
-        )"
-        (focus)="storeOriginalValue($event)"
-        (ngModelChange)="onCellChange(
+        )" (focus)="storeOriginalValue($event)" (ngModelChange)="onCellChange(
           (currentPage - 1) * pageSize + rIndex,
           cIndex + 1,
           $event
-        )"
-      />
-    </td>
+        )" />
+                </td>
 
-  </tr>
-</tbody>
+              </tr>
+            </tbody>
 
 
           </table>
@@ -203,8 +185,10 @@
     </div>
 
   </div>
-  <ng-template #dashboardView *ngIf="commonService.attendanceView==='view'; else addView">
-    <app-attendance-view></app-attendance-view>
+  <ng-template #dashboardView>
+    <ng-container *ngIf="commonService.attendanceView === 'view'; else addView">
+      <app-attendance-view></app-attendance-view>
+    </ng-container>
   </ng-template>
   <ng-template #addView>
     <app-add-manual-attendance></app-add-manual-attendance>

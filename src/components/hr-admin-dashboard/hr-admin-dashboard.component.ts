@@ -1,4 +1,4 @@
-// FILE: hr-admin-dashboard.component.ts - COMPLETE WITH SORTING RESET AND DATE DEFAULTS
+// FILE: hr-admin-dashboard.component.ts - WITH DEFICIENCY DAYS FILTER
 import { CommonModule } from "@angular/common";
 import { Component, OnInit, OnDestroy, ViewChild } from "@angular/core";
 import { FormsModule } from "@angular/forms";
@@ -12,6 +12,7 @@ import { HttpService } from "../../service/http.service";
 import { ConstantService } from "../../service/constant.service";
 import { Subject, takeUntil } from "rxjs";
 import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-filter/manager-employee-filter.component";
+import { CommonFormActionComponent } from "../../common/common-form-action/common-form-action.component";
 
 interface HrAdminRecord {
   employeeId: number;
@@ -23,6 +24,11 @@ interface HrAdminRecord {
   REJECTED: number;
   PENDING: number;
   TOTAL: number;
+  workingDays?: number;
+  presentDays?: number;
+  holidaysDays?: number;
+  leaveDays?: number;
+  deficiencyDays?: number;
 }
 
 @Component({
@@ -36,12 +42,12 @@ interface HrAdminRecord {
     ButtonModule,
     CommonSelectComponent,
     ManagerEmployeeFilterComponent,
+    CommonFormActionComponent,
   ],
   templateUrl: "./hr-admin-dashboard.component.html",
   styleUrls: ["./hr-admin-dashboard.component.scss"],
 })
 export class HrAdminDashboardComponent implements OnInit, OnDestroy {
-  // ViewChild to reference the p-table for sorting reset
   @ViewChild("hrTable") table!: Table;
 
   private destroy$ = new Subject<void>();
@@ -56,6 +62,8 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
 
   // Table data
   hrData: HrAdminRecord[] = [];
+  filteredHrData: HrAdminRecord[] = []; // For deficiency days filtering
+  allHrData: HrAdminRecord[] = []; // Store all data from API
 
   // Dropdown lists
   reportTypeList = [
@@ -90,9 +98,16 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   minToDate: string = "";
   maxToDate: string = "";
 
+  // Deficiency Days filter
+  deficiencyDays: string = "all";
+  deficiencyDaysOptions: { label: string; value: string | number }[] = [];
+  isFilteringDeficiency = false;
+  totalRecords = 0;
+  currentPage = 1;
+  pageSize = 20;
+
   ngOnInit(): void {
     this.setDefaultDateRange();
-
     this.loadEmployeeListFromCache();
 
     this.commonService.managerList$
@@ -114,9 +129,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Get reason list from config
     this.reasonList = this.commonService.config?.reasonList || [];
-
     this.getHrAdminData(true);
   }
 
@@ -125,99 +138,66 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Set default date range to first and last day of current month
-   */
   private setDefaultDateRange(): void {
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth();
-
-    // First day of current month
     const firstDay = new Date(year, month, 1);
-
-    // Last day of current month
     const lastDay = new Date(year, month + 1, 0);
 
-    // Convert to string format for input binding
     this.filters.fromDate = this.formatDateForInput(firstDay);
     this.filters.toDate = this.formatDateForInput(lastDay);
-
-    // Set initial date limits
     this.updateDateLimits();
   }
 
-  /**
-   * Update min/max date limits based on current filter values
-   */
   private updateDateLimits(): void {
-    // Max limit for fromDate is toDate
     if (this.filters.toDate) {
-      this.maxFromDate = this.filters.toDate; // Already in correct format
+      this.maxFromDate = this.filters.toDate;
     } else {
-      this.maxFromDate = ""; // No limit if toDate is not set
+      this.maxFromDate = "";
     }
 
-    // Min limit for toDate is fromDate
     if (this.filters.fromDate) {
-      this.minToDate = this.filters.fromDate; // Already in correct format
+      this.minToDate = this.filters.fromDate;
     } else {
-      this.minToDate = ""; // No limit if fromDate is not set
+      this.minToDate = "";
     }
   }
 
-  /**
-   * Format date for input[type="date"] (YYYY-MM-DD)
-   */
   private formatDateForInput(date: Date | string | null): string {
     if (!date) return "";
-
     const d = typeof date === "string" ? new Date(date) : date;
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
-
     return `${year}-${month}-${day}`;
   }
 
-  /**
-   * Handle date change and update limits
-   */
   onDateChange(): void {
-    // Validate date range
     if (this.filters.fromDate && this.filters.toDate) {
       const fromDate = new Date(this.filters.fromDate);
       const toDate = new Date(this.filters.toDate);
 
       if (fromDate > toDate) {
         this.toastr.error("From date cannot be greater than To date");
-        // Reset to default values
         this.setDefaultDateRange();
         return;
       }
     }
-
-    // Update date limits after change
     this.updateDateLimits();
   }
-  /**
-   * Method to reset table sorting
-   */
+
   private resetTableSorting(): void {
     if (this.table) {
-      // Reset sort field and order
       this.table.sortField = undefined;
       this.table.sortOrder = 1;
       this.table.multiSortMeta = [];
-
-      // Clear any visual sorting indicators
       this.table.reset();
     }
   }
 
   private loadEmployeeListFromCache() {
     const storedData = localStorage.getItem("allEmployeeData");
-
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
@@ -230,92 +210,43 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       }
     }
   }
-
-  /** Build query parameters from filters */
   private buildQueryParams(): any {
     const params: any = {};
 
-    // Employee Name filter
-    if (this.filters.employeeName) {
-      const employeeValue =
-        typeof this.filters.employeeName === "object"
-          ? (this.filters.employeeName as any).value
-          : this.filters.employeeName;
-
-      if (employeeValue) {
-        params.employeeNumber = employeeValue;
-      }
-    }
-
-    // Manager Name filter
-    if (this.filters.managerName) {
-      const managerValue =
-        typeof this.filters.managerName === "object"
-          ? (this.filters.managerName as any).value
-          : this.filters.managerName;
-
-      if (managerValue) {
-        params.managerEmployeeNumber = managerValue;
-      }
-    }
-
-    // Status filter
-    if (this.filters.status) {
-      const statusValue =
-        typeof this.filters.status === "object"
-          ? (this.filters.status as any).value
-          : this.filters.status;
-
-      if (statusValue) {
-        params.status = statusValue;
-      }
-    }
-
-    // From Date filter
+    // existing filters...
     if (this.filters.fromDate) {
       params.fromDate = this.formatDate(this.filters.fromDate);
     }
 
-    // To Date filter
     if (this.filters.toDate) {
       params.toDate = this.formatDate(this.filters.toDate);
     }
 
-    // Reason filter
-    if (this.filters.reason) {
-      const reasonValue =
-        typeof this.filters.reason === "object"
-          ? (this.filters.reason as any).value
-          : this.filters.reason;
-
-      if (reasonValue) {
-        params.reason = reasonValue;
-      }
-    }
+    // ✅ ADD PAGINATION
+    params.page = this.currentPage;
+    params.limit = this.pageSize;
 
     return params;
   }
+  onLazyLoad(event: any) {
+    this.pageSize = event.rows;
+    this.currentPage = event.first / event.rows + 1;
 
-  /** Format date to YYYY-MM-DD */
+    this.getHrAdminData(true);
+  }
+
   private formatDate(date: Date | string | null): string | null {
     if (!date) return null;
-
-    // If already a string in correct format, return as is
-    if (typeof date === "string") {
-      return date;
-    }
-
+    if (typeof date === "string") return date;
     const d = date;
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
-
     return `${year}-${month}-${day}`;
   }
-  /** Build query string from params object */
+
   private buildQueryString(params: any): string {
     const queryParams: string[] = [];
-
     for (const key in params) {
       if (
         params.hasOwnProperty(key) &&
@@ -327,38 +258,38 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
         );
       }
     }
-
     return queryParams.join("&");
   }
 
-  /** Fetch HR Admin Summary Data with filters */
+  private buildDeficiencyDaysOptions(data: HrAdminRecord[]): void {
+    const uniqueValues = new Set<number>();
+    data.forEach((rec) => {
+      if (rec.deficiencyDays !== undefined && rec.deficiencyDays !== null) {
+        uniqueValues.add(rec.deficiencyDays);
+      }
+    });
+
+    const sortedValues = Array.from(uniqueValues).sort((a, b) => b - a);
+
+    this.deficiencyDaysOptions = [
+      { label: "All", value: "all" },
+      ...sortedValues.map((val) => ({ label: String(val), value: val })),
+    ];
+  }
+
   getHrAdminData(withFilters: boolean = false, exporting: boolean = false) {
-    if (this.isLoadingData) {
-      return;
-    }
+    if (this.isLoadingData) return;
 
     this.isLoadingData = true;
     this.commonService.setLoading(true);
 
-    // Reset table sorting before making API call
-    this.resetTableSorting();
-
-    // Build URL with query parameters
     let url = this.constants.hrSummary;
 
     if (withFilters || exporting) {
       const params = this.buildQueryParams();
-
-      // Add exportAll param when exporting
-      if (exporting) {
-        params.exportAll = "true";
-      }
-
+      if (exporting) params.exportAll = "true";
       const queryString = this.buildQueryString(params);
-
-      if (queryString) {
-        url = `${url}?${queryString}`;
-      }
+      if (queryString) url = `${url}?${queryString}`;
     }
 
     this.http
@@ -369,7 +300,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
           if (res?.success && res?.data?.exceptions?.data) {
             const apiData = res.data.exceptions.data;
 
-            // If exporting, just download and return early
             if (exporting) {
               await this.commonService.downloadCSV(apiData);
               this.commonService.setLoading(false);
@@ -377,43 +307,33 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
               return;
             }
 
-            // Only update UI state when NOT exporting
-            // Transform API response to table format
-            this.hrData = apiData
-              .filter((item: any) => item.employeeNumber)
-              .map((item: any) => ({
-                employeeId: item.employeeId,
-                employeeNumber: item.employeeNumber || "N/A",
-                employeeName: item.employeeName || "N/A",
-                designation: item.designation || "N/A",
-                managerName: item.managerName || "N/A",
-                APPROVED: item.APPROVED || 0,
-                REJECTED: item.REJECTED || 0,
-                PENDING: item.PENDING || 0,
-                TOTAL: item.TOTAL || 0,
-              }));
+            this.totalRecords = res.data.exceptions.totalEmployees;
 
-            if (withFilters) {
-              const count = this.hrData.length;
-              this.toastr.success(
-                `Found ${count} record${count !== 1 ? "s" : ""}`
-              );
-            }
-          } else {
-            if (!exporting) {
-              this.toastr.warning("No data found");
-              this.hrData = [];
-            }
+            this.allHrData = apiData.map((item: any) => ({
+              employeeId: item.employeeId,
+              employeeNumber: item.employeeNumber,
+              employeeName: item.employeeName,
+              designation: item.designation,
+              managerName: item.managerName,
+              APPROVED: item.APPROVED || 0,
+              REJECTED: item.REJECTED || 0,
+              PENDING: item.PENDING || 0,
+              TOTAL: item.TOTAL || 0,
+              workingDays: item.workingDays || 0,
+              presentDays: item.presentDays || 0,
+              holidaysDays: item.holidaysDays || 0,
+              leaveDays: item.leaveDays || 0,
+              deficiencyDays: item.deficiencyDays || 0,
+            }));
+
+            this.buildDeficiencyDaysOptions(this.allHrData);
+            this.applyDeficiencyFilter();
           }
 
           this.commonService.setLoading(false);
           this.isLoadingData = false;
         },
-        error: (err) => {
-          console.error("Error fetching HR Admin data:", err);
-          if (!exporting) {
-            this.hrData = [];
-          }
+        error: () => {
           this.commonService.setLoading(false);
           this.isLoadingData = false;
           this.toastr.error("Failed to fetch HR Admin data");
@@ -421,50 +341,49 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Apply Filters - Fetch data from backend with filter params */
-  applyFilters() {
-    // Validate date range
-    if (this.filters.fromDate && this.filters.toDate) {
-      const fromDate = new Date(this.filters.fromDate);
-      const toDate = new Date(this.filters.toDate);
+  deficiencyDaysChange(): void {
+    // this.isFilteringDeficiency = true;
+    this.commonService.setLoading(true);
+    // Simulate a brief loading state for better UX
+    setTimeout(() => {
+      this.applyDeficiencyFilter();
+      // this.isFilteringDeficiency = false;
+      this.commonService.setLoading(false);
+    }, 300);
+  }
 
-      if (fromDate > toDate) {
-        this.toastr.error("From date cannot be greater than To date");
-        return;
-      }
+  private applyDeficiencyFilter(): void {
+    if (this.deficiencyDays === "all") {
+      this.hrData = [...this.allHrData];
+    } else {
+      const filterValue = Number(this.deficiencyDays);
+      this.hrData = this.allHrData.filter(
+        (rec) => rec.deficiencyDays === filterValue
+      );
     }
 
-    // Reset sorting before fetching
-    this.resetTableSorting();
-
-    // Fetch data with filters
-    this.getHrAdminData(true);
+    // Reset table to first page after filtering
+    if (this.table) {
+      this.table.first = 0;
+    }
   }
 
-  /** Reset Filters - Reset to default values and fetch data */
+  applyFilters() {
+    this.currentPage = 1;
+    this.table.first = 0;
+    this.resetTableSorting();
+    this.getHrAdminData(true);
+  }
   resetFilters() {
-    this.filters = {
-      reportType: "summary",
-      employeeName: null,
-      managerName: null,
-      status: null,
-      fromDate: null,
-      toDate: null,
-      reason: null,
-    };
-
-    // Set default date range again
-    this.setDefaultDateRange();
-
-    // Reset sorting before fetching
+    this.currentPage = 1;
+    this.pageSize = 20;
+    this.table.first = 0;
     this.resetTableSorting();
-
-    // Fetch data with default date filters
+    this.setDefaultDateRange();
+    this.deficiencyDays = "all";
     this.getHrAdminData(true);
-    this.toastr.info("Filters reset to default (current month)");
   }
 
-  /** Export to Excel */
   exportToExcel() {
     if (this.hrData.length === 0) {
       this.toastr.warning("No data to export");

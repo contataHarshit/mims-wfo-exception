@@ -4,18 +4,13 @@
   <div class="filter-card">
     <div class="filter-grid-container">
 
-      <!-- Row 1: Employee name, Manager name, Status (3 columns) -->
+      <!-- Row 1: Employee name, Manager name -->
       <div class="filter-row-3">
-        <app-manager-employee-filter [(managerValue)]="filters.managerName"
-          [(employeeValue)]="filters.employeeName"></app-manager-employee-filter>
-        <!-- 
-        <div class="form-row">
-          <label>Status</label>
-          <app-common-select [options]="statusList" [(value)]="filters.status" placeholder="Select Status"></app-common-select>
-        </div> -->
+        <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName">
+        </app-manager-employee-filter>
       </div>
 
-      <!-- Row 2: From date, To date, Reason (3 columns) -->
+      <!-- Row 2: From date, To date -->
       <div class="filter-row-3">
         <div class="form-row">
           <label>From date</label>
@@ -28,99 +23,149 @@
           <input type="date" [(ngModel)]="filters.toDate" class="date-input" [min]="minToDate"
             (change)="onDateChange()" />
         </div>
-
-        <!-- <div class="form-row">
-          <label>Reason</label>
-          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"></app-common-select>
-        </div> -->
       </div>
 
       <!-- Action Buttons -->
-      <div class="button-row">
-        <button pButton label="Apply" class="p-button-success" (click)="applyFilters()"></button>
-        <button pButton label="Reset" class="p-button-secondary" (click)="resetFilters()"></button>
+      <div>
+        <app-common-form-action (reset)="resetFilters()" (submit)="applyFilters()"></app-common-form-action>
       </div>
     </div>
 
-    <!-- Export Button -->
+    <!-- Export and Deficiency Days Filter Row -->
     <div class="export-row">
-      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()"></button>
+      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()">
+      </button>
+
+      <div class="deficiency-filter-wrapper">
+        <label class="deficiency-label">Filter by Deficiency Days:</label>
+        <div class="select-wrapper">
+          <select [(ngModel)]="deficiencyDays" (change)="deficiencyDaysChange()" class="styled-select"
+            [disabled]="isFilteringDeficiency">
+            <option *ngFor="let option of deficiencyDaysOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <span class="select-arrow">
+            <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+              <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </span>
+          <!-- <div class="filter-loader" *ngIf="isFilteringDeficiency">
+            <div class="spinner"></div>
+          </div> -->
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- TABLE SECTION -->
+  <!-- TABLE SECTION WITH FIXED HEADER -->
   <div class="table-card">
-    <p-table [value]="hrData" class="p-datatable-gridlines" [paginator]="true" [rows]="10"
-      [rowsPerPageOptions]="[5, 10, 20]" [responsiveLayout]="'scroll'" #hrTable sortMode="multiple">
-      <ng-template pTemplate="header">
-        <tr>
-          <th pSortableColumn="employeeNumber">
-            Employee ID
-            <p-sortIcon field="employeeNumber"></p-sortIcon>
-          </th>
+    <div class="table-wrapper">
+      <p-table [value]="hrData" class="p-datatable-gridlines" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
+        [paginator]="true" [rows]="20" [totalRecords]="totalRecords" [rowsPerPageOptions]="[20, 50, 100, 200]"
+        [scrollable]="true" scrollHeight="calc(100vh - 400px)" sortMode="multiple" #hrTable>
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="employeeNumber" [style.min-width.px]="120" class="first-header ">
+              Employee ID
+              <p-sortIcon field="employeeNumber"></p-sortIcon>
+            </th>
 
-          <th pSortableColumn="employeeName">
-            Employee Name
-            <p-sortIcon field="employeeName"></p-sortIcon>
-          </th>
+            <th pSortableColumn="employeeName" [style.min-width.px]="180" class="second-header ">
+              Employee Name
+              <p-sortIcon field="employeeName"></p-sortIcon>
+            </th>
 
-          <th pSortableColumn="designation">
-            Designation
-            <p-sortIcon field="designation"></p-sortIcon>
-          </th>
+            <th pSortableColumn="designation" [style.min-width.px]="150">
+              Designation
+              <p-sortIcon field="designation"></p-sortIcon>
+            </th>
 
-          <th pSortableColumn="managerName">
-            Manager Name
-            <p-sortIcon field="managerName"></p-sortIcon>
-          </th>
+            <th pSortableColumn="managerName" [style.min-width.px]="180">
+              Manager Name
+              <p-sortIcon field="managerName"></p-sortIcon>
+            </th>
 
-          <th pSortableColumn="TOTAL">
-            Applied Exceptions
-            <p-sortIcon field="TOTAL"></p-sortIcon>
-          </th>
+            <th pSortableColumn="workingDays" [style.min-width.px]="120">
+              Working Days
+              <p-sortIcon field="workingDays"></p-sortIcon>
+            </th>
 
-          <th pSortableColumn="APPROVED">
-            Accepted Exceptions
-            <p-sortIcon field="APPROVED"></p-sortIcon>
-          </th>
+            <th pSortableColumn="presentDays" [style.min-width.px]="120">
+              Present Days
+              <p-sortIcon field="presentDays"></p-sortIcon>
+            </th>
 
-          <th pSortableColumn="REJECTED">
-            Rejected Exceptions
-            <p-sortIcon field="REJECTED"></p-sortIcon>
-          </th>
+            <th pSortableColumn="holidaysDays" [style.min-width.px]="120">
+              Holiday Days
+              <p-sortIcon field="holidaysDays"></p-sortIcon>
+            </th>
 
-          <th pSortableColumn="PENDING">
-            Pending Exceptions
-            <p-sortIcon field="PENDING"></p-sortIcon>
-          </th>
-        </tr>
-      </ng-template>
+            <th pSortableColumn="leaveDays" [style.min-width.px]="120">
+              Leave Days
+              <p-sortIcon field="leaveDays"></p-sortIcon>
+            </th>
 
+            <th pSortableColumn="deficiencyDays" [style.min-width.px]="140">
+              Deficiency Days
+              <p-sortIcon field="deficiencyDays"></p-sortIcon>
+            </th>
 
-      <ng-template pTemplate="body" let-rec>
-        <tr>
-          <td>{{ rec.employeeNumber }}</td>
-          <td>{{ rec.employeeName }}</td>
-          <td>{{ rec.designation }}</td>
-          <td>{{ rec.managerName }}</td>
-          <td style="text-align: center;">{{ rec.TOTAL }}</td>
-          <td style="text-align: center;">{{ rec.APPROVED }}</td>
-          <td style="text-align: center;">{{ rec.REJECTED }}</td>
-          <td style="text-align: center;">{{ rec.PENDING }}</td>
-        </tr>
-      </ng-template>
+            <th pSortableColumn="TOTAL" [style.min-width.px]="150">
+              Applied Exceptions
+              <p-sortIcon field="TOTAL"></p-sortIcon>
+            </th>
 
-      <ng-template pTemplate="paginatorleft">
-        <!-- <span>Total Records: {{ hrData.length }}</span> -->
-      </ng-template>
+            <th pSortableColumn="APPROVED" [style.min-width.px]="160">
+              Accepted Exceptions
+              <p-sortIcon field="APPROVED"></p-sortIcon>
+            </th>
 
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="8" style="text-align: center; padding: 20px;">
-            No records found
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+            <th pSortableColumn="REJECTED" [style.min-width.px]="160">
+              Rejected Exceptions
+              <p-sortIcon field="REJECTED"></p-sortIcon>
+            </th>
+
+            <th pSortableColumn="PENDING" [style.min-width.px]="150">
+              Pending Exceptions
+              <p-sortIcon field="PENDING"></p-sortIcon>
+            </th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-rec>
+          <tr>
+            <td class="first-col">{{ rec.employeeNumber }}</td>
+            <td class="second-col">{{ rec.employeeName }}</td>
+            <td>{{ rec.designation }}</td>
+            <td>{{ rec.managerName }}</td>
+            <td style="text-align: center;">{{ rec.workingDays }}</td>
+            <td style="text-align: center;">{{ rec.presentDays }}</td>
+            <td style="text-align: center;">{{ rec.holidaysDays }}</td>
+            <td style="text-align: center;">{{ rec.leaveDays }}</td>
+            <td style="text-align: center;">
+              <span class="deficiency-badge">{{ rec.deficiencyDays }}</span>
+            </td>
+            <td style="text-align: center;">{{ rec.TOTAL }}</td>
+            <td style="text-align: center;">{{ rec.APPROVED }}</td>
+            <td style="text-align: center;">{{ rec.REJECTED }}</td>
+            <td style="text-align: center;">{{ rec.PENDING }}</td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="paginatorleft">
+          <span class="total-records">Total Records: {{ hrData.length }}</span>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="13" style="text-align: center; padding: 20px;">
+              No records found
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
   </div>
 </div>

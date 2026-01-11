@@ -40,7 +40,6 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   editedCells = new Set<string>();
   private destroy$ = new Subject<void>();
   currentWeekStart!: string;
-
   filterForm = this.fb.group({
     startDate: [this.today()],
     employeeId: ["ALL"],
@@ -58,7 +57,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     private http: HttpService,
     private constants: ConstantService,
     private toastr: ToastrService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.currentWeekStart = this.today();
@@ -197,8 +196,8 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.http
       .getData(
         this.constants.officeAttendance +
-        "/last-week?" +
-        new URLSearchParams(params).toString()
+          "/last-week?" +
+          new URLSearchParams(params).toString()
       )
       .subscribe({
         next: (res: any) => {
@@ -397,13 +396,10 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
           this.commonService.setLoading(false);
           this.editedMap.clear();
         } else {
-
           this.toastr.error("Update failed");
         }
       },
       error: (e) => {
-
-
         this.toastr.error(e.message || "Update failed");
         this.commonService.setLoading(false);
       },
@@ -441,7 +437,6 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     if (this.tableColumns.length >= 10) {
       return `${this.tableColumns[3].label} – ${this.tableColumns[9].label}`;
     }
-    return '';
+    return "";
   }
-
 }

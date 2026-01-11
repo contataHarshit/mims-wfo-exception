@@ -61,7 +61,7 @@
 
   <!-- ACTION BAR -->
   <div class="action-bar">
-    <button pButton label="Approve Selected" class="p-button-success" (click)="approveSelected()">
+    <button pButton label="Approve" class="p-button-success" (click)="approveSelected()" [disabled]="!requests.length">
     </button>
   </div>
 

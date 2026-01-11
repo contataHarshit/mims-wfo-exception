@@ -1,1 +1,79 @@
-<p>add-manual-attendance works!</p>
+<div class="dashboard-page manual-attendance-page">
+
+  <!-- FILTER CARD -->
+  <div class="dashboard-filter">
+    <div class="form-grid">
+
+      <div class="form-row">
+        <label>Date</label>
+        <input type="date" [(ngModel)]="selectedDate" class="date-input" />
+      </div>
+
+      <div></div>
+      <div></div>
+
+      <div class="form-row" style="align-items: flex-end;">
+        <button pButton label="Submit" icon="pi pi-check" class="p-button-success"
+          [disabled]="!selectedEmployees.length" (click)="submit()"></button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="manual-attendance-content">
+
+    <!-- ALL EMPLOYEES -->
+    <div class="dashboard-table-card">
+
+      <!-- HEADER (WFH STYLE) -->
+      <div class="card-header">
+        <span>All Employees</span>
+        <span class="count">{{ filteredEmployees.length }}</span>
+      </div>
+
+      <!-- SEARCH -->
+      <input type="text" placeholder="Search employee..." class="list-search" [(ngModel)]="employeeSearch" />
+
+      <!-- LIST -->
+      <div class="employee-table">
+        <div class="employee-row" *ngFor="let emp of filteredEmployees">
+          <input type="checkbox" [(ngModel)]="emp.checked" />
+          <div class="emp-name">{{ emp.FullName || emp.employeeName }}</div>
+          <div class="emp-email">{{ emp.email || emp.Email }}</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MOVE -->
+    <div class="move-column">
+      <button pButton label="Move" icon="pi pi-arrow-right" class="p-button-outlined" (click)="moveSelected()"></button>
+    </div>
+
+    <!-- SELECTED EMPLOYEES -->
+    <div class="dashboard-table-card">
+
+      <div class="card-header">
+        <span>Selected Employees</span>
+        <span class="count">{{ selectedEmployees.length }}</span>
+      </div>
+
+      <div class="employee-table empty" *ngIf="!selectedEmployees.length">
+        No employees selected
+      </div>
+
+      <div class="employee-table" *ngIf="selectedEmployees.length">
+        <div class="employee-row" *ngFor="let emp of selectedEmployees">
+          <div class="emp-name">{{ emp.FullName || emp.employeeName }}</div>
+          <div class="emp-email">{{ emp.email || emp.Email }}</div>
+
+          <button pButton icon="pi pi-times" class="p-button-text p-button-danger p-button-sm"
+            (click)="removeEmployee(emp)"></button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
