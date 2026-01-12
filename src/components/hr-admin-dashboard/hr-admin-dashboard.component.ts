@@ -363,9 +363,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     }
 
     // Reset table to first page after filtering
-    if (this.table) {
-      this.table.first = 0;
-    }
+  
   }
 
   applyFilters() {

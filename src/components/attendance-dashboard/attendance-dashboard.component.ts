@@ -359,7 +359,7 @@ export class CsvUploadComponent {
     const headers = [
       "EMAIL",
       "NAME",
-      "EMPLOYEE_NUMBER",
+      "Manager",
       "DAY_1",
       "DAY_2",
       "DAY_3",
@@ -369,7 +369,7 @@ export class CsvUploadComponent {
     const sampleRow = [
       "Employee_Email",
       "Employee_Name",
-      "Employee_Number",
+      "Manager_Name",
       "FD",
       "FD",
       "FD",
