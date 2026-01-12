@@ -72,9 +72,9 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       value: "view",
     },
     {
-      label:"Add",
-      value:"add"
-    }
+      label: "Add",
+      value: "add",
+    },
   ];
   private destroy$ = new Subject<void>();
   isAuthenticating = true;
@@ -182,7 +182,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         this.commonService.setRole(this.role);
         if (this.role === "ADMIN") {
           this.router.navigate(["/dashboard"], {
-            queryParamsHandling: "preserve",
+            queryParams: this.getQueryParamsFromUrl(),
           });
         }
 
@@ -446,5 +446,15 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     this.commonService.selectedView = event.target.value;
     localStorage.setItem("selectedView", this.commonService.selectedView);
     this.commonService.viewChange$.next(this.commonService.selectedView);
+  }
+  private getQueryParamsFromUrl(): Record<string, string> {
+    const params: Record<string, string> = {};
+    const searchParams = new URLSearchParams(window.location.search);
+
+    searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+
+    return params;
   }
 }
