@@ -61,6 +61,8 @@
         </div>
 
         <div class="form-actions">
+          <button pButton type="button" class="p-button-outlined p-button-sm" icon="pi pi-download"
+            label="Download Format" (click)="downloadCsvFormat()"></button>
           <button pButton type="button" class="p-button-secondary" label="Reset" icon="pi pi-refresh"
             (click)="reset()"></button>
           <!-- <button pButton type="button" class="p-button-success" label="Submit" icon="pi pi-check" [disabled]="!convertedJson.length"
@@ -93,17 +95,21 @@
           </div>
 
           <div class="table-info">
+
+
+
             <span class="record-count">
               <i class="pi pi-database"></i>
               Total Records: {{ previewRows.length }}
             </span>
 
-            <!-- ✅ SUBMIT BUTTON MOVED HERE -->
             <button pButton type="button" class="p-button-success p-button-sm" icon="pi pi-check"
               [disabled]="!convertedJson.length" (click)="submit()">
               Submit
             </button>
+
           </div>
+
         </div>
 
         <!-- TABLE -->

@@ -174,8 +174,9 @@
 .move-column {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding-top: 200px;
+  justify-content: baseline;
+  flex-direction: column;
+  gap: 3em;
 
   button {
     padding: 10px 16px;
@@ -232,4 +233,13 @@
   .manual-attendance-page {
     padding: 12px;
   }
+}
+
+.attendance-type-select {
+  width: 140px;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
 }

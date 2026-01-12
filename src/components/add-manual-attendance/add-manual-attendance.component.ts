@@ -19,6 +19,8 @@ export class AddManualAttendanceComponent implements OnInit {
   allEmployees: any[] = [];
   selectedEmployees: any[] = [];
   employeeSearch: string = "";
+  maxDate: string = "";
+  attendanceType: "FD" | "SF" | "HF" = "FD";
 
   constructor(
     private commonService: CommonService,
@@ -34,7 +36,10 @@ export class AddManualAttendanceComponent implements OnInit {
 
   private setTodayDate() {
     const today = new Date();
-    this.selectedDate = today.toISOString().split("T")[0];
+    const formatted = today.toISOString().split("T")[0];
+
+    this.selectedDate = formatted;
+    this.maxDate = formatted;
   }
 
   private loadEmployees() {
@@ -94,11 +99,12 @@ export class AddManualAttendanceComponent implements OnInit {
     }
 
     const payload = this.selectedEmployees.map((emp) => ({
-      email: emp.email || emp.Email,
+      email: emp.EmployeeEmail || emp.email || emp.Email || "",
+
       dates: [
         {
           date: this.selectedDate,
-          value: "P",
+          value: this.attendanceType, // FD | SF | HF
         },
       ],
     }));

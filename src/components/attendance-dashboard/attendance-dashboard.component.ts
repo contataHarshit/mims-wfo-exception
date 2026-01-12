@@ -25,7 +25,7 @@ import { AddManualAttendanceComponent } from "../add-manual-attendance/add-manua
     FormsModule,
     ButtonModule,
     AttendanceViewComponent,
-    AddManualAttendanceComponent
+    AddManualAttendanceComponent,
     // ToastrService
   ],
   templateUrl: "./attendance-dashboard.component.html",
@@ -353,5 +353,43 @@ export class CsvUploadComponent {
     } else {
       this.editedCells.delete(key);
     }
+  }
+  downloadCsvFormat(): void {
+    // ---------- FIXED HEADERS ----------
+    const headers = [
+      "EMAIL",
+      "NAME",
+      "EMPLOYEE_NUMBER",
+      "DAY_1",
+      "DAY_2",
+      "DAY_3",
+    ];
+
+    // ---------- SAMPLE ROW ----------
+    const sampleRow = [
+      "Employee_Email",
+      "Employee_Name",
+      "Employee_Number",
+      "FD",
+      "FD",
+      "FD",
+    ];
+
+    // ---------- BUILD CSV ----------
+    const csvContent = [headers.join(","), sampleRow.join(",")].join("\n");
+
+    // ---------- DOWNLOAD ----------
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "attendance_csv_format.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
   }
 }

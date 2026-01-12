@@ -107,10 +107,7 @@
               <p-sortIcon field="leaveDays"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="deficiencyDays" [style.min-width.px]="140">
-              Deficiency Days
-              <p-sortIcon field="deficiencyDays"></p-sortIcon>
-            </th>
+
 
             <th pSortableColumn="TOTAL" [style.min-width.px]="150">
               Applied Exceptions
@@ -131,6 +128,10 @@
               Pending Exceptions
               <p-sortIcon field="PENDING"></p-sortIcon>
             </th>
+            <th pSortableColumn="deficiencyDays" [style.min-width.px]="140">
+              Deficiency Days
+              <p-sortIcon field="deficiencyDays"></p-sortIcon>
+            </th>
           </tr>
         </ng-template>
 
@@ -144,13 +145,14 @@
             <td style="text-align: center;">{{ rec.presentDays }}</td>
             <td style="text-align: center;">{{ rec.holidaysDays }}</td>
             <td style="text-align: center;">{{ rec.leaveDays }}</td>
-            <td style="text-align: center;">
-              <span class="deficiency-badge">{{ rec.deficiencyDays }}</span>
-            </td>
+
             <td style="text-align: center;">{{ rec.TOTAL }}</td>
             <td style="text-align: center;">{{ rec.APPROVED }}</td>
             <td style="text-align: center;">{{ rec.REJECTED }}</td>
             <td style="text-align: center;">{{ rec.PENDING }}</td>
+            <td style="text-align: center;">
+              <span class="deficiency-badge">{{ rec.deficiencyDays }}</span>
+            </td>
           </tr>
         </ng-template>
 
