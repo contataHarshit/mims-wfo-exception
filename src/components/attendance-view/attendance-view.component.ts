@@ -50,7 +50,9 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   selectedManager: string | null = null;
 
   weekOffset = 0; // 0,7,14,21,28
-
+  page: number = 1;
+  limit: number = 20;
+  pageSizeOptions = [20, 50, 100, 150];
   constructor(
     private fb: FormBuilder,
     public commonService: CommonService,
@@ -177,19 +179,17 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   fetchAttendance() {
     const fromDate = this.filterForm.value.startDate!;
-
     const managerCode = this.extractValue(this.selectedManager);
     const employeeCode = this.extractValue(this.selectedEmployee);
 
-    const params: any = { fromDate };
+    const params: any = {
+      fromDate,
+      page: this.page,
+      limit: this.limit,
+    };
 
-    if (managerCode) {
-      params.managerCode = managerCode;
-    }
-
-    if (employeeCode) {
-      params.employeeCode = employeeCode;
-    }
+    if (managerCode) params.managerCode = managerCode;
+    if (employeeCode) params.employeeCode = employeeCode;
 
     this.commonService.setLoading(true);
 
@@ -201,7 +201,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (res: any) => {
-          if (!res?.success || !Array.isArray(res.data?.data)) {
+          if (!res?.success) {
             this.tableData = [];
             return;
           }
@@ -213,7 +213,6 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
             if (!grouped[r.EmployeeEmail]) {
               grouped[r.EmployeeEmail] = {
-                employeeId: r.EmployeeEmail,
                 employeeName: r.EmployeeName,
                 managerName: r.ManagerName,
                 email: r.EmployeeEmail,
@@ -226,12 +225,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
           this.tableData = Object.values(grouped);
         },
-        error: () => {
-          this.tableData = [];
-        },
-        complete: () => {
-          this.commonService.setLoading(false);
-        },
+        complete: () => this.commonService.setLoading(false),
       });
   }
 
@@ -438,5 +432,22 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       return `${this.tableColumns[3].label} – ${this.tableColumns[9].label}`;
     }
     return "";
+  }
+
+  // prevPage() {
+  //   if (this.page > 1) {
+  //     this.page--;
+  //     this.fetchAttendance();
+  //   }
+  // }
+
+  // nextPage() {
+  //   this.page++;
+  //   this.fetchAttendance();
+  // }
+
+  onLimitChange() {
+    this.page = 1; // reset to first page
+    this.fetchAttendance();
   }
 }
