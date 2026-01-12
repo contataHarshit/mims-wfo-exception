@@ -221,21 +221,21 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const ids = this.selectedRequests.map((r) => r.id);
+    const exceptionIds = this.selectedRequests.map((r) => r.id);
 
     this.commonService.setLoading(true);
 
     this.http
-      .putData(this.constants.auditExceptionRequest + "/approve", {
-        ids,
+      .postData({
+        exceptionIds,
         status: "APPROVED",
-      })
+      },this.constants.auditExceptionRequest + "/approve")
       .subscribe({
         next: (res: any) => {
           if (res.success) {
             this.toastr.success(
-              `${ids.length} request${
-                ids.length > 1 ? "s" : ""
+              `${exceptionIds.length} request${
+                exceptionIds.length > 1 ? "s" : ""
               } approved successfully`
             );
             this.loadRejectedRequests();
