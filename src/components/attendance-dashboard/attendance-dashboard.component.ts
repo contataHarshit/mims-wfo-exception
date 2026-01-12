@@ -357,9 +357,9 @@ export class CsvUploadComponent {
   downloadCsvFormat(): void {
     // ---------- FIXED HEADERS ----------
     const headers = [
-      "EMAIL",
       "NAME",
       "Manager",
+      "EMAIL",
       "DAY_1",
       "DAY_2",
       "DAY_3",
@@ -367,9 +367,10 @@ export class CsvUploadComponent {
 
     // ---------- SAMPLE ROW ----------
     const sampleRow = [
-      "Employee_Email",
+
       "Employee_Name",
       "Manager_Name",
+      "Employee_Email",
       "FD",
       "FD",
       "FD",
