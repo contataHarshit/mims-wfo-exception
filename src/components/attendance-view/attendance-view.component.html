@@ -47,8 +47,9 @@
           (click)="nextWeek()">
         </button>
 
-        <button pButton label="Submit" icon="pi pi-check" class="p-button-success" (click)="submitAttendance()">
-        </button>
+        <app-common-mail-submit [showSubmit]="true" [showReset]="false" (sendWeekly)="commonService.sendWeeklyMail()"
+          (sendMonthly)="commonService.sendMonthlyMail()" (submit)="submitAttendance()" (reset)="reset()"
+          [submitLabel]="'Save'"></app-common-mail-submit>
       </div>
 
 

@@ -4,7 +4,8 @@ import { isPlatformBrowser } from "@angular/common";
 import { BehaviorSubject } from "rxjs";
 import { firstValueFrom } from "rxjs";
 import { HttpClient } from "@angular/common/http";
-
+import { ConstantService } from "./constant.service";
+import { HttpService } from "./http.service";
 @Injectable({
   providedIn: "root",
 })
@@ -71,7 +72,9 @@ export class CommonService {
   selectedView = "self";
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
-    private http: HttpClient
+    private http: HttpClient,
+    private httpService: HttpService,
+    private constants: ConstantService
   ) {}
 
   // ============================================
@@ -307,5 +310,70 @@ export class CommonService {
     a.href = URL.createObjectURL(blob);
     a.download = `exception_requests_${new Date().getTime()}.csv`;
     a.click();
+  }
+  sendWeeklyMail(): void {
+    this.triggerNonComplianceMail("WEEK");
+  }
+
+  sendMonthlyMail(): void {
+    this.triggerNonComplianceMail("MONTH");
+  }
+  private toStartOfDayISO(date: Date): string {
+    date.setHours(0, 0, 0, 0);
+    return date.toISOString();
+  }
+
+  private toEndOfDayISO(date: Date): string {
+    date.setHours(23, 59, 59, 999);
+    return date.toISOString();
+  }
+  private getDateRange(type: "WEEK" | "MONTH"): {
+    startDate: string;
+    endDate: string;
+  } {
+    const today = new Date();
+
+    if (type === "WEEK") {
+      const day = today.getDay(); // 0 = Sun, 1 = Mon
+      const diffToMonday = day === 0 ? 6 : day - 1;
+
+      const start = new Date(today);
+      start.setDate(today.getDate() - diffToMonday - 7);
+
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+
+      return {
+        startDate: this.toStartOfDayISO(start),
+        endDate: this.toEndOfDayISO(end),
+      };
+    }
+
+    // MONTH
+    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const end = new Date(today.getFullYear(), today.getMonth(), 0);
+
+    return {
+      startDate: this.toStartOfDayISO(start),
+      endDate: this.toEndOfDayISO(end),
+    };
+  }
+  private triggerNonComplianceMail(type: "WEEK" | "MONTH"): void {
+    const { startDate, endDate } = this.getDateRange(type);
+
+    const payload = {
+      type,
+      startDate,
+      endDate,
+    };
+
+    this.httpService.postData(payload, this.constants.sendMail).subscribe({
+      next: (res: any) => {
+        console.log(`${type} non-compliance mail triggered`, res);
+      },
+      error: (err) => {
+        console.error(`${type} mail failed`, err);
+      },
+    });
   }
 }

@@ -16,6 +16,7 @@ import { HttpService } from "../../service/http.service";
 import { ConstantService } from "../../service/constant.service";
 import { ToastrService } from "ngx-toastr";
 import { AddManualAttendanceComponent } from "../add-manual-attendance/add-manual-attendance.component";
+import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
 @Component({
   selector: "app-attendance-dashboard",
   standalone: true,
@@ -26,6 +27,7 @@ import { AddManualAttendanceComponent } from "../add-manual-attendance/add-manua
     ButtonModule,
     AttendanceViewComponent,
     AddManualAttendanceComponent,
+    CommonMailSubmitComponent,
     // ToastrService
   ],
   templateUrl: "./attendance-dashboard.component.html",
@@ -355,17 +357,8 @@ export class CsvUploadComponent {
     }
   }
   downloadCsvFormat(): void {
-    // ---------- FIXED HEADERS ----------
-    const headers = [
-      "EMAIL",
-      "NAME",
-      "Manager",
-      "DAY_1",
-      "DAY_2",
-      "DAY_3",
-    ];
+    const headers = ["EMAIL", "NAME", "Manager", "DAY_1", "DAY_2", "DAY_3"];
 
-    // ---------- SAMPLE ROW ----------
     const sampleRow = [
       "Employee_Email",
       "Employee_Name",

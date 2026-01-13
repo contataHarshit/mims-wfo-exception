@@ -25,5 +25,7 @@ export class ConstantService {
   officeAttendance = this.baseUrl + "api/office-attendance";
 
   auditExceptionRequest = this.baseUrl + "api/audit/exception-requests";
+
+  sendMail = this.baseUrl + "api/wfh/non-compliance";
   constructor() {}
 }

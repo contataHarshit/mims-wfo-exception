@@ -10,6 +10,7 @@ import { HttpService } from "../../service/http.service";
 import { ConstantService } from "../../service/constant.service";
 import { ToastrService } from "ngx-toastr";
 import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-filter/manager-employee-filter.component";
+import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
 @Component({
   selector: "app-attendance-view",
   standalone: true,
@@ -21,6 +22,7 @@ import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-fi
     FormsModule,
     ButtonModule,
     ManagerEmployeeFilterComponent,
+    CommonMailSubmitComponent,
   ],
   templateUrl: "./attendance-view.component.html",
   styleUrls: [
@@ -117,11 +119,12 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   /* ---------------- FILTER ACTIONS ---------------- */
 
-  submit() {
+  submit(): void {
     this.weekOffset = 0;
     this.generateColumns(this.filterForm.value.startDate!);
     this.fetchAttendance();
   }
+
   reset() {
     this.selectedManager = null;
     this.selectedEmployee = null;
@@ -201,29 +204,30 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (res: any) => {
-          if (!res?.success) {
+          if (!res?.success || !Array.isArray(res.data?.data)) {
             this.tableData = [];
             return;
           }
 
-          const grouped: Record<string, any> = {};
+          this.tableData = res.data.data.map((emp: any) => {
+            const attendance: Record<string, string | undefined> = {};
 
-          res.data.data.forEach((r: any) => {
-            const dateKey = r.OfficeAttendanceDate.split("T")[0];
+            (emp.dates || []).forEach((d: any) => {
+              const dateKey = d.OfficeAttendanceDate; // already yyyy-mm-dd
+              attendance[dateKey] = d.AttendanceValue;
+            });
 
-            if (!grouped[r.EmployeeEmail]) {
-              grouped[r.EmployeeEmail] = {
-                employeeName: r.EmployeeName,
-                managerName: r.ManagerName,
-                email: r.EmployeeEmail,
-                attendance: {},
-              };
-            }
-
-            grouped[r.EmployeeEmail].attendance[dateKey] = r.AttendanceValue;
+            return {
+              employeeId: emp.EmployeeCode, // IMPORTANT for edited tracking
+              employeeName: emp.EmployeeName,
+              managerName: emp.ManagerName,
+              email: emp.EmployeeEmail,
+              attendance,
+            };
           });
-
-          this.tableData = Object.values(grouped);
+        },
+        error: () => {
+          this.tableData = [];
         },
         complete: () => this.commonService.setLoading(false),
       });

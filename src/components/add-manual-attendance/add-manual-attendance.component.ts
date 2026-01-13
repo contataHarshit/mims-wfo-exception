@@ -6,11 +6,12 @@ import { HttpService } from "../../service/http.service";
 import { ConstantService } from "../../service/constant.service";
 import { ToastrService } from "ngx-toastr";
 import { ButtonModule } from "primeng/button";
+import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
 
 @Component({
   selector: "app-add-manual-attendance",
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule],
+  imports: [CommonModule, FormsModule, ButtonModule, CommonMailSubmitComponent],
   templateUrl: "./add-manual-attendance.component.html",
   styleUrls: ["./add-manual-attendance.component.scss"],
 })
@@ -23,7 +24,7 @@ export class AddManualAttendanceComponent implements OnInit {
   attendanceType: "FD" | "SF" | "HF" = "FD";
 
   constructor(
-    private commonService: CommonService,
+    public commonService: CommonService,
     private http: HttpService,
     private constants: ConstantService,
     private toastr: ToastrService

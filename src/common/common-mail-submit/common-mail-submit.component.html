@@ -1,0 +1,18 @@
+<div class="mail-submit-actions">
+
+    <!-- Weekly & Monthly buttons -->
+    <div class="mail-buttons">
+        <button pButton type="button" class="p-button-info" (click)="onSendWeekly()">
+            Send (Last Week)
+        </button>
+
+        <button pButton type="button" class="p-button-help" (click)="onSendMonthly()">
+            Send (Last Month)
+        </button>
+    </div>
+
+    <!-- Common submit/reset -->
+    <app-common-form-action [showSubmit]="showSubmit" [resetBtn]="showReset" (submit)="onSubmit()" (reset)="onReset()"
+        [submitLabel]="submitLabel"></app-common-form-action>
+
+</div>

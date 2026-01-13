@@ -2,19 +2,19 @@
 
   <!-- FILTER CARD -->
   <div class="dashboard-filter">
-    <div class="form-grid">
+    <div class="filter">
 
       <div class="form-row">
         <label>Date</label>
         <input type="date" [(ngModel)]="selectedDate" class="date-input" [max]="maxDate" />
       </div>
 
-      <div></div>
-      <div></div>
+
 
       <div class="form-row" style="align-items: flex-end;">
-        <button pButton label="Submit" icon="pi pi-check" class="p-button-success"
-          [disabled]="!selectedEmployees.length" (click)="submit()"></button>
+        <app-common-mail-submit [showSubmit]="true" [showReset]="false" (sendWeekly)="commonService.sendWeeklyMail()"
+          (sendMonthly)="commonService.sendMonthlyMail()" (submit)="submit()" (reset)="reset()"
+          [submitLabel]="'Save'"></app-common-mail-submit>
       </div>
 
     </div>

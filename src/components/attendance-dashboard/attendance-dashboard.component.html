@@ -103,10 +103,10 @@
               Total Records: {{ previewRows.length }}
             </span>
 
-            <button pButton type="button" class="p-button-success p-button-sm" icon="pi pi-check"
-              [disabled]="!convertedJson.length" (click)="submit()">
-              Submit
-            </button>
+            <app-common-mail-submit [showSubmit]="true" [showReset]="false"
+              (sendWeekly)="commonService.sendWeeklyMail()" (sendMonthly)="commonService.sendMonthlyMail()"
+              (submit)="submit()" (reset)="reset()" [submitLabel]="'Save'"></app-common-mail-submit>
+
 
           </div>
 

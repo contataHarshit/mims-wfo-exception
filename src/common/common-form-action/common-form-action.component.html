@@ -1,11 +1,9 @@
 <div class="form-actions">
-  <button pButton type="button" class="p-button-secondary" icon="pi pi-refresh" (click)="onReset()"
-    *ngIf="resetBtn !== false">
+  <button pButton type="button" class="p-button-secondary" icon="pi pi-refresh" (click)="onReset()" *ngIf="resetBtn">
     Reset
   </button>
 
-  <button pButton type="button" class="p-button-success" icon="pi pi-check" (click)="onSubmit()"
-    *ngIf="showSubmit !== false">
-    Submit
+  <button pButton type="button" class="p-button-success" icon="pi pi-check" (click)="onSubmit()" *ngIf="showSubmit">
+    {{submitLabel}}
   </button>
 </div>
