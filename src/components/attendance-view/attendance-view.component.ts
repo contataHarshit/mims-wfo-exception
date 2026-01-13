@@ -109,12 +109,12 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
     this.currentWeekStart = d.toISOString().split("T")[0];
 
-    this.filterForm.patchValue({
-      startDate: this.currentWeekStart,
-    });
+    this.filterForm.patchValue(
+      { startDate: this.currentWeekStart },
+      { emitEvent: false } // 🔥 VERY IMPORTANT
+    );
 
-    this.generateColumns(this.currentWeekStart);
-    this.fetchAttendance();
+    this.refreshAttendance();
   }
 
   /* ---------------- FILTER ACTIONS ---------------- */
@@ -411,8 +411,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     if (!value) return;
 
     this.currentWeekStart = value;
-    this.generateColumns(value);
-    this.fetchAttendance();
+    this.refreshAttendance();
   }
 
   onManagerChange(manager: any) {
@@ -424,13 +423,11 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.selectedEmployee = employee;
     this.onFilterChange();
   }
-  private onFilterChange() {
-    const startDate = this.filterForm.value.startDate!;
-    this.currentWeekStart = startDate;
-
-    this.generateColumns(startDate);
-    this.fetchAttendance();
+  private onFilterChange(): void {
+    this.currentWeekStart = this.filterForm.value.startDate!;
+    this.refreshAttendance();
   }
+
   get weekRangeLabel(): string {
     if (this.tableColumns.length >= 10) {
       return `${this.tableColumns[3].label} – ${this.tableColumns[9].label}`;
@@ -452,6 +449,10 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   onLimitChange() {
     this.page = 1; // reset to first page
+    this.fetchAttendance();
+  }
+  private refreshAttendance(): void {
+    this.generateColumns(this.currentWeekStart);
     this.fetchAttendance();
   }
 }

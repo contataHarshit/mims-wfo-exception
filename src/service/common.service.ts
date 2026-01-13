@@ -359,6 +359,7 @@ export class CommonService {
     };
   }
   private triggerNonComplianceMail(type: "WEEK" | "MONTH"): void {
+    this.setLoading(true);
     const { startDate, endDate } = this.getDateRange(type);
 
     const payload = {
@@ -372,8 +373,10 @@ export class CommonService {
         console.log(`${type} non-compliance mail triggered`, res);
       },
       error: (err) => {
+        this.setLoading(false);
         console.error(`${type} mail failed`, err);
       },
+      complete: () => this.setLoading(false),
     });
   }
 }

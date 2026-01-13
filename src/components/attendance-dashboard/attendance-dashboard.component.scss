@@ -505,3 +505,8 @@
     background: #d9363e !important;
   }
 }
+
+::ng-deep .pi-angle-left,
+::ng-deep.pi-angle-right {
+  font-size: 25px;
+}

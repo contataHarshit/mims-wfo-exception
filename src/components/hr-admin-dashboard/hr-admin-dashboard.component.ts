@@ -221,6 +221,12 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     if (this.filters.toDate) {
       params.toDate = this.formatDate(this.filters.toDate);
     }
+    if (this.filters.managerName) {
+      params.managerEmployeeNumber = this.filters.managerName["value"];
+    }
+    if (this.filters.employeeName) {
+      params.employeeNumber = this.filters.employeeName["value"];
+    }
 
     // ✅ ADD PAGINATION
     params.page = this.currentPage;
@@ -363,7 +369,6 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     }
 
     // Reset table to first page after filtering
-  
   }
 
   applyFilters() {
