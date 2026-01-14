@@ -265,3 +265,27 @@
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
+
+/* ================= DELETE BUTTON ================= */
+
+::ng-deep button.delete-btn.p-button {
+  background: #ff4d4f !important;
+  border: none !important;
+  color: #fff !important;
+}
+
+/* Hover only when enabled */
+::ng-deep button.delete-btn.p-button:not(.p-disabled):hover {
+  background: #d9363e !important;
+}
+
+/* ✅ PRIME NG DISABLED STATE */
+::ng-deep button.delete-btn.p-button.p-disabled,
+::ng-deep button.delete-btn.p-button:disabled {
+  background: #9ca3af !important; /* GRAY */
+  border: none !important;
+  color: #ffffff !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+  pointer-events: none;
+}

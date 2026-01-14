@@ -150,7 +150,7 @@
           </td>
           <!-- <td>{{ req.remarks }}</td> -->
           <td *ngIf="selectedView === 'self'">
-            <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn" icon="pi pi-trash"
+            <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn" icon="pi pi-trash" 
               class="delete-btn" pButton type="button">
 
             </button>

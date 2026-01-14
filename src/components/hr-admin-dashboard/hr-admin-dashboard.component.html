@@ -36,7 +36,32 @@
       </app-common-form-action>
     </div>
   </div>
+  <div class="export-row" style="margin-bottom: 10px;">
+      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()">
+      </button>
 
+      <div class="deficiency-filter-wrapper">
+        <label class="deficiency-label">Filter by Deficiency Days:</label>
+        <div class="select-wrapper">
+          <select [(ngModel)]="deficiencyDays" (change)="deficiencyDaysChange()" class="styled-select"
+            [disabled]="isFilteringDeficiency">
+            <option *ngFor="let option of deficiencyDaysOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <span class="select-arrow">
+            <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+              <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </span>
+          <!-- <div class="filter-loader" *ngIf="isFilteringDeficiency">
+            <div class="spinner"></div>
+          </div> -->
+        </div>
+      </div>
+    </div>
+  
 
   <!-- TABLE SECTION WITH FIXED HEADER -->
   <div class="table-card">
