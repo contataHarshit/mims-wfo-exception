@@ -31,6 +31,8 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
   @Output() managerValueChange = new EventEmitter<any>();
   @Output() employeeValueChange = new EventEmitter<any>();
+  @Input() gap: string = '10vw';        // ✅ DEFAULT
+
   managerList: any[] = [];
   employeeList: any[] = [];
   private allEmployees: any[] = [];

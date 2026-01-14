@@ -1,4 +1,4 @@
-<div class="manager-employee-inline">
+<div class="manager-employee-inline" [style.gap]="gap">
     <div class="form-row">
         <label>Manager</label>
         <app-common-select [options]="managerList" [value]="managerValue" (valueChange)="onManagerChange($event)"

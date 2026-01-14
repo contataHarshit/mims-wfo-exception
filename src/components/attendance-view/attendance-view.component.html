@@ -12,7 +12,7 @@
         </div>
 
         <app-manager-employee-filter [(managerValue)]="selectedManager" [(employeeValue)]="selectedEmployee"
-          (managerValueChange)="onManagerChange($event)" (employeeValueChange)="onEmployeeChange($event)">
+          (managerValueChange)="onManagerChange($event)" (employeeValueChange)="onEmployeeChange($event)" [gap]="'2vw'">
         </app-manager-employee-filter>
 
       </div>
@@ -22,9 +22,9 @@
 
     </form>
 
+    <app-common-form-action (reset)="reset()" (submit)="onFilterChange()" [resetBtn]="true">
+    </app-common-form-action>
   </div>
-  <app-common-form-action (reset)="reset()" (submit)="onFilterChange()" [resetBtn]="true">
-  </app-common-form-action>
   <!-- TABLE CARD -->
   <div class="table-card">
 

@@ -6,22 +6,24 @@
 
       <!-- Manager + Employee (2 columns internally) -->
       <div class="manager-employee-col">
-        <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName">
+        <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName" gap="2vw">
         </app-manager-employee-filter>
       </div>
 
       <!-- From Date -->
-      <div class="form-row">
+      <div style="display: flex; gap: 2vw;">
+        <div class="form-row">
         <label>From date</label>
         <input type="date" class="date-input" [(ngModel)]="filters.fromDate" [max]="maxFromDate"
-          (change)="onDateChange()" />
+          (change)="onDateChange()"  style="width: 20vw;"/>
       </div>
 
       <!-- To Date -->
       <div class="form-row">
         <label>To date</label>
         <input type="date" class="date-input" [(ngModel)]="filters.toDate" [min]="minToDate"
-          (change)="onDateChange()" />
+          (change)="onDateChange()" style="width: 20vw;"/>
+      </div>
       </div>
 
       <!-- Buttons -->
