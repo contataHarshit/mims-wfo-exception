@@ -323,8 +323,6 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.isLoadingData = true;
     this.commonService.setLoading(true);
 
-    // Reset table sorting before making API call
-    this.resetTableSorting();
 
     const params = new URLSearchParams();
 
@@ -482,12 +480,13 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  onPageChange(event: any) {
-    this.page = event.first / event.rows + 1;
-    this.limit = event.rows;
+onLazyLoad(event: any) {
+  this.page = event.first / event.rows + 1;
+  this.limit = event.rows;
 
-    this.getExceptionRequest();
-  }
+  this.getExceptionRequest();
+}
+
 
   formatDate(date: string): string {
     if (!date) return "-";
