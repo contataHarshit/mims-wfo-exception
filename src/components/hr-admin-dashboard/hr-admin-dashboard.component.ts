@@ -378,12 +378,33 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     this.getHrAdminData(true);
   }
   resetFilters() {
+    // 1️⃣ Reset filter object completely
+    this.filters = {
+      reportType: "summary",
+      employeeName: null,
+      managerName: null,
+      status: null,
+      fromDate: null,
+      toDate: null,
+      reason: null,
+    };
+
+    // 2️⃣ Reset date range properly
+    this.setDefaultDateRange();
+
+    // 3️⃣ Reset deficiency filter
+    this.deficiencyDays = "all";
+
+    // 4️⃣ Reset table state
     this.currentPage = 1;
     this.pageSize = 20;
-    this.table.first = 0;
-    this.resetTableSorting();
-    this.setDefaultDateRange();
-    this.deficiencyDays = "all";
+
+    if (this.table) {
+      this.table.first = 0;
+      this.resetTableSorting();
+    }
+
+    // 5️⃣ Fetch fresh data
     this.getHrAdminData(true);
   }
 
