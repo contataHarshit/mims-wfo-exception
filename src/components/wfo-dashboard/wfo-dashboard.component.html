@@ -1,61 +1,60 @@
 <div class="dashboard-page">
   <!-- FILTER SECTION -->
   <div class="dashboard-filter">
-    <div style="display: flex; flex-direction: column; gap: 20px;">
 
-      <!-- Row 1: Manager, Employee name, Status -->
-      <div style="    display: flex;
-    gap: 1em;
-">
-        <!-- Manager + Employee (takes 2 columns) -->
-        <div class="span-2">
-          <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
-            [managerDisabled]="selectedView !== 'all'">
-          </app-manager-employee-filter>
-        </div>
-
-        <!-- Status -->
-        <div class="form-row">
-          <label>Status</label>
-          <app-common-select [options]="statusList" [(value)]="filters.status" (valueChange)="onStatusChange($event)"
-            placeholder="Select Status">
-          </app-common-select>
-        </div>
+    <!-- ROW 1 -->
+    <div class="filter-row ">
+      <div class="filter-span-2">
+        <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
+          [managerDisabled]="selectedView !== 'all'">
+        </app-manager-employee-filter>
       </div>
 
-      <!-- Row 2: From date, To date, Reason -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-        <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">From date</label>
-          <input type="date" [(ngModel)]="filters.fromDate" class="date-input"
-            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()"
-            [max]="filters.toDate" />
-        </div>
-
-        <div class="form-row">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">To date</label>
-          <input type="date" [(ngModel)]="filters.toDate" class="date-input" [min]="filters.fromDate"
-            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" (change)="onDateChange()" />
-        </div>
-
-        <div class="form-row" *ngIf="selectedView !== 'self'">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Reason</label>
-          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
-            style="width: 100%;">
-          </app-common-select>
-        </div>
+      <div class="form-row">
+        <label>Status</label>
+        <app-common-select [options]="statusList" [(value)]="filters.status" (valueChange)="onStatusChange($event)"
+          placeholder="Select Status">
+        </app-common-select>
       </div>
 
 
-      <app-common-form-action (reset)="resetFilters()" (submit)="applyFilter()"></app-common-form-action>
     </div>
 
-    <!-- Export Button -->
-    <div style="margin-top: 20px;">
-      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="export()"></button>
+    <!-- ROW 2 -->
+    <div class="filter-row">
+      <div class="form-row">
+        <label>From date</label>
+        <input type="date" class="date-input" [(ngModel)]="filters.fromDate" (change)="onDateChange()"
+          [max]="filters.toDate" />
+      </div>
+
+      <div class="form-row">
+        <label>To date</label>
+        <input type="date" class="date-input" [(ngModel)]="filters.toDate" (change)="onDateChange()"
+          [min]="filters.fromDate" />
+      </div>
+
+
+      <div class="form-row" *ngIf="selectedView !== 'self'">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Reason</label>
+        <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
+          style="width: 100%;">
+        </app-common-select>
+      </div>
     </div>
+
+    <!-- ACTIONS -->
+    <div class="dashboard-filter-actions">
+      <app-common-form-action (reset)="resetFilters()" (submit)="applyFilter()">
+      </app-common-form-action>
+
+    </div>
+
   </div>
 
+
+  <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="export()">
+  </button>
   <!-- TABLE SECTION -->
   <div class="dashboard-table-card" style="margin-top: 20px;">
     <p-table #dt [value]="exceptionRequests" [paginator]="true" [rows]="limit" [totalRecords]="totalRecords"

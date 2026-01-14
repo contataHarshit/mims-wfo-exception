@@ -69,8 +69,13 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     this.filterEmployeesByManager(managerEmpNo);
     this.managerValue = managerEmpNo;
     this.managerValueChange.emit(managerEmpNo);
-
+    console.log("1111111111111");
+    
     // reset employee
+     if(!this.managerValue ){
+      this.employeeList = this.mapEmployees(this.allEmployees);
+      this.employeeValue = null;
+    }
     this.employeeValue = null;
     this.employeeValueChange.emit(null);
   }
@@ -82,14 +87,20 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode
     );
     if (this.managerValue) {
-      this.managerValue.value = this.managerValue.ManagerCode;
+      console.log("wwwwwwwwwwwwwww");
+      this.managerValue.value = this.managerValue.EmployeeNumber;
       this.managerValue.label = `${this.managerValue.FullName} (${this.managerValue.EmployeeNumber})`;
+       this.filterEmployeesByManager(this.managerValue);
+    }
+    if(!this.managerValue ){
+      this.employeeList = this.mapEmployees(this.allEmployees);
+      this.employeeValue = null;
     }
     this.managerValueChange.emit(this.managerValue || null);
 
     this.employeeValue = employeeEmpNo;
     this.employeeValueChange.emit(employeeEmpNo);
-    this.filterEmployeesByManager(this.managerValue);
+   
     // const emp = this.allEmployees.find(
     //   e => e.EmployeeNumber === employeeEmpNo
     // );

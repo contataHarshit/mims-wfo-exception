@@ -423,7 +423,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.selectedEmployee = employee;
     this.onFilterChange();
   }
-  private onFilterChange(): void {
+  onFilterChange(): void {
     this.currentWeekStart = this.filterForm.value.startDate!;
     this.refreshAttendance();
   }

@@ -17,13 +17,14 @@
 
       </div>
 
-      <app-common-form-action (reset)="reset()" [showSubmit]="false" [resetBtn]="true">
-      </app-common-form-action>
+
 
 
     </form>
-  </div>
 
+  </div>
+  <app-common-form-action (reset)="reset()" (submit)="onFilterChange()" [resetBtn]="true">
+  </app-common-form-action>
   <!-- TABLE CARD -->
   <div class="table-card">
 

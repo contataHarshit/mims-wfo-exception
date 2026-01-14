@@ -1,12 +1,13 @@
 .manager-employee-inline {
-      display: flex;
+    display: flex;
     margin-top: 6px;
-    gap: 1em;
+    gap: 10vw;
     /* min-width: 40vw; */
     max-width: 50vw !important;
     justify-content: space-between !important;
     width: 100%;
 }
-.form-row{
+
+.form-row {
     width: 20vw;
 }

@@ -480,3 +480,32 @@
     max-width: 140px !important;
   }
 }
+
+.filter-row-single {
+  display: grid;
+  grid-template-columns: 2.5fr 1fr 1fr auto;
+  gap: 20px;
+  align-items: end;
+}
+
+/* Manager + Employee should stay inline */
+.manager-employee-col {
+  display: flex;
+}
+
+/* Buttons aligned bottom-right */
+.filter-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+/* Date input FIX (calendar spacing preserved) */
+.date-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 40px 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}

@@ -9,3 +9,14 @@
     display: flex;
     gap: 12px;
 }
+
+.small-span {
+    font-size: 10px;
+}
+
+.send-button {
+    max-width: 120px;
+    min-width: 120px;
+    width: 120px;
+    flex-direction: column;
+}
