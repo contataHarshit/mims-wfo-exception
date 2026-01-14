@@ -1,6 +1,6 @@
 <app-header [header]="commonService.header" [role]="role"></app-header>
 
-<div class="tabs-wrapper" *ngIf="(!commonService.loading || token) && !pageLoading">
+<div class="tabs-wrapper" [class.hidden]="!(commonService.loading === false && token)">
   <div class="tabs">
     <button *ngFor="let item of tabs; let i = index" [class.active]="item.isActive" (click)="navigateTo(item.path)">
       {{ item.label }}

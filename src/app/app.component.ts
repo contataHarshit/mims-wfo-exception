@@ -39,10 +39,11 @@ import { FormsModule } from "@angular/forms";
 export class AppComponent implements DoCheck, OnInit, OnDestroy {
   title = "Mims-exception-wfo";
 
-  tabs = [
-    { label: "Create WFH Request", path: "", isActive: false },
-    { label: "WFH Dashboard", path: "dashboard", isActive: false },
-  ];
+  // Initialize with empty array - will be populated based on role
+  tabs: Array<{ label: string; path: string; isActive: boolean }> = [];
+
+  // Flag to control tab visibility
+  showTabs = false;
 
   token: string | null = null;
   role = "";
@@ -117,6 +118,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get("sessionid") || urlParams.get("sessionId");
+
     if (
       !localStorage.getItem("sessionid") ||
       sessionId !== localStorage.getItem("sessionid")
@@ -124,23 +126,26 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       localStorage.setItem("sessionid", sessionId || "");
       localStorage.removeItem("token");
     }
+
     this.token = localStorage.getItem("token") || null;
-    console.log("token", this.token);
 
     if (sessionId && !this.token) {
-      if (localStorage.getItem("department") == "HR") {
-        this.viewOptions.unshift({ label: "All", value: "all" });
-      }
+      // New session - authenticate first
       this.authenticateWithSession(sessionId);
     } else {
       const storedToken = localStorage.getItem("token");
       const storedRole = localStorage.getItem("role");
 
       if (storedToken && storedRole && !this.hasLoadedData) {
+        // Existing session - initialize tabs immediately
         this.token = storedToken;
         this.role = storedRole;
         this.employeeNumber = localStorage.getItem("employeeNumber") || "";
         this.department = localStorage.getItem("department") || "";
+
+        // Initialize tabs based on stored role/department
+        this.initializeTabs(this.role, this.department);
+        this.showTabs = true;
 
         this.commonService.setRole(storedRole);
         this.setDefaultViewByRole(this.role);
@@ -158,13 +163,62 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private authenticateWithSession(sessionId: string) {
-    // if (this.isAuthenticating) {
-    //   console.log("Authentication already in progress, skipping...");
-    //   return;
-    // }
+  /**
+   * Initialize tabs based on user role and department
+   * This ensures tabs are shown immediately without layout shift
+   */
+  private initializeTabs(role: string, department: string) {
+    this.tabs = [];
 
+    // Base tabs for non-admin users
+    if (role !== "ADMIN") {
+      this.tabs.push({
+        label: "Create WFH Request",
+        path: "",
+        isActive: false,
+      });
+    }
+
+    // Dashboard tab for all users
+    this.tabs.push({
+      label: "WFH Dashboard",
+      path: "dashboard",
+      isActive: false,
+    });
+
+    // HR Admin Dashboard for HR department or ADMIN role
+    if (department === "HR" || role === "ADMIN") {
+      this.tabs.push({
+        label: "HR Admin Dashboard",
+        path: "hr-admin-dashboard",
+        isActive: false,
+      });
+      this.tabs.push({
+        label: "Correction Dashboard",
+        path: "correction-dashboard",
+        isActive: false,
+      });
+    }
+
+    // Attendance Dashboard for ACCOUNTS department employees or ADMIN
+    if (
+      (department === "ACCOUNTS" && role === "EMPLOYEE") ||
+      role === "ADMIN"
+    ) {
+      this.tabs.push({
+        label: "Attendance Dashboard",
+        path: "attendance-dashboard",
+        isActive: false,
+      });
+    }
+
+    this.updateActiveTabs(this.router.url);
+  }
+
+  private authenticateWithSession(sessionId: string) {
     this.isAuthenticating = true;
+    this.showTabs = false; // Hide tabs during authentication
+
     firstValueFrom(
       this.http.auth(this.constants.auth, { sessionid: sessionId })
     )
@@ -179,7 +233,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         localStorage.setItem("role", this.role);
         localStorage.setItem("department", this.department);
         localStorage.setItem("employeeNumber", this.employeeNumber);
+
+        // Initialize tabs immediately after authentication
+        this.initializeTabs(this.role, this.department);
+        this.showTabs = true; // Show tabs now that they're properly initialized
+
         this.commonService.setRole(this.role);
+
         if (this.role === "ADMIN") {
           this.router.navigate(["/dashboard"], {
             queryParams: this.getQueryParamsFromUrl(),
@@ -203,11 +263,9 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         return this.loadRoleSpecificData(this.role);
       })
       .catch((err) => {
-        // console.error("Auth API Error:", err);
-        // this.commonService.userDataLoaded$.next(false);
-      })
-      .finally(() => {
-        // this.isAuthenticating = false;
+        console.error("Auth API Error:", err);
+        this.isAuthenticating = false;
+        this.showTabs = false;
       });
   }
 
@@ -217,10 +275,12 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       { label: "Self", value: "self" },
       { label: "Resource", value: "resource" },
     ];
+
     if (role === "ADMIN") {
       this.addAllOption();
       return;
     }
+
     if (department === "HR") {
       this.addAllOption();
       if (role === "EMPLOYEE") {
@@ -230,17 +290,20 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       }
       return;
     }
+
     if (role === "MANAGER") {
       this.commonService.selectedView = "self";
       localStorage.setItem("selectedView", "self");
       return;
     }
+
     if (role === "EMPLOYEE") {
       this.viewOptions = this.viewOptions.filter((o) => o.value === "self");
       this.commonService.selectedView = "self";
       localStorage.setItem("selectedView", "self");
       return;
     }
+
     const savedView = localStorage.getItem("selectedView");
     if (
       savedView === "all" ||
@@ -276,6 +339,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         };
         this.commonService.setEmployeeData(employeeData);
         localStorage.setItem("employeeData", JSON.stringify(employeeData));
+
         if (
           this.role == "ADMIN" ||
           localStorage.getItem("department") === "HR" ||
@@ -296,47 +360,14 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
       if (localStorage.getItem("department") === "HR" || role === "ADMIN") {
         await this.loadAllEmployeeData();
-        if (role === "ADMIN") {
-          this.tabs = this.tabs.filter((t) => t.label !== "Create WFH Request");
-        }
-        if (!this.tabs.some((t) => t.label === "HR Admin Dashboard")) {
-          this.tabs.push({
-            label: "HR Admin Dashboard",
-            path: "hr-admin-dashboard",
-            isActive: false,
-          });
-        }
+      }
 
-        this.updateActiveTabs(this.router.url);
-      }
-      // if (
-      //   !this.tabs.some((t) => t.label === "Attendance Dashboard") &&
-      //   this.commonService.employeeName.toLowerCase().includes("naushada")
-      // ) {
-      if (this.department == "HR" || role === "ADMIN") {
-        if (!this.tabs.some((t) => t.label === "Correction Dashboard")) {
-          this.tabs.push({
-            label: "Correction Dashboard",
-            path: "correction-dashboard",
-            isActive: false,
-          });
-        }
-      }
       if (
         (this.department == "ACCOUNTS" && role === "EMPLOYEE") ||
         role === "ADMIN"
       ) {
-        if (!this.tabs.some((t) => t.label === "Attendance Dashboard")) {
-          this.tabs.push({
-            label: "Attendance Dashboard",
-            path: "attendance-dashboard",
-            isActive: false,
-          });
-        }
-        this.loadAllEmployeeData();
+        await this.loadAllEmployeeData();
       }
-
-      // }
 
       this.commonService.userDataLoaded$.next(true);
       this.hasLoadedData = true;
@@ -389,6 +420,8 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   }
 
   ngDoCheck(): void {
+    if (!this.showTabs) return;
+
     this.tabs.forEach((tab) => {
       const shouldBeActive = this.isActive(tab.path);
       if (tab.isActive !== shouldBeActive) {
@@ -418,6 +451,8 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   }
 
   updateActiveTabs(url: string) {
+    if (!this.showTabs) return;
+
     const currentUrl = url.split("?")[0].replace(/^\/+/, "");
 
     this.tabs.forEach((tab) => {
@@ -447,6 +482,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     localStorage.setItem("selectedView", this.commonService.selectedView);
     this.commonService.viewChange$.next(this.commonService.selectedView);
   }
+
   private getQueryParamsFromUrl(): Record<string, string> {
     const params: Record<string, string> = {};
     const searchParams = new URLSearchParams(window.location.search);
@@ -456,5 +492,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     });
 
     return params;
+  }
+
+  /**
+   * Check if tabs should be displayed
+   * Tabs are shown only after authentication is complete
+   */
+  get shouldShowTabs(): boolean {
+    return this.showTabs && !this.isAuthenticating && this.tabs.length > 0;
   }
 }
