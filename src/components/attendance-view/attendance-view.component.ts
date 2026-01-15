@@ -246,54 +246,19 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCellBlur(row: any, date: string, value: string, event?: Event) {
-    const input = event?.target as HTMLInputElement;
-    const original = (input?.dataset["original"] ?? "").trim();
-    const current = (value ?? "").trim();
-
-    // ❌ Value NOT changed → do nothing
-    if (current === original) {
-      if (input) delete input.dataset["original"];
-      return;
-    }
-
-    this.commonService.setLoading(true);
-
-    const payload = [
-      {
-        email: row.email,
-        dates: [{ date, value: current || undefined }],
-      },
-    ];
-
-    this.http.postData(payload, this.constants.officeAttendance).subscribe({
-      next: (res) => {
-        if (res?.success) {
-          row.attendance[date] = current || undefined;
-          this.editedCells.add(`${row.employeeId}-${date}`);
-          this.toastr.success(res?.data?.message || "Attendance updated");
-        } else {
-          row.attendance[date] = original;
-          this.toastr.error(res?.data?.message || "Update failed");
-        }
-      },
-      error: (err) => {
-        row.attendance[date] = original;
-        this.toastr.error(err?.error?.message || "Update failed");
-      },
-      complete: () => {
-        this.commonService.setLoading(false);
-        if (input) delete input.dataset["original"];
-      },
-    });
-  }
-
   onCellEnter(row: any, date: string, value: string, event: Event) {
     event.preventDefault();
 
     const input = event.target as HTMLInputElement;
-    const original = (input?.dataset["original"] ?? "").trim();
-    const current = (value ?? "").trim() || undefined;
+
+    const original = this.normalizeValue(input.dataset["original"]);
+    const current = this.normalizeValue(value);
+
+    // ❌ NO CHANGE → exit safely
+    if (original === current) {
+      delete input.dataset["original"];
+      return;
+    }
 
     this.commonService.setLoading(true);
 
@@ -326,6 +291,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       },
     });
   }
+
   focusNextEditableCell(currentInput: HTMLInputElement) {
     const inputs = Array.from(
       document.querySelectorAll<HTMLInputElement>(".editable-cell")
@@ -354,16 +320,27 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     return d.toISOString().split("T")[0];
   }
   markEdited(row: any, date: string) {
+    const rawValue = row.attendance[date];
+    const normalizedValue = this.normalizeValue(rawValue);
+
+    // ❌ If value is null (only spaces / empty) → DO NOT mark edited
+    if (normalizedValue === null) {
+      this.editedMap.delete(`${row.email}-${date}`);
+      this.editedCells.delete(`${row.employeeId}-${date}`);
+      return;
+    }
+
     const key = `${row.email}-${date}`;
 
     this.editedMap.set(key, {
       email: row.email,
       date,
-      value: row.attendance[date] || undefined,
+      value: normalizedValue,
     });
 
     this.editedCells.add(`${row.employeeId}-${date}`);
   }
+
   submitAttendance() {
     if (!this.editedMap.size) {
       this.toastr.info("No changes to submit");
@@ -380,7 +357,12 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
         };
       }
 
-      payloadMap[email].dates.push({ date, value });
+      payloadMap[email].dates.push({
+        date,
+        value: !value?.replaceAll(" ", "").length
+          ? null
+          : value.replaceAll(" ", ""),
+      });
     });
 
     const payload = Object.values(payloadMap);
@@ -454,5 +436,11 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   private refreshAttendance(): void {
     this.generateColumns(this.currentWeekStart);
     this.fetchAttendance();
+  }
+  private normalizeValue(value: string | undefined | null): string | null {
+    if (!value) return null;
+
+    const trimmed = value.replaceAll(" ", "");
+    return trimmed.length ? trimmed : null;
   }
 }

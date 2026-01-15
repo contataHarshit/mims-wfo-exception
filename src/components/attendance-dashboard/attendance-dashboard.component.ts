@@ -175,33 +175,53 @@ export class CsvUploadComponent {
       .split("\n")
       .map((r) => r.trim())
       .filter(Boolean)
-      .map((r) => r.split(","));
+      .map((r) => r.split(",").map((c) => c.trim()));
+
+    if (!rows.length) return;
 
     const header = rows[0];
 
-    // Fixed columns (email, name, etc.)
-    const fixedColumns = header.slice(0, 3);
+    // 🔍 Find first Day column (Day1)
+    const firstDayIndex = header.findIndex((h) => /^day\d+$/i.test(h));
 
-    // 🔥 Generate actual date headers ONCE
+    if (firstDayIndex === -1) {
+      this.toastr.error("No Day columns found in CSV");
+      return;
+    }
+
+    // 🧱 Non-day (fixed) columns
+    const fixedHeaders = header.slice(0, firstDayIndex);
+
+    // 📅 Generate actual date headers (filtered range)
     const dateHeaders = this.getDateRange(
       this.form.get("fromDate")?.value!,
       this.form.get("toDate")?.value!
     );
 
-    this.previewHeader = [...fixedColumns, ...dateHeaders];
+    // ✅ FINAL HEADER (NO Day1, Day2)
+    this.previewHeader = [...fixedHeaders, ...dateHeaders];
 
-    this.previewRows = rows
-      .slice(1)
-      .map((row) => [...row.slice(0, 3), ...row.slice(3, 3 + this.dayCount)]);
+    // ---------- ROWS ----------
+    this.previewRows = rows.slice(1).map((row) => {
+      const fixedValues = row.slice(0, fixedHeaders.length);
+
+      // Take only required number of day values
+      const dayValues = row.slice(
+        firstDayIndex,
+        firstDayIndex + dateHeaders.length
+      );
+
+      return [...fixedValues, ...dayValues];
+    });
 
     this.totalPages = Math.ceil(this.previewRows.length / this.pageSize);
     this.currentPage = 1;
 
-    // Converted JSON now uses DATE headers directly
+    // ---------- CONVERTED JSON ----------
     this.convertedJson = this.previewRows.map((row) => {
       const obj: any = {};
       this.previewHeader.forEach((key, index) => {
-        obj[key] = row[index] || null;
+        obj[key] = row[index] ?? null;
       });
       return obj;
     });
@@ -223,20 +243,34 @@ export class CsvUploadComponent {
       h.toLowerCase().includes("email")
     );
 
+    if (emailIndex === -1) {
+      this.toastr.error("Email column not found");
+      return;
+    }
+
+    const fromDate = this.form.get("fromDate")?.value!;
+    const startDate = new Date(fromDate);
+
     const result = this.previewRows
       .map((row) => {
         const email = (row[emailIndex] ?? "").trim();
         if (!email || !email.includes("@")) return null;
 
         const dates = this.previewHeader
-          .slice(3)
-          .map((date, i) => {
-            const value = (row[i + 3] ?? "").trim();
-            if (!value) return null;
+          .map((header, index) => {
+            if (!this.isDayColumn(header)) return null;
+
+            const dayNumber = this.extractDayNumber(header);
+            const value = (row[index] ?? "").trim();
+
+            if (!value.replaceAll(" ", "").length) return null;
+
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + (dayNumber - 1));
 
             return {
-              date: this.toIsoDate(date), // 🔥 FIXED
-              value,
+              date: date.toISOString().split("T")[0],
+              value: value.replaceAll(" ", ""),
             };
           })
           .filter(Boolean);
@@ -248,12 +282,10 @@ export class CsvUploadComponent {
       .filter(Boolean);
 
     this.http.postData(result, this.constants.officeAttendance).subscribe({
-      next: (res: any) => {
-        if (res?.success) {
-          this.toastr.success(res?.data?.message || "Attendance submitted");
-        } else {
-          this.toastr.error(res?.data?.message || "Submission failed");
-        }
+      next: (res) => {
+        res?.success
+          ? this.toastr.success(res?.data?.message || "Attendance submitted")
+          : this.toastr.error("Submission failed");
       },
       error: (err) => {
         this.toastr.error(err?.error?.message || "Submission failed");
@@ -385,5 +417,12 @@ export class CsvUploadComponent {
     link.click();
 
     URL.revokeObjectURL(url);
+  }
+  private isDayColumn(header: string): boolean {
+    return /^day\d+$/i.test(header.trim());
+  }
+
+  private extractDayNumber(header: string): number {
+    return Number(header.replace(/[^0-9]/g, ""));
   }
 }

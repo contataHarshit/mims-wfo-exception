@@ -50,7 +50,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
 
         // Small delay to ensure logs complete
         setTimeout(() => {
-          window.open(Environment.redirectURL);
+          window.location.href = Environment.redirectURL;
         }, 100);
       }
 

@@ -1,82 +1,81 @@
 <!-- hr-admin-dashboard.component.html -->
-<div class="page-container">
+<div class="dashboard-page">
   <!-- FILTER SECTION -->
-  <div class="filter-card">
-    <div class="filter-row-single">
-
-      <!-- Manager + Employee (2 columns internally) -->
-      <div class="manager-employee-col">
+  <div class="dashboard-filter">
+    <div class="form-grid"
+      style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem 1.25rem; align-items: end;">
+      <!-- Manager + Employee (takes 1 column but has 2 inputs internally) -->
+      <div>
         <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
           gap="2vw">
         </app-manager-employee-filter>
       </div>
 
       <!-- From Date -->
-      <div style="display: flex; gap: 2vw;">
-        <div class="form-row">
-          <label>From date</label>
-          <input type="date" class="date-input" [(ngModel)]="filters.fromDate" [max]="maxFromDate"
-            (change)="onDateChange()" style="width: 20vw;" />
-        </div>
-
-        <!-- To Date -->
-        <div class="form-row">
-          <label>To date</label>
-          <input type="date" class="date-input" [(ngModel)]="filters.toDate" [min]="minToDate" (change)="onDateChange()"
-            style="width: 20vw;" />
-        </div>
+      <div class="form-row">
+        <label>From date</label>
+        <input type="date" class="date-input" [(ngModel)]="filters.fromDate" [max]="maxFromDate"
+          (change)="onDateChange()" />
       </div>
 
-      <!-- Buttons -->
-
-
+      <!-- To Date -->
+      <div class="form-row">
+        <label>To date</label>
+        <input type="date" class="date-input" [(ngModel)]="filters.toDate" [min]="minToDate"
+          (change)="onDateChange()" />
+      </div>
     </div>
-    <div class="filter-actions">
+
+    <!-- Filter Actions -->
+    <div class="dashboard-filter-actions">
       <app-common-form-action (reset)="resetFilters()" (submit)="applyFilters()">
       </app-common-form-action>
     </div>
   </div>
-  <div class="export-row" style="margin-bottom: 10px;">
-      <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()">
-      </button>
 
-      <div class="deficiency-filter-wrapper">
-        <label class="deficiency-label">Filter by Deficiency Days:</label>
-        <div class="select-wrapper">
-          <select [(ngModel)]="deficiencyDays" (change)="deficiencyDaysChange()" class="styled-select"
-            [disabled]="isFilteringDeficiency">
-            <option *ngFor="let option of deficiencyDaysOptions" [value]="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-          <span class="select-arrow">
-            <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-              <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </span>
-          <!-- <div class="filter-loader" *ngIf="isFilteringDeficiency">
-            <div class="spinner"></div>
-          </div> -->
-        </div>
+  <!-- EXPORT AND DEFICIENCY FILTER ROW -->
+  <div class="action-bar">
+    <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()">
+    </button>
+
+    <div class="deficiency-filter-wrapper" style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+      <label class="deficiency-label" style="font-weight: 500; font-size: 14px; white-space: nowrap;">Filter by
+        Deficiency Days:</label>
+      <div class="select-wrapper" style="position: relative; min-width: 180px;">
+        <select [(ngModel)]="deficiencyDays" (change)="deficiencyDaysChange()" class="styled-select"
+          [disabled]="isFilteringDeficiency"
+          style="width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background-color: white; cursor: pointer; appearance: none;">
+          <option *ngFor="let option of deficiencyDaysOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+        <span class="select-arrow"
+          style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #6b7280;">
+          <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </span>
       </div>
     </div>
-  
+  </div>
 
-  <!-- TABLE SECTION WITH FIXED HEADER -->
-  <div class="table-card">
+  <!-- TABLE SECTION -->
+  <div class="dashboard-table-card" style="margin-top: 1rem;">
     <div class="table-wrapper">
-      <p-table [value]="hrData" class="p-datatable-gridlines" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
-        [paginator]="true" [rows]="20" [totalRecords]="totalRecords" [rowsPerPageOptions]="[20, 50, 100, 200]"
-        [scrollable]="true" scrollHeight="calc(100vh - 400px)" sortMode="multiple" #hrTable>
+      <p-table [value]="hrData" class="dashboard-table p-datatable-gridlines" [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)" [paginator]="true" [rows]="pageSize" [first]="(currentPage - 1) * pageSize"
+        [totalRecords]="totalRecords" [rowsPerPageOptions]="[20, 50, 100, 200]" [scrollable]="true"
+        scrollHeight="calc(100vh - 400px)" sortMode="multiple" #hrTable>
+
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="employeeNumber" [style.min-width.px]="120" class="first-header ">
+            <th pSortableColumn="employeeNumber" [style.min-width.px]="120" class="first-header">
               Employee ID
               <p-sortIcon field="employeeNumber"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="employeeName" [style.min-width.px]="180" class="second-header ">
+            <th pSortableColumn="employeeName" [style.min-width.px]="180" class="second-header">
               Employee Name
               <p-sortIcon field="employeeName"></p-sortIcon>
             </th>
@@ -101,17 +100,10 @@
               <p-sortIcon field="presentDays"></p-sortIcon>
             </th>
 
-            <!-- <th pSortableColumn="holidaysDays" [style.min-width.px]="120">
-              Holiday Days
-              <p-sortIcon field="holidaysDays"></p-sortIcon>
-            </th> -->
-
             <th pSortableColumn="leaveDays" [style.min-width.px]="120">
               Leave Days
               <p-sortIcon field="leaveDays"></p-sortIcon>
             </th>
-
-
 
             <th pSortableColumn="TOTAL" [style.min-width.px]="150">
               Applied Exceptions
@@ -132,6 +124,7 @@
               Pending Exceptions
               <p-sortIcon field="PENDING"></p-sortIcon>
             </th>
+
             <th pSortableColumn="deficiencyDays" [style.min-width.px]="140">
               Deficiency Days
               <p-sortIcon field="deficiencyDays"></p-sortIcon>
@@ -147,9 +140,7 @@
             <td>{{ rec.managerName }}</td>
             <td style="text-align: center;">{{ rec.workingDays }}</td>
             <td style="text-align: center;">{{ rec.presentDays }}</td>
-            <!-- <td style="text-align: center;">{{ rec.holidaysDays }}</td> -->
             <td style="text-align: center;">{{ rec.leaveDays }}</td>
-
             <td style="text-align: center;">{{ rec.TOTAL }}</td>
             <td style="text-align: center;">{{ rec.APPROVED }}</td>
             <td style="text-align: center;">{{ rec.REJECTED }}</td>
@@ -161,12 +152,12 @@
         </ng-template>
 
         <ng-template pTemplate="paginatorleft">
-          <span class="total-records">Total Records: {{ hrData.length }}</span>
+          <span class="total-records">Total Records: {{ totalRecords }}</span>
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="13" style="text-align: center; padding: 20px;">
+            <td colspan="12" style="text-align: center; padding: 20px;">
               No records found
             </td>
           </tr>

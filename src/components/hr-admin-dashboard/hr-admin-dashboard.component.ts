@@ -45,7 +45,7 @@ interface HrAdminRecord {
     CommonFormActionComponent,
   ],
   templateUrl: "./hr-admin-dashboard.component.html",
-  styleUrls: ["./hr-admin-dashboard.component.scss"],
+  styleUrl: "../../shared/dashboard-common.scss",
 })
 export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   @ViewChild("hrTable") table!: Table;

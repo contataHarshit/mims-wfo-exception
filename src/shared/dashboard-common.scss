@@ -282,10 +282,24 @@
 /* ✅ PRIME NG DISABLED STATE */
 ::ng-deep button.delete-btn.p-button.p-disabled,
 ::ng-deep button.delete-btn.p-button:disabled {
-  background: #9ca3af !important; /* GRAY */
+  background: #9ca3af !important;
+  /* GRAY */
   border: none !important;
   color: #ffffff !important;
   cursor: not-allowed !important;
   opacity: 0.7 !important;
   pointer-events: none;
+}
+
+/* ================= WORD WRAP FIX ================= */
+
+::ng-deep .dashboard-table .p-datatable-tbody>tr>td {
+  white-space: normal !important;
+  /* allow wrapping */
+  word-break: break-word;
+  /* break long words */
+  overflow-wrap: anywhere;
+  /* modern browsers */
+  max-width: 250px;
+  /* optional: controls column width */
 }

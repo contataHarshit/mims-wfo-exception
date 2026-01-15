@@ -53,7 +53,7 @@
     align-items: center;
     gap: 2em;
     width: 70%;
-    justify-content:space-between ;
+    justify-content: space-between;
 }
 
 .week-range {
@@ -106,4 +106,18 @@
     color: #374151;
     min-width: 60px;
     text-align: center;
+}
+
+td {
+
+    white-space: normal !important;
+    /* allow wrapping */
+    word-break: break-word;
+    /* break long words */
+    overflow-wrap: anywhere;
+    /* modern browsers */
+    max-width: 250px;
+    /* optional: controls column width */
+
+
 }

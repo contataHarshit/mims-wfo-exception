@@ -105,7 +105,9 @@ export class AddManualAttendanceComponent implements OnInit {
       dates: [
         {
           date: this.selectedDate,
-          value: this.attendanceType, // FD | SF | HF
+          value: !this.attendanceType.replaceAll(" ", "").length
+            ? null
+            : this.attendanceType.replaceAll(" ", ""), // FD | SF | HF
         },
       ],
     }));
