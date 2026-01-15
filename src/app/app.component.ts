@@ -65,16 +65,16 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   isAttendanceDashboardPage = false;
   attendanceViewOptions = [
     {
+      label: "Add",
+      value: "add",
+    },
+    {
       label: "Upload",
       value: "upload",
     },
     {
       label: "View",
       value: "view",
-    },
-    {
-      label: "Add",
-      value: "add",
     },
   ];
   private destroy$ = new Subject<void>();

@@ -35,12 +35,12 @@ export class CommonService {
   projectName$ = this.projectNameSubject.asObservable();
   projectManager$ = this.projectManagerSubject.asObservable();
   role$ = this.roleSubject.asObservable();
-  attendanceView = "upload";
+  attendanceView = "add";
   // ============================================
   // View Handling
   // ============================================
   viewChange$ = new BehaviorSubject<string>("self");
-  attendanceViewChange$ = new BehaviorSubject<string>("upload");
+  attendanceViewChange$ = new BehaviorSubject<string>("add");
   // ============================================
   // Data Loading Status
   // ============================================

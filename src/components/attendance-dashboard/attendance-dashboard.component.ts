@@ -63,7 +63,7 @@ export class CsvUploadComponent {
     private constants: ConstantService,
     private toastr: ToastrService
   ) {
-    this.commonService.attendanceView = "upload";
+    this.commonService.attendanceView = "add";
   }
 
   get paginatedRows(): string[][] {
@@ -358,17 +358,9 @@ export class CsvUploadComponent {
   }
   downloadCsvFormat(): void {
     // ---------- FIXED HEADERS ----------
-    const headers = [
-      "NAME",
-      "Manager",
-      "EMAIL",
-      "DAY_1",
-      "DAY_2",
-      "DAY_3",
-    ];
+    const headers = ["NAME", "Manager", "EMAIL", "1", "2", "3"];
 
     const sampleRow = [
-
       "Employee_Name",
       "Manager_Name",
       "Employee_Email",
