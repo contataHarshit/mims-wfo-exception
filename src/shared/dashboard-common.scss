@@ -88,6 +88,9 @@
     text-align: center;
     border: 1px solid #e5e7eb;
     padding: 10px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
   }
 
   /* Cells */
@@ -97,6 +100,9 @@
     border: 1px solid #e5e7eb;
     font-size: 13px;
     padding: 10px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
   }
 
   /* Row colors */

@@ -65,87 +65,100 @@
     <div class="table-wrapper">
       <p-table [value]="hrData" class="dashboard-table p-datatable-gridlines" [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)" [paginator]="true" [rows]="pageSize" [first]="(currentPage - 1) * pageSize"
-        [totalRecords]="totalRecords" [rowsPerPageOptions]="[20, 50, 100, 200]" [scrollable]="true"
-        scrollHeight="calc(100vh - 400px)" sortMode="multiple" #hrTable>
+        [totalRecords]="totalRecords" [rowsPerPageOptions]="[20, 50, 100, 200]" scrollable="true"
+        scrollHeight="calc(100vh - 400px)" sortMode="multiple">
 
-        <ng-template pTemplate="header">
+        <!-- ================= FROZEN HEADER ================= -->
+        <ng-template pTemplate="frozenheader">
           <tr>
-            <th pSortableColumn="employeeNumber" [style.min-width.px]="120" class="first-header">
+            <th pSortableColumn="employeeNumber" style="width:120px">
               Employee ID
               <p-sortIcon field="employeeNumber"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="employeeName" [style.min-width.px]="180" class="second-header">
+            <th pSortableColumn="employeeName" style="width:180px">
               Employee Name
               <p-sortIcon field="employeeName"></p-sortIcon>
             </th>
+          </tr>
+        </ng-template>
 
-            <th pSortableColumn="designation" [style.min-width.px]="150">
+        <!-- ================= FROZEN BODY ================= -->
+        <ng-template pTemplate="frozenbody" let-rec>
+          <tr>
+            <td style="width:120px">{{ rec.employeeNumber }}</td>
+            <td style="width:180px">{{ rec.employeeName }}</td>
+          </tr>
+        </ng-template>
+
+        <!-- ================= SCROLLABLE HEADER ================= -->
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="designation" style="min-width:150px">
               Designation
               <p-sortIcon field="designation"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="managerName" [style.min-width.px]="180">
+            <th pSortableColumn="managerName" style="min-width:180px">
               Manager Name
               <p-sortIcon field="managerName"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="workingDays" [style.min-width.px]="120">
+            <th pSortableColumn="workingDays" style="min-width:120px">
               Working Days
               <p-sortIcon field="workingDays"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="presentDays" [style.min-width.px]="120">
+            <th pSortableColumn="presentDays" style="min-width:120px">
               Present Days
               <p-sortIcon field="presentDays"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="leaveDays" [style.min-width.px]="120">
+            <th pSortableColumn="leaveDays" style="min-width:120px">
               Leave Days
               <p-sortIcon field="leaveDays"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="TOTAL" [style.min-width.px]="150">
+            <th pSortableColumn="TOTAL" style="min-width:150px">
               Applied Exceptions
               <p-sortIcon field="TOTAL"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="APPROVED" [style.min-width.px]="160">
+            <th pSortableColumn="APPROVED" style="min-width:160px">
               Accepted Exceptions
               <p-sortIcon field="APPROVED"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="REJECTED" [style.min-width.px]="160">
+            <th pSortableColumn="REJECTED" style="min-width:160px">
               Rejected Exceptions
               <p-sortIcon field="REJECTED"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="PENDING" [style.min-width.px]="150">
+            <th pSortableColumn="PENDING" style="min-width:150px">
               Pending Exceptions
               <p-sortIcon field="PENDING"></p-sortIcon>
             </th>
 
-            <th pSortableColumn="deficiencyDays" [style.min-width.px]="140">
+            <th pSortableColumn="deficiencyDays" style="min-width:140px">
               Deficiency Days
               <p-sortIcon field="deficiencyDays"></p-sortIcon>
             </th>
           </tr>
         </ng-template>
 
+        <!-- ================= SCROLLABLE BODY ================= -->
         <ng-template pTemplate="body" let-rec>
           <tr>
-            <td class="first-col">{{ rec.employeeNumber }}</td>
-            <td class="second-col">{{ rec.employeeName }}</td>
             <td>{{ rec.designation }}</td>
             <td>{{ rec.managerName }}</td>
-            <td style="text-align: center;">{{ rec.workingDays }}</td>
-            <td style="text-align: center;">{{ rec.presentDays }}</td>
-            <td style="text-align: center;">{{ rec.leaveDays }}</td>
-            <td style="text-align: center;">{{ rec.TOTAL }}</td>
-            <td style="text-align: center;">{{ rec.APPROVED }}</td>
-            <td style="text-align: center;">{{ rec.REJECTED }}</td>
-            <td style="text-align: center;">{{ rec.PENDING }}</td>
-            <td style="text-align: center;">
+            <td style="text-align:center">{{ rec.workingDays }}</td>
+            <td style="text-align:center">{{ rec.presentDays }}</td>
+            <td style="text-align:center">{{ rec.leaveDays }}</td>
+            <td style="text-align:center">{{ rec.TOTAL }}</td>
+            <td style="text-align:center">{{ rec.APPROVED }}</td>
+            <td style="text-align:center">{{ rec.REJECTED }}</td>
+            <td style="text-align:center">{{ rec.PENDING }}</td>
+            <td style="text-align:center">
               <span class="deficiency-badge">{{ rec.deficiencyDays }}</span>
             </td>
           </tr>
@@ -157,12 +170,14 @@
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="12" style="text-align: center; padding: 20px;">
+            <td colspan="10" style="text-align:center;padding:20px">
               No records found
             </td>
           </tr>
         </ng-template>
+
       </p-table>
+
     </div>
   </div>
 </div>
