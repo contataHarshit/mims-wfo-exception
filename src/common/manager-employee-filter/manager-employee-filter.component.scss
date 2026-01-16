@@ -6,8 +6,14 @@
     max-width: 50vw !important;
     justify-content: space-between !important;
     width: 100%;
+
 }
 
 .form-row {
     width: 20vw;
+}
+
+label {
+    font-weight: 500;
+    margin-bottom: 4px;
 }
