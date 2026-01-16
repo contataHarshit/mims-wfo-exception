@@ -235,3 +235,12 @@ app-common-select,
 button {
   text-align: center;
 }
+
+::ng-deep .p-datepicker table td {
+  padding: unset !important;
+}
+
+::ng-deep.p-datepicker table td>span {
+  height: unset !important;
+  font-size: 12px !important;
+}

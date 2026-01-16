@@ -6,6 +6,7 @@ import {
   Inject,
   PLATFORM_ID,
   OnDestroy,
+  HostListener,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { HttpService } from "../../service/http.service";
@@ -561,4 +562,14 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   onMonthYearChanged(event: { month: number; year: number }) {
     this.loadFormData(event.month, event.year, true);
   }
+  @HostListener('document:click', ['$event'])
+onDocumentClick(event: Event) {
+  const target = event.target as HTMLElement;
+  const isCalendar = target.closest('.p-calendar');
+  const isDatepicker = target.closest('.p-datepicker');
+  
+  if (isCalendar || isDatepicker) {
+    // Calendar interaction - could add scroll lock here if needed
+  }
+}
 }

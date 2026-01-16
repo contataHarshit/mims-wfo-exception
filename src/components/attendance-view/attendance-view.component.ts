@@ -11,6 +11,7 @@ import { ConstantService } from "../../service/constant.service";
 import { ToastrService } from "ngx-toastr";
 import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-filter/manager-employee-filter.component";
 import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
+
 @Component({
   selector: "app-attendance-view",
   standalone: true,
@@ -43,7 +44,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   currentWeekStart!: string;
   filterForm = this.fb.group({
-    startDate: [this.today()],
+    startDate: [this.getLastWeekStart()],
     employeeId: ["ALL"],
     managerId: ["ALL"],
   });
@@ -51,10 +52,12 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   selectedEmployee: string | null = null;
   selectedManager: string | null = null;
 
-  weekOffset = 0; // 0,7,14,21,28
+  weekOffset = 0;
   page: number = 1;
   limit: number = 20;
   pageSizeOptions = [20, 50, 100, 150];
+  totalRecords: number = 0;
+
   constructor(
     private fb: FormBuilder,
     public commonService: CommonService,
@@ -64,7 +67,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.currentWeekStart = this.today();
+    this.currentWeekStart = this.getLastWeekStart();
     this.generateColumns(this.currentWeekStart);
     this.fetchAttendance();
   }
@@ -77,6 +80,25 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /* ---------------- DATE HELPERS ---------------- */
+
+  // Get max date (today)
+  get maxDate(): string {
+    return new Date().toISOString().split("T")[0];
+  }
+
+  // Get start date for last 7 days (1 week back from today)
+  private getLastWeekStart(): string {
+    const d = new Date();
+    d.setDate(d.getDate() - 6); // Start from 6 days ago to include today as the 7th day
+    return d.toISOString().split("T")[0];
+  }
+
+  // Today's date
+  today(): string {
+    return new Date().toISOString().split("T")[0];
   }
 
   /* ---------------- WEEK HELPERS ---------------- */
@@ -100,7 +122,21 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   nextWeek() {
+    if (this.isNextWeekDisabled()) {
+      return;
+    }
     this.shiftWeek(7);
+  }
+
+  // Check if next week button should be disabled
+  isNextWeekDisabled(): boolean {
+    const d = new Date(this.currentWeekStart);
+    d.setDate(d.getDate() + 13); // Last day of next week (start + 6 days + 7 more)
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return d > today;
   }
 
   private shiftWeek(days: number) {
@@ -111,7 +147,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
     this.filterForm.patchValue(
       { startDate: this.currentWeekStart },
-      { emitEvent: false } // 🔥 VERY IMPORTANT
+      { emitEvent: false }
     );
 
     this.refreshAttendance();
@@ -129,12 +165,14 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.selectedManager = null;
     this.selectedEmployee = null;
 
+    const lastWeekStart = this.getLastWeekStart();
+
     this.filterForm.reset({
-      startDate: this.today(),
+      startDate: lastWeekStart,
     });
 
-    this.currentWeekStart = this.today();
-    this.generateColumns(this.today());
+    this.currentWeekStart = lastWeekStart;
+    this.generateColumns(lastWeekStart);
     this.fetchAttendance();
   }
 
@@ -170,13 +208,8 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   /* ---------------- GET LAST WEEK API ---------------- */
   private extractValue(val: any): string | null {
     if (!val) return null;
-
-    // if already a string → OK
     if (typeof val === "string") return val;
-
-    // if object from common select → take value
     if (typeof val === "object" && val.value) return val.value;
-
     return null;
   }
 
@@ -206,19 +239,21 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
         next: (res: any) => {
           if (!res?.success || !Array.isArray(res.data?.data)) {
             this.tableData = [];
+            this.totalRecords = 0;
             return;
           }
+
+          this.totalRecords = res.data.total;
 
           this.tableData = res.data.data.map((emp: any) => {
             const attendance: Record<string, string | undefined> = {};
 
             (emp.dates || []).forEach((d: any) => {
-              const dateKey = d.OfficeAttendanceDate; // already yyyy-mm-dd
-              attendance[dateKey] = d.AttendanceValue;
+              attendance[d.OfficeAttendanceDate] = d.AttendanceValue;
             });
 
             return {
-              employeeId: emp.EmployeeCode, // IMPORTANT for edited tracking
+              employeeId: emp.EmployeeCode,
               employeeName: emp.EmployeeName,
               managerName: emp.ManagerName,
               email: emp.EmployeeEmail,
@@ -254,7 +289,6 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     const original = this.normalizeValue(input.dataset["original"]);
     const current = this.normalizeValue(value);
 
-    // ❌ NO CHANGE → exit safely
     if (original === current) {
       delete input.dataset["original"];
       return;
@@ -311,19 +345,16 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     return this.editedCells.has(`${row.employeeId}-${date}`);
   }
 
-  today(): string {
-    return new Date().toISOString().split("T")[0];
-  }
   private getWeekStart(date: string, offset = 0): string {
     const d = new Date(date);
     d.setDate(d.getDate() + offset);
     return d.toISOString().split("T")[0];
   }
+
   markEdited(row: any, date: string) {
     const rawValue = row.attendance[date];
     const normalizedValue = this.normalizeValue(rawValue);
 
-    // ❌ If value is null (only spaces / empty) → DO NOT mark edited
     if (normalizedValue === null) {
       this.editedMap.delete(`${row.email}-${date}`);
       this.editedCells.delete(`${row.employeeId}-${date}`);
@@ -388,9 +419,28 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       },
     });
   }
+
   onStartDateChange(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     if (!value) return;
+
+    // Validate against future dates
+    const selectedDate = new Date(value);
+    selectedDate.setDate(selectedDate.getDate() + 6); // End of week
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate > today) {
+      this.toastr.warning("Cannot select dates that result in future week");
+      const lastWeekStart = this.getLastWeekStart();
+      this.filterForm.patchValue(
+        { startDate: lastWeekStart },
+        { emitEvent: false }
+      );
+      this.currentWeekStart = lastWeekStart;
+      this.refreshAttendance();
+      return;
+    }
 
     this.currentWeekStart = value;
     this.refreshAttendance();
@@ -405,38 +455,46 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.selectedEmployee = employee;
     this.onFilterChange();
   }
+
   onFilterChange(): void {
+    this.page = 1;
     this.currentWeekStart = this.filterForm.value.startDate!;
     this.refreshAttendance();
   }
 
   get weekRangeLabel(): string {
-    if (this.tableColumns.length >= 10) {
+    if (this.tableColumns.length === 10) {
+      // tableColumns has 3 static + 7 date columns
+      // Date columns are at indices 3-9
       return `${this.tableColumns[3].label} – ${this.tableColumns[9].label}`;
     }
     return "";
   }
 
-  // prevPage() {
-  //   if (this.page > 1) {
-  //     this.page--;
-  //     this.fetchAttendance();
-  //   }
-  // }
+  prevPage() {
+    if (this.page > 1) {
+      this.page--;
+      this.fetchAttendance();
+    }
+  }
 
-  // nextPage() {
-  //   this.page++;
-  //   this.fetchAttendance();
-  // }
+  nextPage() {
+    if (this.page * this.limit < this.totalRecords) {
+      this.page++;
+      this.fetchAttendance();
+    }
+  }
 
   onLimitChange() {
-    this.page = 1; // reset to first page
+    this.page = 1;
     this.fetchAttendance();
   }
+
   private refreshAttendance(): void {
     this.generateColumns(this.currentWeekStart);
     this.fetchAttendance();
   }
+
   private normalizeValue(value: string | undefined | null): string | null {
     if (!value) return null;
 

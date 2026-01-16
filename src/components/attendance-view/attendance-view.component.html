@@ -8,7 +8,7 @@
 
         <div class="form-row">
           <label>Start Date</label>
-          <input type="date" formControlName="startDate" (change)="onStartDateChange($event)" />
+          <input type="date" formControlName="startDate" [max]="maxDate" (change)="onStartDateChange($event)" />
         </div>
 
         <app-manager-employee-filter [(managerValue)]="selectedManager" [(employeeValue)]="selectedEmployee"
@@ -43,14 +43,14 @@
           {{ weekRangeLabel }}
         </span>
 
-
         <button pButton type="button" icon="pi pi-angle-right" class="p-button-rounded p-button-text"
-          (click)="nextWeek()">
+          [disabled]="isNextWeekDisabled()" (click)="nextWeek()">
         </button>
 
         <app-common-mail-submit [showSubmit]="true" [showReset]="false" (sendWeekly)="commonService.sendWeeklyMail()"
           (sendMonthly)="commonService.sendMonthlyMail()" (submit)="submitAttendance()" (reset)="reset()"
-          [submitLabel]="'Save'"></app-common-mail-submit>
+          [submitLabel]="'Save'">
+        </app-common-mail-submit>
       </div>
 
 
@@ -83,29 +83,37 @@
           </tr>
         </tbody>
       </table>
-      <div class="pagination-bar">
-        <div class="pagination-left">
-          <span>Rows per page</span>
 
-          <select [(ngModel)]="limit" (change)="onLimitChange()">
-            <option *ngFor="let size of pageSizeOptions" [value]="size">
-              {{ size }}
-            </option>
-          </select>
-        </div>
 
-        <!-- <div class="pagination-right">
-          <button pButton icon="pi pi-chevron-left" class="p-button-rounded p-button-text" [disabled]="page === 1"
-            (click)="prevPage()">
-          </button>
 
-          <span class="page-label">Page {{ page }}</span>
+    </div>
+    <div class="pagination-bar">
 
-          <button pButton icon="pi pi-chevron-right" class="p-button-rounded p-button-text" (click)="nextPage()">
-          </button>
-        </div> -->
+      <!-- LEFT: Page size -->
+      <div class="pagination-left">
+        <span>Rows per page</span>
+
+        <select [(ngModel)]="limit" (change)="onLimitChange()">
+          <option *ngFor="let size of pageSizeOptions" [value]="size">
+            {{ size }}
+          </option>
+        </select>
       </div>
 
+      <!-- RIGHT: Page navigation -->
+      <div class="pagination-right">
+        <button pButton icon="pi pi-chevron-left" class="p-button-rounded p-button-text" [disabled]="page === 1"
+          (click)="prevPage()">
+        </button>
+
+        <span class="page-label">
+          Page {{ page }}
+        </span>
+
+        <button pButton icon="pi pi-chevron-right" class="p-button-rounded p-button-text"
+          [disabled]="page * limit >= totalRecords" (click)="nextPage()">
+        </button>
+      </div>
 
     </div>
 
