@@ -193,11 +193,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         path: "hr-admin-dashboard",
         isActive: false,
       });
-      this.tabs.push({
-        label: "Correction Dashboard",
-        path: "correction-dashboard",
-        isActive: false,
-      });
+      if ((role === "MANAGER" && department === "HR") || role === "ADMIN") {
+        this.tabs.push({
+          label: "Correction Dashboard",
+          path: "correction-dashboard",
+          isActive: false,
+        });
+      }
     }
 
     // Attendance Dashboard for ACCOUNTS department employees or ADMIN
