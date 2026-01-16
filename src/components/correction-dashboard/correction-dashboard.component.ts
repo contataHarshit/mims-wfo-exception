@@ -232,6 +232,7 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
       },this.constants.auditExceptionRequest + "/approve")
       .subscribe({
         next: (res: any) => {
+          this.commonService.setLoading(false);
           if (res.success) {
             this.toastr.success(
               `${exceptionIds.length} request${
@@ -247,6 +248,7 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
           this.toastr.error(
             err?.error?.error || err?.error?.errors || "Bulk approval failed"
           );
+          this.commonService.setLoading(false);
         },
         complete: () => {
           this.commonService.setLoading(false);
