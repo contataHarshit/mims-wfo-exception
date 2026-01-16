@@ -61,10 +61,12 @@
             </td>
 
             <td>
-              <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
-                (click)="deleteIndex(i)" *ngIf="formData.exceptions.length > 1"></button>
-              <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"
-                (click)="addMore()" *ngIf="i === formData.exceptions.length - 1"></button>
+              <div style="display: flex; justify-content: space-around;">
+                <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
+                  (click)="deleteIndex(i)" *ngIf="formData.exceptions.length > 1"></button>
+                <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"
+                  (click)="addMore()" *ngIf="i === formData.exceptions.length - 1"></button>
+              </div>
             </td>
           </tr>
         </ng-template>

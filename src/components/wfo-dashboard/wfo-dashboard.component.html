@@ -59,7 +59,8 @@
   <div class="dashboard-table-card" style="margin-top: 20px;">
     <p-table #dt [value]="exceptionRequests" [paginator]="true" [rows]="limit" [totalRecords]="totalRecords"
       [rowsPerPageOptions]="[10, 20, 50]" scrollable="true" scrollHeight="50vh" class="dashboard-table"
-      [responsiveLayout]="'scroll'" class="dashboard-table" sortMode="multiple" (onLazyLoad)="onLazyLoad($event)" [lazy]="true">
+      [responsiveLayout]="'scroll'" class="dashboard-table" sortMode="multiple" (onLazyLoad)="onLazyLoad($event)"
+      [lazy]="true">
       <ng-template pTemplate="header">
         <tr>
           <th style="width: 60px;" *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
@@ -150,10 +151,13 @@
           </td>
           <!-- <td>{{ req.remarks }}</td> -->
           <td *ngIf="selectedView === 'self'">
-            <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn" icon="pi pi-trash" 
-              class="delete-btn" pButton type="button">
+            <div>
+              <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn"
+                icon="pi pi-trash" class="delete-btn" pButton type="button">
 
-            </button>
+
+              </button>
+            </div>
           </td>
         </tr>
       </ng-template>

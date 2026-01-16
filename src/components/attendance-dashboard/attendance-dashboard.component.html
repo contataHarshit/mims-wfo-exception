@@ -130,9 +130,11 @@
 
                 <!-- DELETE COLUMN -->
                 <td class="sticky-col sticky-col-1 delete-col" style="z-index: 9 !important;">
-                  <button pButton type="button" icon="pi pi-trash" class="delete-btn"
-                    (click)="deleteRow((currentPage - 1) * pageSize + rIndex)">
-                  </button>
+                  <div>
+                    <button pButton type="button" icon="pi pi-trash" class="delete-btn"
+                      (click)="deleteRow((currentPage - 1) * pageSize + rIndex)">
+                    </button>
+                  </div>
                 </td>
 
                 <!-- NAME COLUMN -->

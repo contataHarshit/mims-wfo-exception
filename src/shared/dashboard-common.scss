@@ -308,4 +308,17 @@
   /* modern browsers */
   max-width: 250px;
   /* optional: controls column width */
+
+}
+
+/* Center align text horizontally */
+::ng-deep .dashboard-table .p-datatable-tbody>tr>td {
+  text-align: center;
+  vertical-align: middle;
+
+  div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 }
