@@ -11,9 +11,11 @@
 
 .form-row {
     width: 20vw;
+    display: flex;
+    flex-direction: column;
 }
 
 label {
     font-weight: 500;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
