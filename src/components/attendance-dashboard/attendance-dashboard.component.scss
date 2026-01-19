@@ -510,3 +510,9 @@
 ::ng-deep.pi-angle-right {
   font-size: 25px;
 }
+
+.page-nav {
+  display: flex;
+  justify-content: right;
+  align-items: center;
+}

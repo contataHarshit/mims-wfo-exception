@@ -48,7 +48,7 @@ export class CsvUploadComponent {
   pageSize = 10;
   totalPages = 0;
   editedCells = new Set<string>();
-
+  fixedHeadersCount = 0;
   form = this.fb.group({
     fromDate: ["", Validators.required],
     toDate: ["", Validators.required],
@@ -61,7 +61,7 @@ export class CsvUploadComponent {
     private dialog: MatDialog,
     private http: HttpService,
     private constants: ConstantService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {
     this.commonService.attendanceView = "add";
   }
@@ -125,7 +125,7 @@ export class CsvUploadComponent {
 
   triggerFileInput(): void {
     const fileInput = document.getElementById(
-      "csvFileInput"
+      "csvFileInput",
     ) as HTMLInputElement;
 
     if (!fileInput) return;
@@ -162,7 +162,7 @@ export class CsvUploadComponent {
     this.form.patchValue({ file: null });
 
     const fileInput = document.getElementById(
-      "csvFileInput"
+      "csvFileInput",
     ) as HTMLInputElement;
     if (fileInput) fileInput.value = "";
   }
@@ -191,24 +191,27 @@ export class CsvUploadComponent {
 
     // 🧱 Non-day (fixed) columns
     const fixedHeaders = header.slice(0, firstDayIndex);
+    this.fixedHeadersCount = fixedHeaders.length;
 
     // 📅 Generate actual date headers (filtered range)
     const dateHeaders = this.getDateRange(
       this.form.get("fromDate")?.value!,
-      this.form.get("toDate")?.value!
+      this.form.get("toDate")?.value!,
     );
 
     // ✅ FINAL HEADER (NO Day1, Day2)
     this.previewHeader = [...fixedHeaders, ...dateHeaders];
+    console.log("rows", rows);
 
     // ---------- ROWS ----------
     this.previewRows = rows.slice(1).map((row) => {
       const fixedValues = row.slice(0, fixedHeaders.length);
+      console.log("csvvvvvvvvvv", this.previewRows);
 
       // Take only required number of day values
       const dayValues = row.slice(
         firstDayIndex,
-        firstDayIndex + dateHeaders.length
+        firstDayIndex + dateHeaders.length,
       );
 
       return [...fixedValues, ...dayValues];
@@ -240,7 +243,7 @@ export class CsvUploadComponent {
 
   submit(): void {
     const emailIndex = this.previewHeader.findIndex((h) =>
-      h.toLowerCase().includes("email")
+      h.toLowerCase().includes("email"),
     );
 
     if (emailIndex === -1) {
@@ -256,17 +259,13 @@ export class CsvUploadComponent {
         const email = (row[emailIndex] ?? "").trim();
         if (!email || !email.includes("@")) return null;
 
-        const dates = this.previewHeader
-          .map((header, index) => {
-            if (!this.isDayColumn(header)) return null;
-
-            const dayNumber = this.extractDayNumber(header);
-            const value = (row[index] ?? "").trim();
-
-            if (!value.replaceAll(" ", "").length) return null;
+        const dates = row
+          .slice(this.fixedHeadersCount) // ONLY date columns
+          .map((value, i) => {
+            if (!value || !value.replaceAll(" ", "").length) return null;
 
             const date = new Date(startDate);
-            date.setDate(startDate.getDate() + (dayNumber - 1));
+            date.setDate(startDate.getDate() + i);
 
             return {
               date: date.toISOString().split("T")[0],

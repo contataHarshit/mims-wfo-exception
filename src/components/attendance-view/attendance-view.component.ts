@@ -63,7 +63,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     public commonService: CommonService,
     private http: HttpService,
     private constants: ConstantService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit(): void {
@@ -130,13 +130,17 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   // Check if next week button should be disabled
   isNextWeekDisabled(): boolean {
-    const d = new Date(this.currentWeekStart);
-    d.setDate(d.getDate() + 13); // Last day of next week (start + 6 days + 7 more)
+    const start = new Date(this.currentWeekStart);
+
+    // End of NEXT week (start + 13 days)
+    const nextWeekEnd = new Date(start);
+    nextWeekEnd.setDate(start.getDate() + 13);
+    nextWeekEnd.setHours(0, 0, 0, 0);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return d > today;
+    return nextWeekEnd > today;
   }
 
   private shiftWeek(days: number) {
@@ -147,7 +151,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
     this.filterForm.patchValue(
       { startDate: this.currentWeekStart },
-      { emitEvent: false }
+      { emitEvent: false },
     );
 
     this.refreshAttendance();
@@ -233,7 +237,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       .getData(
         this.constants.officeAttendance +
           "/last-week?" +
-          new URLSearchParams(params).toString()
+          new URLSearchParams(params).toString(),
       )
       .subscribe({
         next: (res: any) => {
@@ -328,7 +332,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   focusNextEditableCell(currentInput: HTMLInputElement) {
     const inputs = Array.from(
-      document.querySelectorAll<HTMLInputElement>(".editable-cell")
+      document.querySelectorAll<HTMLInputElement>(".editable-cell"),
     ).filter((i) => !i.disabled);
 
     const index = inputs.indexOf(currentInput);
@@ -435,7 +439,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       const lastWeekStart = this.getLastWeekStart();
       this.filterForm.patchValue(
         { startDate: lastWeekStart },
-        { emitEvent: false }
+        { emitEvent: false },
       );
       this.currentWeekStart = lastWeekStart;
       this.refreshAttendance();
