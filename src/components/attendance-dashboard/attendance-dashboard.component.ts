@@ -17,6 +17,7 @@ import { ConstantService } from "../../service/constant.service";
 import { ToastrService } from "ngx-toastr";
 import { AddManualAttendanceComponent } from "../add-manual-attendance/add-manual-attendance.component";
 import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
+import { DuplicateResponsePopupComponent } from "../../popup/duplicate-response-popup/duplicate-response-popup.component";
 @Component({
   selector: "app-attendance-dashboard",
   standalone: true,
@@ -28,6 +29,7 @@ import { CommonMailSubmitComponent } from "../../common/common-mail-submit/commo
     AttendanceViewComponent,
     AddManualAttendanceComponent,
     CommonMailSubmitComponent,
+    DuplicateResponsePopupComponent
     // ToastrService
   ],
   templateUrl: "./attendance-dashboard.component.html",
@@ -285,6 +287,12 @@ export class CsvUploadComponent {
         res?.success
           ? this.toastr.success(res?.data?.message || "Attendance submitted")
           : this.toastr.error("Submission failed");
+          if(res?.data?.errors && res?.data?.errors.length){
+            this.dialog.open(DuplicateResponsePopupComponent, {
+              width: "600px",
+              data: { errors: res?.data?.errors || []  ,},
+            });
+          }
       },
       error: (err) => {
         this.toastr.error(err?.error?.message || "Submission failed");

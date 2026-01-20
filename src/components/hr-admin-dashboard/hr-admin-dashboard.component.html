@@ -69,31 +69,22 @@
         scrollHeight="calc(100vh - 400px)" sortMode="multiple" #hrTable>
 
         <!-- ================= FROZEN HEADER ================= -->
-        <ng-template pTemplate="frozenheader">
-          <tr>
-            <th pSortableColumn="employeeNumber" style="width:120px">
-              Employee ID
-              <p-sortIcon field="employeeNumber"></p-sortIcon>
-            </th>
 
-            <th pSortableColumn="employeeName" style="width:180px">
-              Employee Name
-              <p-sortIcon field="employeeName"></p-sortIcon>
-            </th>
-          </tr>
-        </ng-template>
 
         <!-- ================= FROZEN BODY ================= -->
-        <ng-template pTemplate="frozenbody" let-rec>
-          <tr>
-            <td style="width:120px">{{ rec.employeeNumber }}</td>
-            <td style="width:180px">{{ rec.employeeName }}</td>
-          </tr>
-        </ng-template>
 
         <!-- ================= SCROLLABLE HEADER ================= -->
         <ng-template pTemplate="header">
           <tr>
+            <th pSortableColumn="employeeNumber" style="min-width:150px">
+              Employee Number
+              <p-sortIcon field="employeeNumber"></p-sortIcon>
+            </th>
+            <th pSortableColumn="employeeName" style="min-width:200px">
+              Employee Name
+              <p-sortIcon field="employeeName"></p-sortIcon>
+
+            </th>
             <th pSortableColumn="designation" style="min-width:150px">
               Designation
               <p-sortIcon field="designation"></p-sortIcon>
@@ -149,6 +140,8 @@
         <!-- ================= SCROLLABLE BODY ================= -->
         <ng-template pTemplate="body" let-rec>
           <tr>
+            <td>{{rec.employeeNumber}}</td>
+            <td>{{rec.employeeName}}</td>
             <td>{{ rec.designation }}</td>
             <td>{{ rec.managerName }}</td>
             <td style="text-align:center">{{ rec.workingDays }}</td>

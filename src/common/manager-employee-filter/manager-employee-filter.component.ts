@@ -136,10 +136,8 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   onManagerChange(managerEmpNo: string) {
     this.filterEmployeesByManager(managerEmpNo);
     this.managerValue = managerEmpNo;
-    // this.managerValue.label=this
     this.managerValueChange.emit(managerEmpNo);
 
-    // reset employee
     if (!this.managerValue) {
       this.employeeList = this.mapEmployees(this.allEmployees);
       this.employeeValue = null;
