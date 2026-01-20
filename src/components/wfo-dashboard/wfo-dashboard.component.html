@@ -6,7 +6,7 @@
     <div class="filter-row ">
       <div class="filter-span-2">
         <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
-          [managerDisabled]="selectedView !== 'all'">
+          [managerDisabled]="selectedView !== 'all'" [employeeDisabled]="selectedView === 'self'">
         </app-manager-employee-filter>
       </div>
 

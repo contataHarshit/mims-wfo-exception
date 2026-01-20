@@ -53,7 +53,7 @@ interface ExceptionRequest {
     DateRangePickerComponent,
     CommonSelectComponent,
     ManagerEmployeeFilterComponent,
-    CommonFormActionComponent
+    CommonFormActionComponent,
   ],
   templateUrl: "./wfo-dashboard.component.html",
   styleUrl: "../../shared/dashboard-common.scss",
@@ -72,7 +72,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     private http: HttpService,
     private constants: ConstantService,
     private toastr: ToastrService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
   ) {}
 
   private allExceptionRequests: ExceptionRequest[] = [];
@@ -159,6 +159,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         }
         if (this.selectedView === "resource") {
           let temp = JSON.parse(localStorage.getItem("employeeData") || "null");
+          this.filters.employeeName = null;
           this.filters.managerName = {
             label: temp?.employeeName,
             value: temp?.employeeNumber,
@@ -166,6 +167,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         }
         if (this.selectedView === "all") {
           this.filters.managerName = null;
+          this.filters.employeeName = null;
         }
         // Only reload if view actually changed
         if (previousView !== this.selectedView) {
@@ -175,7 +177,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           }
           if (this.selectedView === "resource") {
             let temp = JSON.parse(
-              localStorage.getItem("employeeData") || "null"
+              localStorage.getItem("employeeData") || "null",
             );
             this.filters.managerName = {
               label: temp?.employeeName,
@@ -252,7 +254,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   // Helper method to set manager for self view
   private setManagerForSelfView() {
     const employeeData = JSON.parse(
-      localStorage.getItem("employeeData") || "null"
+      localStorage.getItem("employeeData") || "null",
     );
     if (employeeData?.managerName) {
       this.ngZone.run(() => {
@@ -299,7 +301,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     return (
       s === "APPROVED" ||
       this.exceptionRequests.some(
-        (r) => r.status === "APPROVED" || (r.approvedBy && r.approvedBy !== "-")
+        (r) =>
+          r.status === "APPROVED" || (r.approvedBy && r.approvedBy !== "-"),
       )
     );
   }
@@ -309,7 +312,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     return (
       s === "REJECTED" ||
       this.exceptionRequests.some(
-        (r) => r.status === "REJECTED" || (r.rejectedBy && r.rejectedBy !== "-")
+        (r) =>
+          r.status === "REJECTED" || (r.rejectedBy && r.rejectedBy !== "-"),
       )
     );
   }
@@ -322,7 +326,6 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
     this.isLoadingData = true;
     this.commonService.setLoading(true);
-
 
     const params = new URLSearchParams();
 
@@ -474,19 +477,18 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           this.toastr.error(
             err?.error?.error ||
               err?.error?.errors ||
-              "Failed to fetch data. Please try again."
+              "Failed to fetch data. Please try again.",
           );
         },
       });
   }
 
-onLazyLoad(event: any) {
-  this.page = event.first / event.rows + 1;
-  this.limit = event.rows;
+  onLazyLoad(event: any) {
+    this.page = event.first / event.rows + 1;
+    this.limit = event.rows;
 
-  this.getExceptionRequest();
-}
-
+    this.getExceptionRequest();
+  }
 
   formatDate(date: string): string {
     if (!date) return "-";
@@ -507,7 +509,7 @@ onLazyLoad(event: any) {
     setTimeout(() => {
       const count = this.exceptionRequests.length;
       this.toastr.success(
-        `Filter applied. Found ${count} record${count !== 1 ? "s" : ""}`
+        `Filter applied. Found ${count} record${count !== 1 ? "s" : ""}`,
       );
     }, 300);
   }
@@ -553,14 +555,14 @@ onLazyLoad(event: any) {
     } else {
       // Remove from selected requests
       this.selectedRequests = this.selectedRequests.filter(
-        (r: any) => r.id !== req.id
+        (r: any) => r.id !== req.id,
       );
       this.allSelected = false;
     }
 
     // Check if all are selected
     const selectableRows = this.exceptionRequests.filter(
-      (r) => r.status !== "REJECTED" && !this.isRowDisabled(r)
+      (r) => r.status !== "REJECTED" && !this.isRowDisabled(r),
     );
     this.allSelected =
       selectableRows.length > 0 && selectableRows.every((r) => r.checked);
@@ -584,7 +586,7 @@ onLazyLoad(event: any) {
           this.toastr.success(
             `${
               this.selectedRequests.length
-            } requests ${status.toLowerCase()} successfully`
+            } requests ${status.toLowerCase()} successfully`,
           );
           this.selectedRequests = [];
           this.remarks = "";
@@ -597,7 +599,7 @@ onLazyLoad(event: any) {
       error: (err: any) => {
         console.error("Bulk Update Error:", err);
         this.toastr.error(
-          err?.error?.error || err?.error?.errors || "Bulk update failed"
+          err?.error?.error || err?.error?.errors || "Bulk update failed",
         );
       },
     });
@@ -678,7 +680,7 @@ onLazyLoad(event: any) {
               this.toastr.error(
                 err?.error?.error ||
                   err?.error?.errors ||
-                  "Error deleting record. Please try again."
+                  "Error deleting record. Please try again.",
               );
               console.error("DELETE API Error:", err);
             },
@@ -700,7 +702,7 @@ onLazyLoad(event: any) {
     // Update selected requests array
     if (checked) {
       this.selectedRequests = this.exceptionRequests.filter(
-        (r) => r.checked && r.status !== "REJECTED" && !this.isRowDisabled(r)
+        (r) => r.checked && r.status !== "REJECTED" && !this.isRowDisabled(r),
       );
     } else {
       this.selectedRequests = [];

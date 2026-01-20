@@ -452,12 +452,12 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   onManagerChange(manager: any) {
     this.selectedManager = manager;
-    this.onFilterChange();
+    // this.onFilterChange();
   }
 
   onEmployeeChange(employee: any) {
     this.selectedEmployee = employee;
-    this.onFilterChange();
+    // this.onFilterChange();
   }
 
   onFilterChange(): void {

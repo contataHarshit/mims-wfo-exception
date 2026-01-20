@@ -1,12 +1,16 @@
 import {
   Component,
   EventEmitter,
+  Inject,
   Input,
   OnDestroy,
   OnInit,
   Output,
+  PLATFORM_ID,
+  OnChanges,
+  SimpleChanges,
 } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { CommonSelectComponent } from "../common-select/common-select.component";
 import { CommonService } from "../../service/common.service";
@@ -24,21 +28,24 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   @Input() managerDisabled = false;
-
+  @Input() employeeDisabled = false;
   // ✅ store ONLY IDs
   @Input() managerValue: any = null;
   @Input() employeeValue: any = null;
 
   @Output() managerValueChange = new EventEmitter<any>();
   @Output() employeeValueChange = new EventEmitter<any>();
-  @Input() gap: string = '10vw';        // ✅ DEFAULT
+  @Input() gap: string = "10vw"; // ✅ DEFAULT
 
   managerList: any[] = [];
   employeeList: any[] = [];
   private allEmployees: any[] = [];
 
-  constructor(private commonService: CommonService) {}
-
+  constructor(
+    private commonService: CommonService,
+    @Inject(PLATFORM_ID) private platformId: Object,
+  ) {}
+  currentView: string = "";
   ngOnInit(): void {
     // MANAGERS (already formatted from service)
     this.commonService.managerList$
@@ -63,18 +70,77 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
         }
       });
   }
+  ngOnChanges(changes: SimpleChanges): void {
+    // ✅ When employee filter is disabled (SELF VIEW)
+    if (isPlatformBrowser(this.platformId)) {
+      this.currentView = localStorage.getItem("selectedView") || "self";
+    }
+    if (
+      changes["employeeDisabled"]?.currentValue === true &&
+      !this.employeeValue
+    ) {
+      this.setSelfEmployee();
+    }
+    if (
+      changes["managerValue"]?.currentValue !==
+      changes["managerValue"]?.previousValue
+    ) {
+      this.filterEmployeesByManager(this.managerValue);
+    }
+    if (this.currentView === "all" && !this.managerValue) {
+      this.employeeList = this.mapEmployees(this.allEmployees);
+    }
+    if (this.currentView === "resource" && this.managerValue) {
+      this.filterEmployeesByManager(this.managerValue);
+    }
+    if (
+      this.currentView == "all" &&
+      !this.managerValue &&
+      changes["employeeValue"]?.currentValue !==
+        changes["employeeValue"]?.previousValue
+    ) {
+      this.onEmployeeChange(changes["employeeValue"]?.currentValue);
+    }
+  }
+  private setSelfEmployee() {
+    if (localStorage.getItem("selectedView") == "self") {
+      const storedEmployee = localStorage.getItem("employeeData");
+      if (!storedEmployee) return;
+
+      const emp = JSON.parse(storedEmployee);
+
+      const label = `${emp.employeeName || emp.fullName || emp.name} (${emp.employeeNumber})`;
+
+      // ✅ IMPORTANT: options must contain the selected value
+      this.employeeList = [
+        {
+          label,
+          value: emp.employeeNumber,
+        },
+      ];
+
+      // ✅ value must match option.value
+      this.employeeValue = {
+        label: emp.employeeName,
+        value: emp.employeeNumber,
+      };
+      console.log("this employeeValue", this.employeeValue, emp);
+
+      // propagate to parent
+      this.employeeValueChange.emit(this.employeeValue);
+    }
+  }
 
   /* ================= EVENTS ================= */
 
   onManagerChange(managerEmpNo: string) {
-    console.log("managerEmpNo", managerEmpNo);
     this.filterEmployeesByManager(managerEmpNo);
     this.managerValue = managerEmpNo;
+    // this.managerValue.label=this
     this.managerValueChange.emit(managerEmpNo);
-    console.log("1111111111111");
-    
+
     // reset employee
-     if(!this.managerValue ){
+    if (!this.managerValue) {
       this.employeeList = this.mapEmployees(this.allEmployees);
       this.employeeValue = null;
     }
@@ -86,15 +152,15 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     console.log("emp", employeeEmpNo, this.employeeList, this.allEmployees);
 
     this.managerValue = this.allEmployees.find(
-      (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode
+      (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode,
     );
     if (this.managerValue) {
       console.log("wwwwwwwwwwwwwww");
       this.managerValue.value = this.managerValue.EmployeeNumber;
       this.managerValue.label = `${this.managerValue.FullName} (${this.managerValue.EmployeeNumber})`;
-       this.filterEmployeesByManager(this.managerValue);
+      this.filterEmployeesByManager(this.managerValue);
     }
-    if(!this.managerValue ){
+    if (!this.managerValue) {
       this.employeeList = this.mapEmployees(this.allEmployees);
       this.employeeValue = null;
     }
@@ -102,7 +168,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
     this.employeeValue = employeeEmpNo;
     this.employeeValueChange.emit(employeeEmpNo);
-   
+
     // const emp = this.allEmployees.find(
     //   e => e.EmployeeNumber === employeeEmpNo
     // );
@@ -139,7 +205,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     console.log("filterEmployeesByManager", managerEmpNo);
     this.employeeList = [];
     const filtered = this.allEmployees.filter(
-      (e) => e.ManagerCode === managerEmpNo?.value
+      (e) => e.ManagerCode === managerEmpNo?.value,
     );
     this.employeeList = this.mapEmployees(filtered);
   }
