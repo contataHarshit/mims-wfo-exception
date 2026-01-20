@@ -45,7 +45,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   currentWeekStart!: string;
   filterForm = this.fb.group({
     startDate: [this.getLastWeekStart()],
-    employeeId: ["ALL"],
+    employeeNumber: ["ALL"],
     managerId: ["ALL"],
   });
 
@@ -74,7 +74,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   editedMap = new Map<
     string,
-    { email: string; date: string; value: string | undefined }
+    { employeeNumber: string; date: string; value: string | undefined }
   >();
 
   ngOnDestroy(): void {
@@ -205,6 +205,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       { label: "Employee", key: "employeeName" },
       { label: "Manager", key: "managerName" },
       { label: "Email", key: "email" },
+      { label: "Employee Number", key: "employeeNumber" },
       ...days,
     ];
   }
@@ -257,7 +258,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
             });
 
             return {
-              employeeId: emp.EmployeeCode,
+              employeeNumber: emp.EmployeeCode,
               employeeName: emp.EmployeeName,
               managerName: emp.ManagerName,
               email: emp.EmployeeEmail,
@@ -275,7 +276,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   /* ---------------- CELL EDIT ---------------- */
 
   isEditable(colKey: string): boolean {
-    return !["employeeName", "managerName", "email"].includes(colKey);
+    return !["employeeName", "managerName", "email", "employeeNumber"].includes(colKey);
   }
 
   storeOriginalValue(event: Event): void {
@@ -302,7 +303,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
     const payload = [
       {
-        email: row.email,
+        employeeNumber: row.employeeNumber,
         dates: [{ date, value: current }],
       },
     ];
@@ -311,7 +312,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
       next: (res) => {
         if (res?.success) {
           row.attendance[date] = current;
-          this.editedCells.add(`${row.employeeId}-${date}`);
+          this.editedCells.add(`${row.employeeNumber}-${date}`);
           this.toastr.success(res?.data?.message || "Attendance updated");
         } else {
           row.attendance[date] = original;
@@ -346,7 +347,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   isEdited(row: any, date: string): boolean {
-    return this.editedCells.has(`${row.employeeId}-${date}`);
+    return this.editedCells.has(`${row.employeeNumber}-${date}`);
   }
 
   private getWeekStart(date: string, offset = 0): string {
@@ -361,19 +362,19 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
     if (normalizedValue === null) {
       this.editedMap.delete(`${row.email}-${date}`);
-      this.editedCells.delete(`${row.employeeId}-${date}`);
+      this.editedCells.delete(`${row.employeeNumber}-${date}`);
       return;
     }
 
     const key = `${row.email}-${date}`;
 
     this.editedMap.set(key, {
-      email: row.email,
+      employeeNumber: row.employeeNumber,
       date,
       value: normalizedValue,
     });
 
-    this.editedCells.add(`${row.employeeId}-${date}`);
+    this.editedCells.add(`${row.employeeNumber}-${date}`);
   }
 
   submitAttendance() {
@@ -383,16 +384,17 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     }
 
     const payloadMap: Record<string, any> = {};
+console.log("editedMap-------?>",this.editedMap);
 
-    this.editedMap.forEach(({ email, date, value }) => {
-      if (!payloadMap[email]) {
-        payloadMap[email] = {
-          email,
+    this.editedMap.forEach(({ employeeNumber, date, value }) => {
+      if (!payloadMap[employeeNumber]) {
+        payloadMap[employeeNumber] = {
+          employeeNumber,
           dates: [],
         };
       }
 
-      payloadMap[email].dates.push({
+      payloadMap[employeeNumber].dates.push({
         date,
         value: !value?.replaceAll(" ", "").length
           ? null
@@ -404,7 +406,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
     this.commonService.setLoading(true);
 
-    this.http.postData(payload, this.constants.officeAttendance).subscribe({
+    this.http.postData(payload, this.constants.officeAttendance + "/employee-number").subscribe({
       next: (res) => {
         if (res?.success) {
           this.toastr.success(res?.data?.message || "Attendance updated");

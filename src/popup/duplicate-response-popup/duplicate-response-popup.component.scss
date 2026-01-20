@@ -1,0 +1,47 @@
+.duplicate-popup {
+  padding: 20px;
+  min-width: 500px;
+}
+
+.popup-header {
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.popup-message {
+  font-size: 14px;
+  margin: 12px 0;
+  color: #555;
+}
+
+.email-list {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+
+.email-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.popup-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}

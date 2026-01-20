@@ -29,7 +29,7 @@ import { DuplicateResponsePopupComponent } from "../../popup/duplicate-response-
     AttendanceViewComponent,
     AddManualAttendanceComponent,
     CommonMailSubmitComponent,
-    DuplicateResponsePopupComponent
+    DuplicateResponsePopupComponent,
     // ToastrService
   ],
   templateUrl: "./attendance-dashboard.component.html",
@@ -244,6 +244,7 @@ export class CsvUploadComponent {
   }
 
   submit(): void {
+    this.commonService.setLoading(true);
     const emailIndex = this.previewHeader.findIndex((h) =>
       h.toLowerCase().includes("email"),
     );
@@ -287,14 +288,20 @@ export class CsvUploadComponent {
         res?.success
           ? this.toastr.success(res?.data?.message || "Attendance submitted")
           : this.toastr.error("Submission failed");
-          if(res?.data?.errors && res?.data?.errors.length){
-            this.dialog.open(DuplicateResponsePopupComponent, {
-              width: "600px",
-              data: { errors: res?.data?.errors || []  ,},
-            });
-          }
+        this.commonService.setLoading(false);
+        if (res?.data?.duplicateEmails?.length) {
+          this.dialog.open(DuplicateResponsePopupComponent, {
+            width: "600px",
+            disableClose: true,
+            data: {
+              duplicateEmails: res.data.duplicateEmails,
+              message: res.data.message,
+            },
+          });
+        }
       },
       error: (err) => {
+        this.commonService.setLoading(false);
         this.toastr.error(err?.error?.message || "Submission failed");
       },
     });

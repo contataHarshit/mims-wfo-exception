@@ -98,9 +98,10 @@ export class AddManualAttendanceComponent implements OnInit {
       this.toastr.warning("No employees selected");
       return;
     }
-
+    console.log("selected",this.selectedEmployees);
+    
     const payload = this.selectedEmployees.map((emp) => ({
-      email: emp.EmployeeEmail || emp.email || emp.Email || "",
+      employeeNumber: emp.EmployeeNumber ||"",
 
       dates: [
         {
@@ -114,7 +115,7 @@ export class AddManualAttendanceComponent implements OnInit {
 
     this.commonService.setLoading(true);
 
-    this.http.postData(payload, this.constants.officeAttendance).subscribe({
+    this.http.postData(payload, this.constants.officeAttendance + "/employee-number").subscribe({
       next: (res: any) => {
         if (res?.success) {
           this.toastr.success("Attendance added successfully");

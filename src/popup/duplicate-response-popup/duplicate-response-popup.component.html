@@ -1,1 +1,26 @@
-<p>duplicate-response-popup works!</p>
+<div class="duplicate-popup">
+
+    <!-- Header -->
+    <div class="popup-header">
+        <h3>Duplicate Attendance Found</h3>
+    </div>
+
+    <!-- Message -->
+    <p class="popup-message">
+        Please upload attendance for these emails from add or view screen.
+    </p>
+
+    <!-- Email List -->
+    <div class="email-list" *ngIf="duplicateEmails.length">
+        <div class="email-item" *ngFor="let email of duplicateEmails">
+            {{ email }}
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="popup-footer">
+        <button pButton type="button" label="OK" class="p-button-primary" (click)="close()"></button>
+    </div>
+
+</div>
