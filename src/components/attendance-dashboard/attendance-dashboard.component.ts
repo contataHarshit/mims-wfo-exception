@@ -245,6 +245,22 @@ export class CsvUploadComponent {
 
   submit(): void {
     this.commonService.setLoading(true);
+    const invalids = this.validateCellLength();
+
+    if (invalids.length) {
+      this.commonService.setLoading(false);
+      this.dialog.open(DuplicateResponsePopupComponent, {
+        width: "620px",
+        disableClose: true,
+        data: {
+          totalRecords: this.previewRows.length,
+          savedRecords: 0,
+          invalidValues: invalids,
+        },
+      });
+      return;
+    }
+
     const emailIndex = this.previewHeader.findIndex((h) =>
       h.toLowerCase().includes("email"),
     );
@@ -289,13 +305,16 @@ export class CsvUploadComponent {
           ? this.toastr.success(res?.data?.message || "Attendance submitted")
           : this.toastr.error("Submission failed");
         this.commonService.setLoading(false);
-        if (res?.data?.duplicateEmails?.length) {
+        if (res?.data?.duplicateEmails?.length || res?.data?.errors?.length) {
           this.dialog.open(DuplicateResponsePopupComponent, {
-            width: "600px",
+            width: "620px",
             disableClose: true,
             data: {
+              totalRecords: res.data.totalRows,
+              savedRecords: res.data.affectedRows,
+
+              errors: res.data.errors,
               duplicateEmails: res.data.duplicateEmails,
-              message: res.data.message,
             },
           });
         }
@@ -438,5 +457,25 @@ export class CsvUploadComponent {
 
   private extractDayNumber(header: string): number {
     return Number(header.replace(/[^0-9]/g, ""));
+  }
+  private validateCellLength(): { email: string; value: string }[] {
+    const emailIndex = this.previewHeader.findIndex((h) =>
+      h.toLowerCase().includes("email"),
+    );
+
+    if (emailIndex === -1) return [];
+
+    const invalids: { email: string; value: string }[] = [];
+
+    this.previewRows.forEach((row) => {
+      const email = row[emailIndex];
+      row.slice(this.fixedHeadersCount).forEach((val) => {
+        if (val && val.toString().trim().length > 3) {
+          invalids.push({ email, value: val });
+        }
+      });
+    });
+
+    return invalids;
   }
 }

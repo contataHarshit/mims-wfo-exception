@@ -91,7 +91,10 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       this.employeeList = this.mapEmployees(this.allEmployees);
     }
     if (this.currentView === "resource" && this.managerValue) {
-      this.filterEmployeesByManager(this.managerValue);
+      let temp = JSON.parse(
+        localStorage.getItem("managerEmployeeData") || "[]",
+      );
+      this.employeeList = this.mapEmployees(temp);
     }
     if (
       this.currentView == "all" &&
@@ -148,6 +151,11 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
   onEmployeeChange(employeeEmpNo: any) {
     console.log("emp", employeeEmpNo, this.employeeList, this.allEmployees);
+    if (this.currentView === "resource" && this.managerValue) {
+      this.employeeValue = employeeEmpNo;
+      this.employeeValueChange.emit(employeeEmpNo);
+      return;
+    }
 
     this.managerValue = this.allEmployees.find(
       (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode,

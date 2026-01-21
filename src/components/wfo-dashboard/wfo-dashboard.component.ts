@@ -259,8 +259,14 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     if (employeeData?.managerName) {
       this.ngZone.run(() => {
         this.filters.managerName = {
-          label: employeeData.managerName.name,
+          label:
+            employeeData.managerName.name +
+            `(${employeeData.managerName.employeeNumber})`,
           value: employeeData.managerName.employeeNumber,
+        };
+        this.filters.employeeName = {
+          label: employeeData.employeeName + `(${employeeData.employeeNumber})`,
+          value: employeeData.employeeNumber,
         };
       });
     }
@@ -505,7 +511,6 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.page = 1;
     this.resetTableSorting();
     this.getExceptionRequest();
-
     setTimeout(() => {
       const count = this.exceptionRequests.length;
       this.toastr.success(

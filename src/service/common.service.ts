@@ -6,6 +6,8 @@ import { firstValueFrom } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { ConstantService } from "./constant.service";
 import { HttpService } from "./http.service";
+import { ConfirmPopupComponent } from "../popup/confirm-popup/confirm-popup.component";
+import { MatDialog } from "@angular/material/dialog";
 @Injectable({
   providedIn: "root",
 })
@@ -74,7 +76,8 @@ export class CommonService {
     @Inject(PLATFORM_ID) private platformId: Object,
     private http: HttpClient,
     private httpService: HttpService,
-    private constants: ConstantService
+    private constants: ConstantService,
+    private dialog: MatDialog,
   ) {}
 
   // ============================================
@@ -266,7 +269,7 @@ export class CommonService {
 
     try {
       this.config = await firstValueFrom(
-        this.http.get("/assets/config/config.json")
+        this.http.get("/assets/config/config.json"),
       );
       this.configLoaded = true;
       return this.config;
@@ -286,7 +289,7 @@ export class CommonService {
     const removedKeys = ["id", "Id", "_id", "employeeId"];
 
     const headers = Object.keys(data[0]).filter(
-      (h) => !removedKeys.includes(h)
+      (h) => !removedKeys.includes(h),
     );
 
     csvRows.push(headers.join(","));
@@ -371,12 +374,37 @@ export class CommonService {
     this.httpService.postData(payload, this.constants.sendMail).subscribe({
       next: (res: any) => {
         console.log(`${type} non-compliance mail triggered`, res);
+
+        this.openConfirmPopup(
+          `${type === "WEEK" ? "Weekly" : "Monthly"} Mail Sent`,
+          res?.data?.message || "Mail sent successfully.",
+        );
       },
       error: (err) => {
-        this.setLoading(false);
         console.error(`${type} mail failed`, err);
+
+        this.openConfirmPopup(
+          "Mail Failed",
+          "Something went wrong while sending the mail. Please try again later.",
+        );
       },
       complete: () => this.setLoading(false),
+    });
+  }
+  private openConfirmPopup(
+    title: string,
+    message: string,
+    confirmText: string = "OK",
+  ): void {
+    this.dialog.open(ConfirmPopupComponent, {
+      width: "400px",
+      disableClose: true,
+      data: {
+        title,
+        message,
+        confirmLabel: "OK",
+        showCancelButton: false,
+      },
     });
   }
 }

@@ -1,26 +1,63 @@
-<div class="duplicate-popup">
+<div class="popup-wrapper">
 
-    <!-- Header -->
+    <!-- HEADER -->
     <div class="popup-header">
-        <h3>Duplicate Attendance Found</h3>
-    </div>
-
-    <!-- Message -->
-    <p class="popup-message">
-        Please upload attendance for these emails from add or view screen.
-    </p>
-
-    <!-- Email List -->
-    <div class="email-list" *ngIf="duplicateEmails.length">
-        <div class="email-item" *ngFor="let email of duplicateEmails">
-            {{ email }}
+        <i class="pi pi-exclamation-triangle"></i>
+        <div>
+            <h3>Attendance Validation</h3>
+            <p>Please resolve the issues below to continue</p>
         </div>
-
     </div>
 
-    <!-- Footer -->
+    <!-- SECTION 1 : SUMMARY -->
+    <div class="popup-summary">
+        <div>
+            <span>Total Records: &nbsp;</span>
+            <strong>{{ totalRecords }}</strong>
+        </div>
+        <div>
+            <span>Saved Records: &nbsp;</span>
+            <strong>{{ savedRecords }}</strong>
+        </div>
+    </div>
+
+    <!-- SECTION 2 : INVALID VALUES -->
+    <div *ngIf="invalidValues.length" class="section">
+        <h4>Invalid Attendance Values</h4>
+
+        <div class="error-card" *ngFor="let item of invalidValues">
+            <div class="email">{{ item.email }}</div>
+            <div class="msg">
+                Value too large:
+                <strong>{{ item.value }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3 : EMAIL NOT FOUND -->
+    <div *ngIf="errors.length" class="section">
+        <h4>Email not found</h4>
+
+        <div class="error-card simple" *ngFor="let e of errors">
+            {{ e }}
+        </div>
+    </div>
+
+    <!-- SECTION 4 : DUPLICATE RECORDS -->
+    <div *ngIf="duplicateEmails.length" class="section">
+        <h4>Duplicate Attendance Record found</h4>
+        <p class="hint">Please use Add or view screen to add records</p>
+
+        <div class="error-card simple" *ngFor="let d of duplicateEmails"
+            style="display: flex; justify-content: space-between;">
+            <span>{{ d.email }}</span>
+            <span>{{ d.count }}</span>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
     <div class="popup-footer">
-        <button pButton type="button" label="OK" class="p-button-primary" (click)="close()"></button>
+        <button pButton label="OK" (click)="close()"></button>
     </div>
 
 </div>
