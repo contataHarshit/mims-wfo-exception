@@ -10,9 +10,13 @@
     </div>
 
     <!-- SECTION 1 : SUMMARY -->
-    <div class="popup-summary">
+    <div class="popup-summary" *ngIf="!invalidValues.length">
         <div>
             <span>Total Records: &nbsp;</span>
+            <strong>{{ totalRows }}</strong>
+        </div>
+        <div>
+            <span>Data Set: &nbsp;</span>
             <strong>{{ totalRecords }}</strong>
         </div>
         <div>
@@ -32,6 +36,7 @@
                 <strong>{{ item.value }}</strong>
             </div>
         </div>
+        <p class="invalidDesclaimer">*Please Enter value less than or equal to 3</p>
     </div>
 
     <!-- SECTION 3 : EMAIL NOT FOUND -->
@@ -44,16 +49,32 @@
     </div>
 
     <!-- SECTION 4 : DUPLICATE RECORDS -->
-    <div *ngIf="duplicateEmails.length" class="section">
-        <h4>Duplicate Attendance Record found</h4>
-        <p class="hint">Please use Add or view screen to add records</p>
+   <!-- SECTION 4 : DUPLICATE RECORDS -->
+<div *ngIf="duplicateEmails.length" class="section">
+  <h4>Duplicate Attendance Record found</h4>
+  <p class="hint">Please use Add or view screen to add records</p>
 
-        <div class="error-card simple" *ngFor="let d of duplicateEmails"
-            style="display: flex; justify-content: space-between;">
-            <span>{{ d.email }}</span>
-            <span>{{ d.count }}</span>
-        </div>
-    </div>
+  <div class="table-container">
+    <table class="duplicate-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Employee with same email</th>
+          <th>Duplicate email in CSV</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let d of duplicateEmails">
+          <td class="email-cell">{{ d.email || 'N/A' }}</td>
+          <td class="center">{{ d.employeeWithSameEmail ?? 'N/A' }}</td>
+          <td class="center">{{ d.duplicatesEmailInCsv ?? 'N/A' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 
     <!-- FOOTER -->
     <div class="popup-footer">

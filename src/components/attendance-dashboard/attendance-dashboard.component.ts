@@ -307,12 +307,12 @@ export class CsvUploadComponent {
         this.commonService.setLoading(false);
         if (res?.data?.duplicateEmails?.length || res?.data?.errors?.length) {
           this.dialog.open(DuplicateResponsePopupComponent, {
-            width: "620px",
+            width: "900px",
             disableClose: true,
             data: {
-              totalRecords: res.data.totalRows,
+              totalRecords: res.data.totalRecords,
               savedRecords: res.data.affectedRows,
-
+              totalRows: res.data.totalRows,
               errors: res.data.errors,
               duplicateEmails: res.data.duplicateEmails,
             },

@@ -12,10 +12,10 @@ import { ButtonModule } from "primeng/button";
 export class DuplicateResponsePopupComponent {
   totalRecords = 0;
   savedRecords = 0;
-
+  totalRows = 0;
   invalidValues: { email: string; value: string }[] = [];
   errors: string[] = [];
-  duplicateEmails: { email: string; count: number }[] = [];
+  duplicateEmails: { email: string; employeeWithSameEmail?: number, duplicatesEmailInCsv?: number }[] = [];
 
   constructor(
     private dialogRef: MatDialogRef<DuplicateResponsePopupComponent>,
@@ -23,7 +23,7 @@ export class DuplicateResponsePopupComponent {
   ) {
     this.totalRecords = data?.totalRecords ?? 0;
     this.savedRecords = data?.savedRecords ?? 0;
-
+    this.totalRows = data?.totalRows ?? 0;
     this.invalidValues = data?.invalidValues ?? [];
     this.errors = data?.errors ?? [];
     this.duplicateEmails = data?.duplicateEmails ?? [];
