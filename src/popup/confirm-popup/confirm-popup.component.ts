@@ -15,10 +15,11 @@ export class ConfirmPopupComponent {
     private dialogRef: MatDialogRef<ConfirmPopupComponent>,
     @Inject(MAT_DIALOG_DATA)
     public data: {
-      message: string;
-      title: string;
-      confirmLabel: string;
-      showCancelButton: boolean;
+      message?: string;
+      title?: string;
+      confirmLabel?: string;
+      showCancelButton?: boolean;
+      managerEmailCount?: number;
     },
   ) {
     if (!this.data.confirmLabel) {
@@ -27,6 +28,7 @@ export class ConfirmPopupComponent {
     if (this.data.showCancelButton === undefined) {
       this.data.showCancelButton = true;
     }
+    
   }
 
   onConfirm(): void {

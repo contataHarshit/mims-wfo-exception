@@ -8,6 +8,7 @@ import { ConstantService } from "./constant.service";
 import { HttpService } from "./http.service";
 import { ConfirmPopupComponent } from "../popup/confirm-popup/confirm-popup.component";
 import { MatDialog } from "@angular/material/dialog";
+import { ToastrService } from "ngx-toastr";
 @Injectable({
   providedIn: "root",
 })
@@ -78,6 +79,7 @@ export class CommonService {
     private httpService: HttpService,
     private constants: ConstantService,
     private dialog: MatDialog,
+    private toastr: ToastrService,
   ) {}
 
   // ============================================
@@ -374,36 +376,39 @@ export class CommonService {
     this.httpService.postData(payload, this.constants.sendMail).subscribe({
       next: (res: any) => {
         console.log(`${type} non-compliance mail triggered`, res);
-
+        this.toastr.success(res?.data?.message)
         this.openConfirmPopup(
-          `${type === "WEEK" ? "Weekly" : "Monthly"} Mail Sent`,
-          res?.data?.message || "Mail sent successfully.",
+          `${type === "WEEK" ? "Weekly" : "Monthly"} Mail`,
+          res?.data?.deficiencyEmployeeCount,
+          res?.data?.employeeCount,
+          res?.data?.managerEmailCount,
         );
       },
       error: (err) => {
-        console.error(`${type} mail failed`, err);
-
-        this.openConfirmPopup(
-          "Mail Failed",
-          "Something went wrong while sending the mail. Please try again later.",
-        );
+        this.toastr.error(err.error.message || `${type} mail failed`);
       },
       complete: () => this.setLoading(false),
     });
   }
   private openConfirmPopup(
     title: string,
-    message: string,
-    confirmText: string = "OK",
+    deficiencyEmployeeCount: number = 0,
+    employeeCount: number = 0,
+    managerEmailCount = 0,
   ): void {
+    console.log("deffffffffff", deficiencyEmployeeCount, employeeCount);
+
     this.dialog.open(ConfirmPopupComponent, {
       width: "400px",
       disableClose: true,
       data: {
         title,
-        message,
         confirmLabel: "OK",
         showCancelButton: false,
+        message: deficiencyEmployeeCount
+          ? `<H2><b> ${deficiencyEmployeeCount} </b></H2>deficiency mails sent<br>out of <b>${employeeCount}</b> Employees`
+          : `No employees found deficient, no mail sent`,
+        managerEmailCount,
       },
     });
   }

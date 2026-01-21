@@ -1,9 +1,13 @@
 <div class="confirm-popup">
   <h2>{{data.title }}</h2>
-  <p>{{ data.message }}</p>
+  <p [innerHTML]="data.message">{{ data.message }}</p>
+  <p *ngIf="data.managerEmailCount"><span>Manager Email Count: &nbsp;</span><span>
+      {{data.managerEmailCount || 0}}
+    </span></p>
+
 
   <div class="button-group">
-    <button pButton [label]="data.confirmLabel" class="p-button-danger" (click)="onConfirm()"></button>
+    <button pButton [label]="data.confirmLabel || 'Yes'" class="p-button-danger" (click)="onConfirm()"></button>
     <button pButton label="No" class="p-button-secondary" (click)="onCancel()" *ngIf="data.showCancelButton"></button>
   </div>
 </div>
