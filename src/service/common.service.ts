@@ -398,8 +398,6 @@ export class CommonService {
     employeeCount: number = 0,
     managerEmailCount = 0,
   ): void {
-    console.log("deffffffffff", deficiencyEmployeeCount, employeeCount);
-
     this.dialog.open(ConfirmPopupComponent, {
       width: "400px",
       disableClose: true,

@@ -30,7 +30,7 @@
         <h4>Invalid Attendance Values</h4>
 
         <div class="error-card" *ngFor="let item of invalidValues">
-            <div class="email">{{ item.email }}</div>
+            <div class="employeeNumber">{{ item.employeeNumber }}</div>
             <div class="msg">
                 Value too large:
                 <strong>{{ item.value }}</strong>
@@ -41,7 +41,7 @@
 
     <!-- SECTION 3 : EMAIL NOT FOUND -->
     <div *ngIf="errors.length" class="section">
-        <h4>Email not found</h4>
+        <h4>Employee Number not found</h4>
 
         <div class="error-card simple" *ngFor="let e of errors">
             {{ e }}
@@ -50,7 +50,7 @@
 
     <!-- SECTION 4 : DUPLICATE RECORDS -->
    <!-- SECTION 4 : DUPLICATE RECORDS -->
-<div *ngIf="duplicateEmails.length" class="section">
+<div *ngIf="duplicateEmployeeNumbers.length" class="section">
   <h4>Duplicate Attendance Record found</h4>
   <p class="hint">Please use Add or view screen to add records</p>
 
@@ -58,17 +58,15 @@
     <table class="duplicate-table">
       <thead>
         <tr>
-          <th>Email</th>
-          <th>Employee with same email</th>
-          <th>Duplicate email in CSV</th>
+          <th>Employee Number</th>
+          <th>Duplicate employee number in CSV</th>
         </tr>
       </thead>
 
       <tbody>
-        <tr *ngFor="let d of duplicateEmails">
-          <td class="email-cell">{{ d.email || 'N/A' }}</td>
-          <td class="center">{{ d.employeeWithSameEmail ?? 'N/A' }}</td>
-          <td class="center">{{ d.duplicatesEmailInCsv ?? 'N/A' }}</td>
+        <tr *ngFor="let d of duplicateEmployeeNumbers; let i = index">
+          <td class="center">{{ d.employeeNumber || 'N/A' }}</td>
+          <td class="center">{{ d.duplicatesInCsv ?? 'N/A' }}</td>
         </tr>
       </tbody>
     </table>

@@ -13,9 +13,9 @@ export class DuplicateResponsePopupComponent {
   totalRecords = 0;
   savedRecords = 0;
   totalRows = 0;
-  invalidValues: { email: string; value: string }[] = [];
+  invalidValues: { employeeNumber: string; value: string }[] = [];
   errors: string[] = [];
-  duplicateEmails: { email: string; employeeWithSameEmail?: number, duplicatesEmailInCsv?: number }[] = [];
+  duplicateEmployeeNumbers: { employeeNumber: string; employeeWithSameEmployeeNumber?: number, duplicatesInCsv?: number }[] = [];
 
   constructor(
     private dialogRef: MatDialogRef<DuplicateResponsePopupComponent>,
@@ -26,7 +26,7 @@ export class DuplicateResponsePopupComponent {
     this.totalRows = data?.totalRows ?? 0;
     this.invalidValues = data?.invalidValues ?? [];
     this.errors = data?.errors ?? [];
-    this.duplicateEmails = data?.duplicateEmails ?? [];
+    this.duplicateEmployeeNumbers = data?.duplicateEmployeeNumbers ?? [];
   }
 
   close(): void {
