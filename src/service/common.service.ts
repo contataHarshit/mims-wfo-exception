@@ -375,7 +375,6 @@ export class CommonService {
 
     this.httpService.postData(payload, this.constants.sendMail).subscribe({
       next: (res: any) => {
-        console.log(`${type} non-compliance mail triggered`, res);
         this.toastr.success(res?.data?.message);
         this.openConfirmPopup(
           `${type === "WEEK" ? "Weekly" : "Monthly"} Mail`,
