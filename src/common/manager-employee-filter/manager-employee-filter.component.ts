@@ -90,11 +90,17 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     if (this.currentView === "all" && !this.managerValue) {
       this.employeeList = this.mapEmployees(this.allEmployees);
     }
-    if (this.currentView === "resource" && this.managerValue) {
+    if (this.currentView === "resource" ) {
+      console.log("ssdddd");
+      
       let temp = JSON.parse(
         localStorage.getItem("managerEmployeeData") || "[]",
       );
+      let tempManagerVal= localStorage.getItem("employeeData") || null;
+      this.managerValue=tempManagerVal? {value:JSON.parse(tempManagerVal).EmployeeNumber,label:JSON.parse(tempManagerVal).employeeName} : null;
       this.employeeList = this.mapEmployees(temp);
+      console.log("temp",temp);
+      
     }
     if (
       this.currentView == "all" &&
