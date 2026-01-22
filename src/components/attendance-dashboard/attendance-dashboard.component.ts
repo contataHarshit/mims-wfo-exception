@@ -203,12 +203,9 @@ export class CsvUploadComponent {
 
     // ✅ FINAL HEADER (NO Day1, Day2)
     this.previewHeader = [...fixedHeaders, ...dateHeaders];
-    console.log("rows", rows);
-
     // ---------- ROWS ----------
     this.previewRows = rows.slice(1).map((row) => {
       const fixedValues = row.slice(0, fixedHeaders.length);
-      console.log("csvvvvvvvvvv", this.previewRows);
 
       // Take only required number of day values
       const dayValues = row.slice(
@@ -325,7 +322,6 @@ export class CsvUploadComponent {
       },
     });
 
-    console.log("FINAL CLEAN PAYLOAD", result);
   }
 
   private toIsoDate(ddmmyyyy: string): string {

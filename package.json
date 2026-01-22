@@ -3,10 +3,9 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "generate-env": "node generate-env.js",
-    "start": "npm run generate-env && ng serve --configuration deployment",
-    "build": "npm run generate-env && ng build --configuration deployment",
-    "build:deployment": "npm run generate-env && ng build --configuration deployment",
+    "start": "ng serve --configuration deployment",
+    "build": " ng build --configuration deployment",
+    "build:deployment": "ng build --configuration deployment",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:Mims-exception-wfo": "node dist/mims-exception-wfo/server/server.mjs"

@@ -384,8 +384,6 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     }
 
     const payloadMap: Record<string, any> = {};
-console.log("editedMap-------?>",this.editedMap);
-
     this.editedMap.forEach(({ employeeNumber, date, value }) => {
       if (!payloadMap[employeeNumber]) {
         payloadMap[employeeNumber] = {

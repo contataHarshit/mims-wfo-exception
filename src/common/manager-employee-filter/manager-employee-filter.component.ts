@@ -52,7 +52,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((list) => {
         this.managerList = list || [];
-        console.log("this manager list", this.managerList);
       });
 
     // ALL EMPLOYEES
@@ -91,7 +90,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       this.employeeList = this.mapEmployees(this.allEmployees);
     }
     if (this.currentView === "resource" ) {
-      console.log("ssdddd");
       
       let temp = JSON.parse(
         localStorage.getItem("managerEmployeeData") || "[]",
@@ -131,7 +129,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
         label: emp.employeeName,
         value: emp.employeeNumber,
       };
-      console.log("this employeeValue", this.employeeValue, emp);
 
       // propagate to parent
       this.employeeValueChange.emit(this.employeeValue);
@@ -154,7 +151,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   }
 
   onEmployeeChange(employeeEmpNo: any) {
-    console.log("emp", employeeEmpNo, this.employeeList, this.allEmployees);
     if (this.currentView === "resource" && this.managerValue) {
       this.employeeValue = employeeEmpNo;
       this.employeeValueChange.emit(employeeEmpNo);
@@ -165,7 +161,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode,
     );
     if (this.managerValue) {
-      console.log("wwwwwwwwwwwwwww");
       this.managerValue.value = this.managerValue.EmployeeNumber;
       this.managerValue.label = `${this.managerValue.FullName} (${this.managerValue.EmployeeNumber})`;
       this.filterEmployeesByManager(this.managerValue);
@@ -212,7 +207,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   /* ================= HELPERS ================= */
 
   private filterEmployeesByManager(managerEmpNo: any) {
-    console.log("filterEmployeesByManager", managerEmpNo);
     this.employeeList = [];
     const filtered = this.allEmployees.filter(
       (e) => e.ManagerCode === managerEmpNo?.value,
@@ -221,8 +215,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   }
 
   private mapEmployees(list: any[]) {
-    console.log("list", list);
-
     return list.map((e) => ({
       label: `${e.FullName} (${e.EmployeeNumber})`,
       value: e.EmployeeNumber,

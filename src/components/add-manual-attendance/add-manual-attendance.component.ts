@@ -98,8 +98,6 @@ export class AddManualAttendanceComponent implements OnInit {
       this.toastr.warning("No employees selected");
       return;
     }
-    console.log("selected",this.selectedEmployees);
-    
     const payload = this.selectedEmployees.map((emp) => ({
       employeeNumber: emp.EmployeeNumber ||"",
 
