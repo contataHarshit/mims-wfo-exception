@@ -20,3 +20,15 @@
     width: 120px;
     flex-direction: column;
 }
+
+.send-button:disabled,
+.send-button.p-disabled {
+    background-color: #d1d5db !important;
+    /* light gray */
+    border-color: #d1d5db !important;
+    color: #6b7280 !important;
+    /* dark gray text */
+    cursor: not-allowed;
+    opacity: 1;
+    /* prevents PrimeNG from fading */
+}

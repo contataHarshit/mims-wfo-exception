@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ButtonModule } from "primeng/button";
 import { CommonFormActionComponent } from "../common-form-action/common-form-action.component";
+import { CommonService } from "../../service/common.service";
 
 @Component({
   selector: "app-common-mail-submit",
@@ -20,8 +21,9 @@ export class CommonMailSubmitComponent {
   @Output() sendMonthly = new EventEmitter<void>();
   @Output() submit = new EventEmitter<void>();
   @Output() reset = new EventEmitter<void>();
-
+  constructor(public commonService: CommonService) {}
   onSendWeekly() {
+    this.commonService.disableSendMail = true;
     this.sendWeekly.emit();
   }
 

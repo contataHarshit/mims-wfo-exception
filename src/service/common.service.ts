@@ -81,7 +81,7 @@ export class CommonService {
     private dialog: MatDialog,
     private toastr: ToastrService,
   ) {}
-
+  disableSendMail: boolean = false;
   // ============================================
   // LOADING STATE METHODS
   // ============================================
@@ -376,7 +376,7 @@ export class CommonService {
     this.httpService.postData(payload, this.constants.sendMail).subscribe({
       next: (res: any) => {
         console.log(`${type} non-compliance mail triggered`, res);
-        this.toastr.success(res?.data?.message)
+        this.toastr.success(res?.data?.message);
         this.openConfirmPopup(
           `${type === "WEEK" ? "Weekly" : "Monthly"} Mail`,
           res?.data?.deficiencyEmployeeCount,
@@ -387,7 +387,10 @@ export class CommonService {
       error: (err) => {
         this.toastr.error(err.error.message || `${type} mail failed`);
       },
-      complete: () => this.setLoading(false),
+      complete: () => {
+        this.disableSendMail = false;
+        this.setLoading(false);
+      },
     });
   }
   private openConfirmPopup(
