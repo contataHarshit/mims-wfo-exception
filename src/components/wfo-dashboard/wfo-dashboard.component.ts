@@ -551,16 +551,16 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   toggleSelection(req: any, event: any): void {
     req.checked = event.target.checked;
-
+    
     if (req.checked) {
       // Add to selected requests if not already present
-      if (!this.selectedRequests.find((r: any) => r.id === req.exceptionId)) {
+      if (!this.selectedRequests.find((r: any) => r.exceptionId === req.exceptionId)) {
         this.selectedRequests.push(req);
       }
     } else {
       // Remove from selected requests
       this.selectedRequests = this.selectedRequests.filter(
-        (r: any) => r.id !== req.id,
+        (r: any) => r.exceptionId !== req.exceptionId,
       );
       this.allSelected = false;
     }
@@ -703,14 +703,22 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         req.checked = checked;
       }
     });
-
+    
     // Update selected requests array
     if (checked) {
       this.selectedRequests = this.exceptionRequests.filter(
         (r) => r.checked && r.status !== "REJECTED" && !this.isRowDisabled(r),
       );
-    } else {
-      this.selectedRequests = [];
+    }
+
+    let allunSelected=true
+    for(let i=0;i<this.selectedRequests.length;i++){
+      if(this.selectedRequests[i].checked){
+        allunSelected=false;
+      }
+    }
+    if(allunSelected){
+      this.selectedRequests=[];
     }
   }
   private isRowDisabled(req: any): boolean {
