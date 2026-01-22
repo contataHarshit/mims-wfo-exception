@@ -312,7 +312,6 @@ export class CsvUploadComponent {
               : this.toastr.error("Submission failed");
           this.commonService.setLoading(false);
           if (
-            res?.data?.duplicateEmployeeNumbers?.length ||
             res?.data?.errors?.length
           ) {
             this.dialog.open(DuplicateResponsePopupComponent, {
