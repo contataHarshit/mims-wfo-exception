@@ -89,13 +89,17 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     if (this.currentView === "all" && !this.managerValue) {
       this.employeeList = this.mapEmployees(this.allEmployees);
     }
-    if (this.currentView === "resource" ) {
-      
+    if (this.currentView === "resource") {
       let temp = JSON.parse(
         localStorage.getItem("managerEmployeeData") || "[]",
       );
-      let tempManagerVal= localStorage.getItem("employeeData") || null;
-      this.managerValue=tempManagerVal? {value:JSON.parse(tempManagerVal).EmployeeNumber,label:JSON.parse(tempManagerVal).employeeName} : null;
+      let tempManagerVal = localStorage.getItem("employeeData") || null;
+      this.managerValue = tempManagerVal
+        ? {
+            value: JSON.parse(tempManagerVal).EmployeeNumber,
+            label: JSON.parse(tempManagerVal).employeeName,
+          }
+        : null;
       this.employeeList = this.mapEmployees(temp);
     }
     if (
@@ -173,35 +177,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
     this.employeeValue = employeeEmpNo;
     this.employeeValueChange.emit(employeeEmpNo);
-
-    // const emp = this.allEmployees.find(
-    //   e => e.EmployeeNumber === employeeEmpNo
-    // );
-
-    // if (!emp) {
-    //   console.warn('Employee not found:', employeeEmpNo);
-    //   return;
-    // }
-
-    // if (!emp.ManagerCode) {
-    //   console.warn('Employee has no ManagerCode:', emp);
-    //   return;
-    // }
-
-    // console.log('Employee:', emp.FullName, '| ManagerCode:', emp.ManagerCode);
-
-    // // Verify manager exists in managerList
-    // const managerExists = this.managerList.find(m => m.value === emp.ManagerCode);
-    // console.log('Manager found in list:', managerExists);
-
-    // // ✅ Auto-select the employee's manager
-    // this.managerValue = emp.ManagerCode;
-    // this.managerValueChange.emit(emp.ManagerCode);
-
-    // // Filter employees by this manager
-    // this.filterEmployeesByManager(emp.ManagerCode);
-
-    // console.log('Manager value set to:', this.managerValue);
   }
 
   /* ================= HELPERS ================= */

@@ -87,7 +87,7 @@ export class CsvUploadComponent {
     const fromDate = this.form.get("fromDate")?.value;
     const toDate = this.form.get("toDate")?.value;
 
-    this.resetPreviewState();
+    // this.resetPreviewState();
 
     if (!fromDate || !toDate) {
       this.dayCount = 0;
@@ -113,6 +113,9 @@ export class CsvUploadComponent {
     }
 
     this.dayCount = diff;
+    if (fromDate && toDate && this.rawCsvText) {
+      this.processCsv(this.rawCsvText);
+    }
   }
   private resetPreviewState(): void {
     this.previewHeader = [];
@@ -207,10 +210,9 @@ export class CsvUploadComponent {
     this.previewRows = rows.slice(1).map((row) => {
       const fixedValues = row.slice(0, fixedHeaders.length);
 
-      // Take only required number of day values
-      const dayValues = row.slice(
-        firstDayIndex,
-        firstDayIndex + dateHeaders.length,
+      const dayValues = Array.from(
+        { length: dateHeaders.length },
+        (_, i) => row[firstDayIndex + i] ?? null,
       );
 
       return [...fixedValues, ...dayValues];
@@ -264,6 +266,7 @@ export class CsvUploadComponent {
 
     if (employeeNumberIndex === -1) {
       this.toastr.error("Employee No column not found");
+      this.commonService.setLoading(false);
       return;
     }
 
@@ -276,53 +279,60 @@ export class CsvUploadComponent {
         if (!employeeNumber) return null;
 
         const dates = row
-          .slice(this.fixedHeadersCount) // ONLY date columns
+          .slice(this.fixedHeadersCount)
           .map((value, i) => {
-            if (!value || !value.replaceAll(" ", "").length) return null;
-
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + i);
 
             return {
               date: date.toISOString().split("T")[0],
-              value: value.replaceAll(" ", ""),
+              value:
+                value && value.toString().trim().length
+                  ? value.toString().trim()
+                  : null,
             };
           })
+
           .filter(Boolean);
-          console.log("dates------------>",dates);
-          
-        if (!dates.length) return null;
 
         return { employeeNumber, dates };
       })
       .filter(Boolean);
 
-    this.http.postData(result, this.constants.officeAttendance + "/employee-number").subscribe({
-      next: (res) => {
-        res?.success
-          ? this.toastr.success(res?.data?.message || "Attendance submitted")
-          : this.toastr.error("Submission failed");
-        this.commonService.setLoading(false);
-        if (res?.data?.duplicateEmployeeNumbers?.length || res?.data?.errors?.length) {
-          this.dialog.open(DuplicateResponsePopupComponent, {
-            width: "900px",
-            disableClose: true,
-            data: {
-              totalRecords: res.data.totalRecords,
-              savedRecords: res.data.affectedRows,
-              totalRows: res.data.totalRows,
-              errors: res.data.errors,
-              duplicateEmployeeNumbers: res.data.duplicateEmployeeNumbers,
-            },
-          });
-        }
-      },
-      error: (err) => {
-        this.commonService.setLoading(false);
-        this.toastr.error(err?.error?.message || "Submission failed");
-      },
-    });
-
+    this.http
+      .postData(result, this.constants.officeAttendance + "/employee-number")
+      .subscribe({
+        next: (res) => {
+          res?.success && !res?.data?.errors?.length
+            ? this.toastr.success(res?.data?.message || "Attendance submitted")
+            : res?.data?.errors?.length
+              ? this.toastr.error(
+                  res?.data?.message || "Submission completed with errors",
+                )
+              : this.toastr.error("Submission failed");
+          this.commonService.setLoading(false);
+          if (
+            res?.data?.duplicateEmployeeNumbers?.length ||
+            res?.data?.errors?.length
+          ) {
+            this.dialog.open(DuplicateResponsePopupComponent, {
+              width: "900px",
+              disableClose: true,
+              data: {
+                totalRecords: res.data.totalRecords,
+                savedRecords: res.data.affectedRows,
+                totalRows: res.data.totalRows,
+                errors: res.data.errors,
+                duplicateEmployeeNumbers: res.data.duplicateEmployeeNumbers,
+              },
+            });
+          }
+        },
+        error: (err) => {
+          this.commonService.setLoading(false);
+          this.toastr.error(err?.error?.message || "Submission failed");
+        },
+      });
   }
 
   private toIsoDate(ddmmyyyy: string): string {
@@ -394,6 +404,9 @@ export class CsvUploadComponent {
       if (this.currentPage > this.totalPages) {
         this.currentPage = this.totalPages || 1;
       }
+      if (!this.previewRows.length) {
+        this.reset();
+      }
     });
   }
   storeOriginalValue(event: Event): void {
@@ -420,12 +433,21 @@ export class CsvUploadComponent {
   }
   downloadCsvFormat(): void {
     // ---------- FIXED HEADERS ----------
-    const headers = ["NAME", "Manager", "EMPLOYEE NO", "EMAIL", "Day1", "Day2", "Day3"];
+    const headers = [
+      "EMPLOYEE NO",
+      "NAME",
+      "Manager",
+      "EMAIL",
+      "Day1",
+      "Day2",
+      "Day3",
+    ];
 
     const sampleRow = [
+      "Employee_Number",
       "Employee_Name",
       "Manager_Name",
-      "Employee_Number",
+
       "Employee_Email",
       "FD",
       "FD",

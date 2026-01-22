@@ -87,7 +87,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     private http: HttpService,
     private constants: ConstantService,
     private route: ActivatedRoute,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit() {
@@ -100,7 +100,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     this.router.events
       .pipe(
         filter((e) => e instanceof NavigationEnd),
-        takeUntil(this.destroy$)
+        takeUntil(this.destroy$),
       )
       .subscribe((event) => {
         const navEnd = event as NavigationEnd;
@@ -222,7 +222,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     this.showTabs = false; // Hide tabs during authentication
 
     firstValueFrom(
-      this.http.auth(this.constants.auth, { sessionid: sessionId })
+      this.http.auth(this.constants.auth, { sessionid: sessionId }),
     )
       .then((response: any) => {
         const employee = response?.data?.employee || {};
@@ -265,7 +265,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         return this.loadRoleSpecificData(this.role);
       })
       .catch((err) => {
-        console.error("Auth API Error:", err);
         this.isAuthenticating = false;
         this.showTabs = false;
       });
@@ -287,7 +286,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       this.addAllOption();
       if (role === "EMPLOYEE") {
         this.viewOptions = this.viewOptions.filter(
-          (o) => o.value !== "resource"
+          (o) => o.value !== "resource",
         );
       }
       return;
@@ -331,7 +330,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
     try {
       const empRes: any = await firstValueFrom(
-        this.http.getData(this.constants.employeeData)
+        this.http.getData(this.constants.employeeData),
       );
 
       if (empRes?.success && empRes.data?.employee) {
@@ -348,7 +347,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
           (this.department == "ACCOUNTS" && role === "EMPLOYEE")
         ) {
           const managerRes: any = await firstValueFrom(
-            this.http.getData(this.constants.managerList)
+            this.http.getData(this.constants.managerList),
           );
           if (managerRes?.success && managerRes.data?.managers) {
             this.commonService.setManagerList(managerRes.data.managers);
@@ -374,7 +373,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       this.commonService.userDataLoaded$.next(true);
       this.hasLoadedData = true;
     } catch (err) {
-      console.error("Error loading role-specific data:", err);
       this.commonService.userDataLoaded$.next(false);
     }
   }
@@ -386,13 +384,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
     try {
       const res: any = await firstValueFrom(
-        this.http.getData(this.constants.allEmployeeData)
+        this.http.getData(this.constants.allEmployeeData),
       );
       if (res?.success && res.data?.employees) {
         this.commonService.setAllEmployeeData(res.data.employees);
         localStorage.setItem(
           "allEmployeeData",
-          JSON.stringify(res.data.employees)
+          JSON.stringify(res.data.employees),
         );
       }
     } catch (err) {
@@ -407,13 +405,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
     try {
       const res: any = await firstValueFrom(
-        this.http.getData(this.constants.mangerEmployeeData)
+        this.http.getData(this.constants.mangerEmployeeData),
       );
       if (res?.success && res.data?.employees) {
         this.commonService.setManagerEmployeeData(res.data.employees);
         localStorage.setItem(
           "managerEmployeeData",
-          JSON.stringify(res.data.employees)
+          JSON.stringify(res.data.employees),
         );
       }
     } catch (err) {
@@ -476,7 +474,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       this.commonService.attendanceView = event.target.value;
       localStorage.setItem("attendanceView", this.commonService.attendanceView);
       this.commonService.attendanceViewChange$.next(
-        this.commonService.attendanceView
+        this.commonService.attendanceView,
       );
       return;
     }
