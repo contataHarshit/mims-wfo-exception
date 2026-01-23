@@ -85,6 +85,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       changes["managerValue"]?.previousValue
     ) {
       this.filterEmployeesByManager(this.managerValue);
+      return;
     }
     if (this.currentView === "all" && !this.managerValue) {
       this.employeeList = this.mapEmployees(this.allEmployees);
@@ -104,7 +105,6 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     }
     if (
       this.currentView == "all" &&
-      !this.managerValue &&
       changes["employeeValue"]?.currentValue !==
         changes["employeeValue"]?.previousValue
     ) {
@@ -161,9 +161,11 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.managerValue = this.allEmployees.find(
-      (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode,
-    );
+    if (employeeEmpNo) {
+      this.managerValue = this.allEmployees.find(
+        (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode,
+      );
+    }
     if (this.managerValue) {
       this.managerValue.value = this.managerValue.EmployeeNumber;
       this.managerValue.label = `${this.managerValue.FullName} (${this.managerValue.EmployeeNumber})`;
@@ -183,10 +185,14 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
   private filterEmployeesByManager(managerEmpNo: any) {
     this.employeeList = [];
-    const filtered = this.allEmployees.filter(
-      (e) => e.ManagerCode === managerEmpNo?.value,
-    );
-    this.employeeList = this.mapEmployees(filtered);
+    if (managerEmpNo) {
+      const filtered = this.allEmployees.filter(
+        (e) => e.ManagerCode === managerEmpNo?.value,
+      );
+      this.employeeList = this.mapEmployees(filtered);
+      return;
+    }
+    this.employeeList = this.mapEmployees(this.allEmployees);
   }
 
   private mapEmployees(list: any[]) {
