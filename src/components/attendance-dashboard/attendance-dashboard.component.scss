@@ -489,6 +489,26 @@
   z-index: 12 !important;
 }
 
+.first-dynamic-col {
+  position: sticky !important;
+  left: 280px;
+  z-index: 13 !important;
+}
+
+td.first-dynamic-col {
+  background-color: #fff;
+}
+
+th.first-dynamic-col {
+  top: 0 !important;
+  z-index: 30 !important;
+}
+
+// .first-dynamic-col input {
+//   font-weight: 600;
+// }
+
+
 .preview-table thead th {
   position: sticky;
   top: 0;

@@ -119,8 +119,9 @@
             <thead>
               <tr>
                 <th class="sticky-col sticky-col-1 delete-col"></th>
-                <th class="sticky-col sticky-col-2">NAME</th>
-                <th *ngFor="let h of previewHeader.slice(1)">{{ h }}</th>
+                <th class="sticky-col sticky-col-2">Employee No.</th>
+                <th *ngFor="let h of previewHeader.slice(1);let i=index" [class.first-dynamic-col]="i === 0">{{ h }}
+                </th>
               </tr>
             </thead>
 
@@ -151,7 +152,8 @@
                 </td>
 
                 <!-- REST SCROLLABLE CELLS -->
-                <td *ngFor="let h of previewHeader.slice(1); let cIndex = index">
+                <td *ngFor="let h of previewHeader.slice(1); let cIndex = index"
+                  [class.first-dynamic-col]="cIndex === 0">
                   <input type="text" [(ngModel)]="previewRows[(currentPage - 1) * pageSize + rIndex][cIndex + 1]"
                     [ngModelOptions]="{ standalone: true }" class="editable-cell" [class.edited-cell]="isCellEdited(
           (currentPage - 1) * pageSize + rIndex,

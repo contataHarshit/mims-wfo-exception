@@ -5,12 +5,14 @@ import {
 } from "@angular/common/http";
 import { catchError, tap, timeout } from "rxjs/operators";
 import { throwError } from "rxjs";
+import { inject } from "@angular/core";
+import { ToastrService } from "ngx-toastr";
 import { Environment } from "../environments/environment";
 
-const API_TIMEOUT = 20000; // ⏱ 20 seconds (adjust if needed)
+const API_TIMEOUT = 20000; // 20 sec
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
-  console.log("🔵 Interceptor fired for:", req.url);
+  const toastr = inject(ToastrService);
 
   // Skip auth & assets
   if (req.url.includes("auth") || req.url.includes("/assets/")) {
@@ -26,38 +28,42 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   return next(req).pipe(
-    // ⏱️ HANDLE LONG PENDING REQUESTS
     timeout(API_TIMEOUT),
 
     tap({
-      next: (event: HttpEvent<any>) => {
-        console.log("✅ Request success:", req.url);
+      next: (_event: HttpEvent<any>) => {
+        // success – nothing to do
       },
     }),
 
     catchError((error: any) => {
-      console.error("🔴 INTERCEPTOR ERROR:", error);
+      const is401 =
+        error instanceof HttpErrorResponse && error.status === 401;
 
-      const shouldRedirect =
-        error instanceof HttpErrorResponse &&
-        (
-          error.status === 401 ||     // Unauthorized
-          error.status === 0          // Network / CORS / fetch failed
+      const isNetwork =
+        error instanceof HttpErrorResponse && error.status === 0;
+
+      const isTimeout = error?.name === "TimeoutError";
+
+      if (is401 || isNetwork || isTimeout) {
+        toastr.error(
+          isTimeout
+            ? "Session timeout. Redirecting to mims…"
+            : "Session expired. Redirecting to mims…",
+          "Authentication Error",
+          {
+            timeOut: 3000,
+            progressBar: true,
+            closeButton: true,
+            tapToDismiss: false,
+          }
         );
 
-      // ⏱ TimeoutError does NOT have status
-      const isTimeout =
-        error.name === "TimeoutError";
-
-      if (shouldRedirect || isTimeout) {
-        console.warn("🚨 Redirect condition met");
-        console.warn("➡ Redirecting to:", Environment.redirectURL);
-
-        localStorage.clear();
-
+        // ⏳ Redirect AFTER toast finishes
         setTimeout(() => {
+          localStorage.clear();
           window.location.href = Environment.redirectURL;
-        }, 100);
+        }, 3000);
       }
 
       return throwError(() => error);
