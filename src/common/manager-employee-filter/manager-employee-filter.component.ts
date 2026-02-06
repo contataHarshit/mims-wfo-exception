@@ -82,7 +82,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     }
     if (
       changes["managerValue"]?.currentValue !==
-      changes["managerValue"]?.previousValue
+      changes["managerValue"]?.previousValue && this.currentView !=='resource'
     ) {
       this.filterEmployeesByManager(this.managerValue);
       return;

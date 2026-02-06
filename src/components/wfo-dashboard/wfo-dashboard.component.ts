@@ -112,6 +112,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   remarks: string = "";
   department: string = "";
   allSelected: boolean = false;
+  currentSortField: string | null = null;
+currentSortOrder: number = 0; // 1 ASC, -1 DESC, 0 NORMAL
 
   ngOnInit(): void {
     this.commonService.setLoading(true);
@@ -227,6 +229,16 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     // Cleanup subscriptions
+    this.filters.managerName = null;
+    this.filters.employeeName = null;
+    console.log("szxddccccccc");
+    if (localStorage.getItem("role") == "ADMIN") {
+      localStorage.setItem("selectedView", "all");
+      this.commonService.selectedView = "all";
+    } else {
+      localStorage.setItem("selectedView", "self");
+      this.commonService.selectedView = "self";
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -271,6 +283,55 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       });
     }
   }
+onCustomSort(event: any) {
+  const field = event.field;
+
+  // If new column clicked → reset order
+  if (this.currentSortField !== field) {
+    this.currentSortField = field;
+    this.currentSortOrder = 1;
+  } else {
+    // cycle ASC → DESC → NORMAL
+    if (this.currentSortOrder === 1) {
+      this.currentSortOrder = -1;
+    } else if (this.currentSortOrder === -1) {
+      this.currentSortOrder = 0;
+    } else {
+      this.currentSortOrder = 1;
+    }
+  }
+
+  // NORMAL STATE → RESET SORT + API CALL
+  if (this.currentSortOrder === 0) {
+    this.resetTableSorting();
+    this.getExceptionRequest(); // reload original order
+    return;
+  }
+
+  // CLIENT SIDE SORT
+  this.exceptionRequests.sort((a: any, b: any) => {
+    let value1 = a[field];
+    let value2 = b[field];
+
+    // Handle nulls
+    if (value1 == null) return -1 * this.currentSortOrder;
+    if (value2 == null) return 1 * this.currentSortOrder;
+
+    // Date handling
+    if (field === "exceptionDate" || field === "submissionDate") {
+      value1 = new Date(value1).getTime();
+      value2 = new Date(value2).getTime();
+    }
+
+    // String compare
+    if (typeof value1 === "string") {
+      return value1.localeCompare(value2) * this.currentSortOrder;
+    }
+
+    // Number compare
+    return (value1 - value2) * this.currentSortOrder;
+  });
+}
 
   // Method to reset table sorting
   private resetTableSorting() {
@@ -489,12 +550,16 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  onLazyLoad(event: any) {
-    this.page = event.first / event.rows + 1;
-    this.limit = event.rows;
+onLazyLoad(event: any) {
+  // ignore sorting lazy event
+  if (event.sortField) return;
 
-    this.getExceptionRequest();
-  }
+  this.page = event.first / event.rows + 1;
+  this.limit = event.rows;
+
+  this.getExceptionRequest();
+}
+
 
   formatDate(date: string): string {
     if (!date) return "-";
@@ -551,10 +616,14 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   toggleSelection(req: any, event: any): void {
     req.checked = event.target.checked;
-    
+
     if (req.checked) {
       // Add to selected requests if not already present
-      if (!this.selectedRequests.find((r: any) => r.exceptionId === req.exceptionId)) {
+      if (
+        !this.selectedRequests.find(
+          (r: any) => r.exceptionId === req.exceptionId,
+        )
+      ) {
         this.selectedRequests.push(req);
       }
     } else {
@@ -703,7 +772,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         req.checked = checked;
       }
     });
-    
+
     // Update selected requests array
     if (checked) {
       this.selectedRequests = this.exceptionRequests.filter(
@@ -711,14 +780,14 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       );
     }
 
-    let allunSelected=true
-    for(let i=0;i<this.selectedRequests.length;i++){
-      if(this.selectedRequests[i].checked){
-        allunSelected=false;
+    let allunSelected = true;
+    for (let i = 0; i < this.selectedRequests.length; i++) {
+      if (this.selectedRequests[i].checked) {
+        allunSelected = false;
       }
     }
-    if(allunSelected){
-      this.selectedRequests=[];
+    if (allunSelected) {
+      this.selectedRequests = [];
     }
   }
   private isRowDisabled(req: any): boolean {
