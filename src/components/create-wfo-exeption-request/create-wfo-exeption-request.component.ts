@@ -538,7 +538,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
 
   getAllowedDateRange(): { minDate: Date; maxDate: Date } {
     const today = new Date();
-    const minDate = addDays(today, -21);
+    const minDate = addDays(today, -35);
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
     const maxDate = endOfMonth(nextMonth);
     return { minDate, maxDate };
