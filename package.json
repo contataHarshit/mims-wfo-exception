@@ -6,6 +6,7 @@
     "start": "ng serve --configuration deployment",
     "build": " ng build --configuration deployment",
     "build:deployment": "ng build --configuration deployment",
+    "build:staging": "ng build --configuration staging",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:Mims-exception-wfo": "node dist/mims-exception-wfo/server/server.mjs"
