@@ -73,7 +73,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     private constants: ConstantService,
     private toastr: ToastrService,
     private ngZone: NgZone,
-  ) {}
+  ) { }
 
   private allExceptionRequests: ExceptionRequest[] = [];
   exceptionRequests: ExceptionRequest[] = [];
@@ -227,9 +227,19 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     // Cleanup subscriptions
+    this.filters.managerName = null;
+    this.filters.employeeName = null;
+    if (localStorage.getItem("role") == "ADMIN") {
+      localStorage.setItem("selectedView", "all");
+      this.commonService.selectedView = "all";
+    } else {
+      localStorage.setItem("selectedView", "self");
+      this.commonService.selectedView = "self";
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
+
 
   // Load employee list from localStorage cache
   private loadEmployeeListFromCache() {
@@ -395,9 +405,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
-    const url = `${
-      this.constants.exceptionRequest
-    }/paginated?${params.toString()}`;
+    const url = `${this.constants.exceptionRequest
+      }/paginated?${params.toString()}`;
 
     this.http
       .getData(url)
@@ -482,8 +491,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           this.isLoadingData = false;
           this.toastr.error(
             err?.error?.error ||
-              err?.error?.errors ||
-              "Failed to fetch data. Please try again.",
+            err?.error?.errors ||
+            "Failed to fetch data. Please try again.",
           );
         },
       });
@@ -505,7 +514,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  onDateChange() {}
+  onDateChange() { }
 
   applyFilter() {
     this.page = 1;
@@ -551,7 +560,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   toggleSelection(req: any, event: any): void {
     req.checked = event.target.checked;
-    
+
     if (req.checked) {
       // Add to selected requests if not already present
       if (!this.selectedRequests.find((r: any) => r.exceptionId === req.exceptionId)) {
@@ -589,8 +598,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       next: (res: any) => {
         if (res.success) {
           this.toastr.success(
-            `${
-              this.selectedRequests.length
+            `${this.selectedRequests.length
             } requests ${status.toLowerCase()} successfully`,
           );
           this.selectedRequests = [];
@@ -684,8 +692,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             error: (err: any) => {
               this.toastr.error(
                 err?.error?.error ||
-                  err?.error?.errors ||
-                  "Error deleting record. Please try again.",
+                err?.error?.errors ||
+                "Error deleting record. Please try again.",
               );
               console.error("DELETE API Error:", err);
             },
@@ -703,7 +711,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         req.checked = checked;
       }
     });
-    
+
     // Update selected requests array
     if (checked) {
       this.selectedRequests = this.exceptionRequests.filter(
@@ -711,14 +719,14 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       );
     }
 
-    let allunSelected=true
-    for(let i=0;i<this.selectedRequests.length;i++){
-      if(this.selectedRequests[i].checked){
-        allunSelected=false;
+    let allunSelected = true
+    for (let i = 0; i < this.selectedRequests.length; i++) {
+      if (this.selectedRequests[i].checked) {
+        allunSelected = false;
       }
     }
-    if(allunSelected){
-      this.selectedRequests=[];
+    if (allunSelected) {
+      this.selectedRequests = [];
     }
   }
   private isRowDisabled(req: any): boolean {
