@@ -57,7 +57,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     private http: HttpService,
     private constants: ConstantService,
     public commonService: CommonService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   // Table data
@@ -194,6 +194,10 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       this.table.multiSortMeta = [];
       this.table.reset();
     }
+
+    // Reset custom sorting state
+    this.currentSortField = "";
+    this.currentSortOrder = 1;
   }
 
   private loadEmployeeListFromCache() {
@@ -260,7 +264,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
         params[key] !== ""
       ) {
         queryParams.push(
-          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
         );
       }
     }
@@ -364,7 +368,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     } else {
       const filterValue = Number(this.deficiencyDays);
       this.hrData = this.allHrData.filter(
-        (rec) => rec.deficiencyDays === filterValue
+        (rec) => rec.deficiencyDays === filterValue,
       );
     }
 
@@ -415,5 +419,26 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     }
     this.toastr.info("Exporting...");
     this.getHrAdminData(true, true);
+  }
+  currentSortField: string = "";
+  currentSortOrder: 1 | -1 = 1;
+  onSortClick(field: keyof HrAdminRecord): void {
+    // Toggle sorting order if same column
+    if (this.currentSortField === field) {
+      this.currentSortOrder = this.currentSortOrder === 1 ? -1 : 1;
+    } else {
+      this.currentSortField = field;
+      this.currentSortOrder = 1;
+    }
+
+    // No date fields here currently, but keeping future-safe
+    const dateFields: string[] = [];
+
+    this.hrData = this.commonService.sortData(
+      this.hrData,
+      field,
+      this.currentSortOrder,
+      dateFields.includes(field as string),
+    );
   }
 }

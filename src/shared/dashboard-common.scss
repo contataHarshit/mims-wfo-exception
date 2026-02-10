@@ -322,3 +322,18 @@
     align-items: center;
   }
 }
+.sortable-icon{
+  cursor: pointer;
+}
+.sortable-icon:hover {
+  color: var(--primary-color);
+  
+}
+.sort-icon-container{
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  width: 150px;
+  height: 30px;
+}

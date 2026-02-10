@@ -456,7 +456,6 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
                 tempHash[this.exceptionRequests[i].status] = true;
               }
             }
-
             if (Object.keys(tempHash).length == 1) {
               if (
                 Object.keys(tempHash)[0] == "REJECTED" ||
@@ -560,10 +559,14 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   toggleSelection(req: any, event: any): void {
     req.checked = event.target.checked;
-    
+
     if (req.checked) {
       // Add to selected requests if not already present
-      if (!this.selectedRequests.find((r: any) => r.exceptionId === req.exceptionId)) {
+      if (
+        !this.selectedRequests.find(
+          (r: any) => r.exceptionId === req.exceptionId,
+        )
+      ) {
         this.selectedRequests.push(req);
       }
     } else {
@@ -712,7 +715,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         req.checked = checked;
       }
     });
-    
+
     // Update selected requests array
     if (checked) {
       this.selectedRequests = this.exceptionRequests.filter(
@@ -720,14 +723,14 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       );
     }
 
-    let allunSelected=true
-    for(let i=0;i<this.selectedRequests.length;i++){
-      if(this.selectedRequests[i].checked){
-        allunSelected=false;
+    let allunSelected = true;
+    for (let i = 0; i < this.selectedRequests.length; i++) {
+      if (this.selectedRequests[i].checked) {
+        allunSelected = false;
       }
     }
-    if(allunSelected){
-      this.selectedRequests=[];
+    if (allunSelected) {
+      this.selectedRequests = [];
     }
   }
   private isRowDisabled(req: any): boolean {
@@ -750,5 +753,26 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   }
   getRowClass(req: any): string {
     return req.checked ? "row-checked" : "";
+  }
+  currentSortField: string = "";
+  currentSortOrder: 1 | -1 = 1;
+
+  sortTableValues(field: keyof ExceptionRequest) {
+    // Toggle order if same field
+    if (this.currentSortField === field) {
+      this.currentSortOrder = this.currentSortOrder === 1 ? -1 : 1;
+    } else {
+      this.currentSortField = field;
+      this.currentSortOrder = 1;
+    }
+
+    const dateFields = ["exceptionDate", "submissionDate"];
+
+    this.exceptionRequests = this.commonService.sortData(
+      this.exceptionRequests,
+      field,
+      this.currentSortOrder,
+      dateFields.includes(field as string),
+    );
   }
 }

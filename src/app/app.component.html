@@ -7,13 +7,10 @@
     </button>
     <div class="select-wrapper"
       *ngIf="(((role == 'MANAGER'|| department ==='HR') &&   role !=='ADMIN' && isDashboardPage) ) || isAttendanceDashboardPage">
-     <div *ngIf="isDashboardPage" class="select-view-wrapper">
-       <label for="" class="approvalView" >Approval View: &nbsp;</label>
       <select [(ngModel)]="commonService.selectedView" (change)="onViewChange($event)" class="styled-select"
-        >
+        *ngIf="isDashboardPage">
         <option value="all" *ngFor="let option of viewOptions" [value]="option.value">{{option.label}}</option>
       </select>
-     </div>
       <select [(ngModel)]="commonService.attendanceView" (change)="onViewChange($event,true)" class="styled-select"
         *ngIf="isAttendanceDashboardPage">
         <option value="all" *ngFor="let option of attendanceViewOptions" [value]="option.value">{{option.label}}

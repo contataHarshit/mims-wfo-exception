@@ -412,4 +412,46 @@ export class CommonService {
       },
     });
   }
+  // ============================================
+  // COMMON SORT FUNCTION (GENERIC)
+  // ============================================
+
+  sortData<T>(
+    data: T[],
+    field: keyof T,
+    order: 1 | -1,
+    isDate: boolean = false,
+  ): T[] {
+    if (!data || !field) return data;
+
+    return [...data].sort((a: any, b: any) => {
+      let value1 = a[field];
+      let value2 = b[field];
+
+      // Handle null / undefined
+      if (value1 == null) return 1;
+      if (value2 == null) return -1;
+
+      // DATE SORT
+      if (isDate) {
+        const d1 = new Date(value1).getTime();
+        const d2 = new Date(value2).getTime();
+        return (d1 - d2) * order;
+      }
+
+      // NUMBER SORT
+      if (!isNaN(value1) && !isNaN(value2)) {
+        return (Number(value1) - Number(value2)) * order;
+      }
+
+      // STRING SORT (case insensitive)
+      value1 = value1.toString().toLowerCase();
+      value2 = value2.toString().toLowerCase();
+
+      if (value1 < value2) return -1 * order;
+      if (value1 > value2) return 1 * order;
+
+      return 0;
+    });
+  }
 }

@@ -70,54 +70,81 @@
               (change)="selectAllChange($event)" [(ngModel)]="allSelected">
           </th>
 
-          <th pSortableColumn="employeeId">
-            Employee Id
-            <p-sortIcon field="employeeId"></p-sortIcon>
+          <th>
+            <div class="sort-icon-container">
+              <p>Employee Id</p>
+              <p-sortIcon field="employeeId" class="sortable-icon" (click)="sortTableValues('employeeId')"></p-sortIcon>
+
+            </div>
           </th>
 
-          <th pSortableColumn="employeeName">
-            Employee Name
-            <p-sortIcon field="employeeName"></p-sortIcon>
+          <th>
+            <div class="sort-icon-container">
+              <p>Employee Name</p>
+              <p-sortIcon field="employeeName" class="sortable-icon"
+                (click)="sortTableValues('employeeName')"></p-sortIcon>
+            </div>
           </th>
 
-          <th pSortableColumn="designation">
-            Designation
-            <p-sortIcon field="designation"></p-sortIcon>
+          <th>
+            <div class="sort-icon-container">
+              <p>Designation</p>
+              <p-sortIcon field="designation" class="sortable-icon"
+                (click)="sortTableValues('designation')"></p-sortIcon>
+            </div>
           </th>
 
-          <th pSortableColumn="managerName">
-            Manager Name
-            <p-sortIcon field="managerName" *ngIf="selectedView==='all'"></p-sortIcon>
+          <th>
+            <div class="sort-icon-container">
+              <p>Manager Name</p>
+              <p-sortIcon field="managerName" class="sortable-icon"
+                (click)="sortTableValues('managerName')"></p-sortIcon>
+            </div>
           </th>
 
-          <th *ngIf="showApprovedColumn()" pSortableColumn="approvedBy">
-            Approved By
-            <p-sortIcon field="approvedBy"></p-sortIcon>
+          <th *ngIf="showApprovedColumn()">
+            <div  class="sort-icon-container">
+              <p>Approved By</p>
+              <p-sortIcon field="approvedBy" class="sortable-icon" (click)="sortTableValues('approvedBy')"></p-sortIcon>
+            </div>
           </th>
 
-          <th *ngIf="showRejectedColumn()" pSortableColumn="rejectedBy">
-            Rejected By
-            <p-sortIcon field="rejectedBy"></p-sortIcon>
+          <th *ngIf="showRejectedColumn()" >
+            <div class="sort-icon-container">
+              <p>Rejected By</p>
+              <p-sortIcon field="rejectedBy" class="sortable-icon" (click)="sortTableValues('rejectedBy')"></p-sortIcon>
+            </div>
           </th>
 
-          <th pSortableColumn="exceptionDate">
-            Exception Date
-            <p-sortIcon field="exceptionDate"></p-sortIcon>
+          <th>
+            <div  class="sort-icon-container">
+              <p>Exception Date</p>
+              <p-sortIcon field="exceptionDate" class="sortable-icon"
+                (click)="sortTableValues('exceptionDate')"></p-sortIcon>
+            </div>
           </th>
 
-          <th pSortableColumn="primaryReason">
-            Reason
-            <p-sortIcon field="primaryReason"></p-sortIcon>
+          <th>
+            <div class="sort-icon-container">
+              <p>Primary Reason</p>
+              <p-sortIcon field="primaryReason" class="sortable-icon"
+                (click)="sortTableValues('primaryReason')"></p-sortIcon>
+            </div>
           </th>
 
-          <th pSortableColumn="submissionDate">
-            Submission Date
-            <p-sortIcon field="submissionDate"></p-sortIcon>
+          <th>
+            <div class="sort-icon-container">
+              <p>Submission Date</p>
+              <p-sortIcon field="submissionDate" class="sortable-icon"
+                (click)="sortTableValues('submissionDate')"></p-sortIcon>
+            </div>
           </th>
 
-          <th pSortableColumn="status">
-            Status
-            <p-sortIcon field="status"></p-sortIcon>
+          <th >
+            <div class="sort-icon-container">
+              <p>Status</p>
+              <p-sortIcon field="status" class="sortable-icon" (click)="sortTableValues('status')"></p-sortIcon>
+            </div>
           </th>
 
           <th *ngIf="selectedView === 'self'">Action</th>

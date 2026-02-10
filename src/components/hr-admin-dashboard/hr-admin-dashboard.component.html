@@ -76,63 +76,90 @@
         <!-- ================= SCROLLABLE HEADER ================= -->
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="employeeNumber" style="min-width:150px">
-              Employee Number
-              <p-sortIcon field="employeeNumber"></p-sortIcon>
+            <th style="min-width:150px">
+              <div class="sort-icon-container">
+                <p>Employee Id</p>
+                <p-sortIcon field="employeeNumber" (click)="onSortClick('employeeNumber')"
+                  class="sortable-icon"></p-sortIcon>
+              </div>
             </th>
-            <th pSortableColumn="employeeName" style="min-width:200px">
-              Employee Name
-              <p-sortIcon field="employeeName"></p-sortIcon>
+            <th style="min-width:200px">
+              <div class="sort-icon-container">
+                Employee Name
+                <p-sortIcon field="employeeName" (click)="onSortClick('employeeName')"
+                  class="sortable-icon"></p-sortIcon>
 
+              </div>
             </th>
-            <th pSortableColumn="designation" style="min-width:150px">
-              Designation
-              <p-sortIcon field="designation"></p-sortIcon>
-            </th>
+            <th style="min-width:150px">
+              <div class="sort-icon-container">
+                Designation
+                <p-sortIcon field="designation" (click)="onSortClick('designation')" class="sortable-icon"></p-sortIcon>
+              </div>
 
-            <th pSortableColumn="managerName" style="min-width:180px">
-              Manager Name
-              <p-sortIcon field="managerName"></p-sortIcon>
-            </th>
+            <th style="min-width:180px">
+              <div class="sort-icon-container">
+                Manager Name
+                <p-sortIcon field="managerName" (click)="onSortClick('managerName')" class="sortable-icon"></p-sortIcon>
 
-            <th pSortableColumn="workingDays" style="min-width:120px">
-              Working Days
-              <p-sortIcon field="workingDays"></p-sortIcon>
-            </th>
-
-            <th pSortableColumn="presentDays" style="min-width:120px">
-              Present Days
-              <p-sortIcon field="presentDays"></p-sortIcon>
-            </th>
-
-            <th pSortableColumn="leaveDays" style="min-width:120px">
-              Leave Days
-              <p-sortIcon field="leaveDays"></p-sortIcon>
+              </div>
             </th>
 
-            <th pSortableColumn="TOTAL" style="min-width:150px">
-              Applied Exceptions
-              <p-sortIcon field="TOTAL"></p-sortIcon>
+            <th style="min-width:120px">
+              <div class="sort-icon-container">
+                Working Days
+                <p-sortIcon field="workingDays" (click)="onSortClick('workingDays')" class="sortable-icon"></p-sortIcon>
+              </div>
             </th>
 
-            <th pSortableColumn="APPROVED" style="min-width:160px">
-              Accepted Exceptions
-              <p-sortIcon field="APPROVED"></p-sortIcon>
+            <th style="min-width:120px">
+              <div class="sort-icon-container">
+                Present Days
+                <p-sortIcon field="presentDays" (click)="onSortClick('presentDays')" class="sortable-icon"></p-sortIcon>
+              </div>
             </th>
 
-            <th pSortableColumn="REJECTED" style="min-width:160px">
-              Rejected Exceptions
-              <p-sortIcon field="REJECTED"></p-sortIcon>
+            <th style="min-width:120px">
+              <div class="sort-icon-container">
+                Leave Days
+                <p-sortIcon field="leaveDays" (click)="onSortClick('leaveDays')" class="sortable-icon"></p-sortIcon>
+              </div>
             </th>
 
-            <th pSortableColumn="PENDING" style="min-width:150px">
-              Pending Exceptions
-              <p-sortIcon field="PENDING"></p-sortIcon>
+            <th style="min-width:150px">
+              <div class="sort-icon-container">
+                Total Exceptions
+                <p-sortIcon field="TOTAL" (click)="onSortClick('TOTAL')" class="sortable-icon"></p-sortIcon>
+              </div>
             </th>
 
-            <th pSortableColumn="deficiencyDays" style="min-width:140px">
-              Deficiency Days
-              <p-sortIcon field="deficiencyDays"></p-sortIcon>
+            <th style="min-width:160px">
+              <div class="sort-icon-container">
+                Approved Exceptions
+                <p-sortIcon field="APPROVED" (click)="onSortClick('APPROVED')" class="sortable-icon"></p-sortIcon>
+              </div>
+            </th>
+
+            <th style="min-width:160px">
+              <div class="sort-icon-container">
+                Rejected Exceptions
+                <p-sortIcon field="REJECTED" (click)="onSortClick('REJECTED')" class="sortable-icon"></p-sortIcon>
+              </div>
+            </th>
+
+            <th style="min-width:150px">
+              <div class="sort-icon-container">
+                Pending Exceptions
+                <p-sortIcon field="PENDING" (click)="onSortClick('PENDING')" class="sortable-icon"></p-sortIcon>
+              </div>
+            </th>
+
+            <th style="min-width:140px">
+              <div class="sort-icon-container">
+                Deficiency Days
+                <p-sortIcon field="deficiencyDays" (click)="onSortClick('deficiencyDays')"
+                  class="sortable-icon"></p-sortIcon>
+              </div>
             </th>
           </tr>
         </ng-template>
