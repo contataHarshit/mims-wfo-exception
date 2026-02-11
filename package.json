@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --configuration deployment",
+    "start": "ng serve",
     "build": " ng build --configuration deployment",
     "build:deployment": "ng build --configuration deployment",
     "build:staging": "ng build --configuration staging",

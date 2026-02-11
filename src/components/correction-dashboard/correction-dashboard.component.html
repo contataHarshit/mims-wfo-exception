@@ -3,8 +3,27 @@
   <!-- FILTER CARD -->
   <div class="dashboard-filter">
 
-    <app-manager-employee-filter [(managerValue)]="filters.manager" [(employeeValue)]="filters.employee">
-    </app-manager-employee-filter>
+    <div class="form-grid">
+
+      <div>
+        <app-manager-employee-filter [(managerValue)]="filters.manager" [(employeeValue)]="filters.employee">
+        </app-manager-employee-filter>
+      </div>
+
+      <div class="form-row">
+        <label>From date</label>
+        <input type="date" class="date-input" [(ngModel)]="filters.fromDate" [max]="maxFromDate" dateFormat="dd/mm/yy"
+          (change)="onDateChange()" />
+      </div>
+
+      <div class="form-row">
+        <label>To date</label>
+        <input type="date" class="date-input" [(ngModel)]="filters.toDate" [min]="minToDate"
+          (change)="onDateChange()" />
+      </div>
+
+    </div>
+
 
 
     <app-common-form-action (submit)="applyFilter()" (reset)="resetFilters()">
@@ -33,6 +52,7 @@
           <th>Exception Date</th>
           <th>Submission Date</th>
           <th>Status</th>
+          <th>Rejected By</th>
         </tr>
       </ng-template>
 
@@ -52,6 +72,7 @@
           <td>
             <span class="status-rejected">REJECTED</span>
           </td>
+          <td>{{ row.rejectedBy || 'NA' }}</td>
         </tr>
       </ng-template>
 

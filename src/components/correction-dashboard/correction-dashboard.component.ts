@@ -11,7 +11,7 @@ import { ConstantService } from "../../service/constant.service";
 import { CommonService } from "../../service/common.service";
 import { Subject, takeUntil } from "rxjs";
 import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-filter/manager-employee-filter.component";
-
+import { CalendarModule } from "primeng/calendar";
 interface CorrectionRequest {
   id: number;
   employeeId: string;
@@ -20,6 +20,7 @@ interface CorrectionRequest {
   managerName: string;
   exceptionDate: string;
   submissionDate: string;
+  rejectedBy?: string;
   checked?: boolean;
 }
 
@@ -34,6 +35,7 @@ interface CorrectionRequest {
     CommonSelectComponent,
     CommonFormActionComponent,
     ManagerEmployeeFilterComponent,
+    CalendarModule
   ],
   templateUrl: "./correction-dashboard.component.html",
   styleUrl: "../../shared/dashboard-common.scss",
@@ -48,16 +50,23 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     private http: HttpService,
     private constants: ConstantService,
     private commonService: CommonService
-  ) {}
+  ) { }
 
   /* ---------------- FILTERS ---------------- */
   filters = {
     manager: null as any,
     employee: null as any,
+    fromDate: null as string | null,
+    toDate: null as string | null,
+
   };
 
   managerList: any[] = [];
   employeeList: any[] = [];
+  minFromDate: string = "";
+  maxFromDate: string = "";
+  minToDate: string = "";
+  maxToDate: string = "";
 
   /* ---------------- TABLE ---------------- */
   requests: CorrectionRequest[] = [];
@@ -72,6 +81,7 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadDropdownData();
+    this.setDefaultDateRange();
     this.loadRejectedRequests();
   }
 
@@ -136,8 +146,17 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     if (this.filters.employee?.value) {
       params.set("employeeNumber", this.filters.employee.value);
     }
+    if (this.filters.fromDate) {
+      params.set("fromDate", this.filters.fromDate);
+    }
+
+    if (this.filters.toDate) {
+      params.set("toDate", this.filters.toDate);
+    }
+
 
     const url = `${this.constants.auditExceptionRequest}?${params.toString()}`;
+    console.log("url--------", url);
 
     this.http.getData(url).subscribe({
       next: (res: any) => {
@@ -157,6 +176,7 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
           managerName: item.manager,
           exceptionDate: this.formatDate(item.selectedDate),
           submissionDate: this.formatDate(item.updatedDate),
+          rejectedBy: item.rejectedBy ?? "NA",
           checked: false,
         }));
 
@@ -185,6 +205,8 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     this.filters = {
       manager: null,
       employee: null,
+      fromDate: null,
+      toDate: null,
     };
     this.page = 1;
     this.loadRejectedRequests();
@@ -229,14 +251,13 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
       .postData({
         exceptionIds,
         status: "APPROVED",
-      },this.constants.auditExceptionRequest + "/approve")
+      }, this.constants.auditExceptionRequest + "/approve")
       .subscribe({
         next: (res: any) => {
           this.commonService.setLoading(false);
           if (res.success) {
             this.toastr.success(
-              `${exceptionIds.length} request${
-                exceptionIds.length > 1 ? "s" : ""
+              `${exceptionIds.length} request${exceptionIds.length > 1 ? "s" : ""
               } approved successfully`
             );
             this.loadRejectedRequests();
@@ -284,4 +305,60 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
   onEmployeeChange(value: any) {
     this.filters.employee = value;
   }
+  private formatDateForInput(date: Date | string | null): string {
+    if (!date) return "";
+    const d = typeof date === "string" ? new Date(date) : date;
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private updateDateLimits(): void {
+    if (this.filters.toDate) {
+      this.maxFromDate = this.filters.toDate;
+    } else {
+      this.maxFromDate = "";
+    }
+
+    if (this.filters.fromDate) {
+      this.minToDate = this.filters.fromDate;
+    } else {
+      this.minToDate = "";
+    }
+  }
+
+  onDateChange(): void {
+    if (this.filters.fromDate && this.filters.toDate) {
+      const fromDate = new Date(this.filters.fromDate);
+      const toDate = new Date(this.filters.toDate);
+
+      if (fromDate > toDate) {
+        this.toastr.error("From date cannot be greater than To date");
+        this.filters.fromDate = null;
+        this.filters.toDate = null;
+        return;
+      }
+    }
+
+    this.updateDateLimits();
+  }
+  private setDefaultDateRange(): void {
+    const today = new Date();
+
+    // To Date = today
+    const toDate = new Date(today);
+
+    // From Date = last 30 days
+    const fromDate = new Date(today);
+    fromDate.setDate(today.getDate() - 30);
+
+    this.filters.fromDate = this.formatDateForInput(fromDate);
+    this.filters.toDate = this.formatDateForInput(toDate);
+
+    this.updateDateLimits();
+  }
+
 }
