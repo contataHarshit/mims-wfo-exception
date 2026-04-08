@@ -105,8 +105,8 @@ export class CsvUploadComponent {
     const diff =
       Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    if (diff > 35) {
-      this.toastr.error("Maximum allowed date range is 35 days.");
+    if (diff > 99) {
+      this.toastr.error("Maximum allowed date range is 99 days.");
       this.form.patchValue({ toDate: null });
       this.dayCount = 0;
       return;

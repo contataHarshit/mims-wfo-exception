@@ -108,8 +108,8 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   get rangeLabel(): string {
     const start = this.weekOffset + 1;
-    const end = Math.min(this.weekOffset + 7, 35);
-    return `Days ${start}–${end} of 35`;
+    const end = Math.min(this.weekOffset + 7, 99);
+    return `Days ${start}–${end} of 99`;
   }
 
   canGoPrevious(): boolean {
