@@ -87,3 +87,22 @@
   </div>
 
 </div>
+<style>
+  ::ng-deep .dashboard-table .p-datatable-thead > tr > th,
+::ng-deep .dashboard-table .p-datatable-tbody > tr > td {
+  width: auto !important;
+  min-width: unset !important;
+  max-width: unset !important;
+}
+
+/* 🔥 Force table to fit screen */
+::ng-deep .dashboard-table table {
+  width: 100% !important;
+  table-layout: fixed;
+}
+
+/* 🔥 Remove horizontal scroll */
+::ng-deep .dashboard-table .p-datatable-wrapper {
+  overflow-x: hidden !important;
+}
+</style>
