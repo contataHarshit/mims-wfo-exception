@@ -35,8 +35,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
   @Output() managerValueChange = new EventEmitter<any>();
   @Output() employeeValueChange = new EventEmitter<any>();
-  @Input() gap: string = "10vw"; // ✅ DEFAULT
-
+  @Input() gap: string = "1vw"; // ✅ DEFAULT
   managerList: any[] = [];
   employeeList: any[] = [];
   private allEmployees: any[] = [];
@@ -82,7 +81,8 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     }
     if (
       changes["managerValue"]?.currentValue !==
-      changes["managerValue"]?.previousValue && this.currentView !=='resource'
+        changes["managerValue"]?.previousValue &&
+      this.currentView !== "resource"
     ) {
       this.filterEmployeesByManager(this.managerValue);
       return;

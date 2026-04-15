@@ -9,7 +9,10 @@
   padding: 1.25rem 2rem;
   background-color: #f4f6f8;
   min-height: calc(100vh - 60px);
-  font-family: 'Segoe UI', sans-serif;
+  font-family: Segoe UI, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* ================= FILTER CARD ================= */
@@ -20,6 +23,7 @@
   border-radius: 10px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 1rem;
+  width: 90%;
 }
 
 .dashboard-filter .form-grid {
@@ -32,10 +36,11 @@
 .dashboard-filter .form-row {
   display: flex;
   flex-direction: column;
+  width: 12vw;
 }
 
 .dashboard-filter label {
-  font-size: 13px;
+  font-size: 0.85rem;
   font-weight: bold;
   margin-bottom: 6px;
   color: #374151;
@@ -44,7 +49,9 @@
 .dashboard-filter input,
 .dashboard-filter p-dropdown,
 .dashboard-filter p-calendar {
-  width: 20vw !important;
+  width: 12vw !important;
+  font-size: 0.7rem;
+  height: 38px;
 }
 
 /* ---- Filter Actions ---- */
@@ -63,6 +70,7 @@
   border-radius: 10px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  width: 90%;
 }
 
 /* ================= ACTION BAR ================= */
@@ -71,6 +79,7 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 1rem;
+  width: 100%;
 }
 
 /* ================= PRIME TABLE ================= */
@@ -84,7 +93,7 @@
     z-index: 120;
     background-color: #f1f1f1;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 0.7rem;
     text-align: center;
     border: 1px solid #e5e7eb;
     padding: 10px;
@@ -98,11 +107,12 @@
     text-align: center;
     vertical-align: middle;
     border: 1px solid #e5e7eb;
-    font-size: 13px;
+    font-size: 0.7rem;
     padding: 10px;
     width: 180px;
     min-width: 180px;
     max-width: 180px;
+    height: 1vh;
   }
 
   /* Row colors */
@@ -127,12 +137,10 @@
 /* ================= TABLE HEIGHT (IMPORTANT) ================= */
 
 /* ✅ Fits more rows on one screen */
-::ng-deep .dashboard-table .p-datatable-wrapper {
-  max-height: 70vh !important;
-}
+
 
 ::ng-deep .dashboard-table .p-datatable-scrollable-body {
-  max-height: 70vh !important;
+  // max-height: 70vh !important;
   overflow-y: auto !important;
 }
 
@@ -143,7 +151,7 @@
 .status-rejected {
   padding: 4px 12px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 0.7rem;
   font-weight: 600;
   display: inline-block;
 }
@@ -199,7 +207,7 @@
 
 .filter-row {
   display: flex;
-  gap: 10vw;
+  gap: 1vw;
 }
 
 /* EXACTLY 3 PER ROW */
@@ -213,8 +221,7 @@
 }
 
 /* Inputs consistency */
-.dashboard-filter input,
-.dashboard-filter app-common-select {
+.dashboard-filter input {
   width: 100%;
 }
 
@@ -238,13 +245,16 @@
 }
 
 /* ================= DATE INPUT FIX ================= */
+p {
+  font-size: 0.7rem !important;
+}
 
 .date-input {
   width: 100%;
   height: 40px;
   /* SAME as dropdowns */
   padding: 0 12px;
-  font-size: 14px;
+  font-size: 0.85rem;
   font-family: inherit;
 
   border: 1px solid #d1d5db;
@@ -307,6 +317,7 @@
   overflow-wrap: anywhere;
   /* modern browsers */
   max-width: 250px;
+  height: 1vh;
   /* optional: controls column width */
 
 }
@@ -322,14 +333,17 @@
     align-items: center;
   }
 }
-.sortable-icon{
+
+.sortable-icon {
   cursor: pointer;
 }
+
 .sortable-icon:hover {
   color: var(--primary-color);
-  
+
 }
-.sort-icon-container{
+
+.sort-icon-container {
   display: flex;
   align-items: flex-start;
   justify-content: center;

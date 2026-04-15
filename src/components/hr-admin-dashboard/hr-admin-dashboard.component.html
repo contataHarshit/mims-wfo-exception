@@ -2,8 +2,7 @@
 <div class="dashboard-page">
   <!-- FILTER SECTION -->
   <div class="dashboard-filter">
-    <div class="form-grid"
-      style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem 1.25rem; align-items: end;">
+    <div style="display: flex;gap: 2vw;">
       <!-- Manager + Employee (takes 1 column but has 2 inputs internally) -->
       <div>
         <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
@@ -35,10 +34,12 @@
 
   <!-- EXPORT AND DEFICIENCY FILTER ROW -->
   <div class="action-bar">
-    <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()">
+    <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="exportToExcel()"
+      style="height: 37px; font-size: 0.7rem; align-self: flex-start; margin-left: 5%;">
     </button>
 
-    <div class="deficiency-filter-wrapper" style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+    <div class="deficiency-filter-wrapper"
+      style="display: flex; align-items: center; gap: 12px; margin-left: auto; margin-right: 5%;">
       <label class="deficiency-label" style="font-weight: 500; font-size: 14px; white-space: nowrap;">Filter by
         Deficiency Days:</label>
       <div class="select-wrapper" style="position: relative; min-width: 180px;">

@@ -3,43 +3,45 @@
   <div class="dashboard-filter">
 
     <!-- ROW 1 -->
-    <div class="filter-row ">
-      <div class="filter-span-2">
-        <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
-          [managerDisabled]="selectedView !== 'all'" [employeeDisabled]="selectedView === 'self'">
-        </app-manager-employee-filter>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5vw; "[ngStyle]="{'justify-content': selectedView==='self' ? 'left' : 'space-between'}">
+      <div class="filter-row ">
+        <div class="filter-span-2">
+          <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
+            [managerDisabled]="selectedView !== 'all'" [employeeDisabled]="selectedView === 'self'">
+          </app-manager-employee-filter>
+        </div>
+
+        <div class="form-row">
+          <label>Status</label>
+          <app-common-select [options]="statusList" [(value)]="filters.status" (valueChange)="onStatusChange($event)"
+            placeholder="Select Status">
+          </app-common-select>
+        </div>
+
+
       </div>
+      <br>
+      <!-- ROW 2 -->
+      <div class="filter-row">
+        <div class="form-row">
+          <label>From date</label>
+          <input type="date" class="date-input" [(ngModel)]="filters.fromDate" (change)="onDateChange()"
+            [max]="filters.toDate" />
+        </div>
 
-      <div class="form-row">
-        <label>Status</label>
-        <app-common-select [options]="statusList" [(value)]="filters.status" (valueChange)="onStatusChange($event)"
-          placeholder="Select Status">
-        </app-common-select>
-      </div>
-
-
-    </div>
-    <br>
-    <!-- ROW 2 -->
-    <div class="filter-row">
-      <div class="form-row">
-        <label>From date</label>
-        <input type="date" class="date-input" [(ngModel)]="filters.fromDate" (change)="onDateChange()"
-          [max]="filters.toDate" />
-      </div>
-
-      <div class="form-row">
-        <label>To date</label>
-        <input type="date" class="date-input" [(ngModel)]="filters.toDate" (change)="onDateChange()"
-          [min]="filters.fromDate" />
-      </div>
+        <div class="form-row">
+          <label>To date</label>
+          <input type="date" class="date-input" [(ngModel)]="filters.toDate" (change)="onDateChange()"
+            [min]="filters.fromDate" />
+        </div>
 
 
-      <div class="form-row" *ngIf="selectedView !== 'self'">
-        <label>Reason</label>
-        <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
-          style="width: 100%;">
-        </app-common-select>
+        <div class="form-row" *ngIf="selectedView !== 'self'">
+          <label>Reason</label>
+          <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
+            style="width: 100%;">
+          </app-common-select>
+        </div>
       </div>
     </div>
 
@@ -53,18 +55,37 @@
   </div>
 
 
-  <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="export()">
+  <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="export()"
+    style="height: 37px; font-size: 0.7rem;align-self: flex-start; margin-left: 5%;">
   </button>
   <!-- TABLE SECTION -->
   <div class="dashboard-table-card" style="margin-top: 20px;">
     <p-table #dt [value]="exceptionRequests" [paginator]="true" [rows]="limit" [totalRecords]="totalRecords"
       [rowsPerPageOptions]="[10, 20, 50]" scrollable="true" scrollHeight="50vh" class="dashboard-table"
-      [responsiveLayout]="'scroll'" class="dashboard-table" sortMode="multiple" (onLazyLoad)="onLazyLoad($event)"
-      [lazy]="true">
+      [responsiveLayout]="'scroll'" sortMode="multiple" (onLazyLoad)="onLazyLoad($event)" [lazy]="true">
+
+      <!-- ✅ COLGROUP FIX: Controls actual rendered column widths in PrimeNG scrollable table -->
+      <ng-template pTemplate="colgroup">
+        <colgroup>
+          <col *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')"
+            style="width: 60px; min-width: 60px; max-width: 60px;">
+          <col style="width: 180px; min-width: 180px;"><!-- Employee Id -->
+          <col style="width: 180px; min-width: 180px;"><!-- Employee Name -->
+          <col style="width: 180px; min-width: 180px;"><!-- Designation -->
+          <col style="width: 180px; min-width: 180px;"><!-- Manager Name -->
+          <col *ngIf="showApprovedColumn()" style="width: 180px; min-width: 180px;"><!-- Approved By -->
+          <col *ngIf="showRejectedColumn()" style="width: 180px; min-width: 180px;"><!-- Rejected By -->
+          <col style="width: 180px; min-width: 180px;"><!-- Exception Date -->
+          <col style="width: 180px; min-width: 180px;"><!-- Primary Reason -->
+          <col style="width: 180px; min-width: 180px;"><!-- Submission Date -->
+          <col style="width: 180px; min-width: 180px;"><!-- Status -->
+          <col *ngIf="selectedView === 'self'" style="width: 60px; min-width: 60px;max-width: 60px;"><!-- Action -->
+        </colgroup>
+      </ng-template>
 
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 60px;" *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
+          <th *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
             <input type="checkbox"
               *ngIf="!disableSelectAll && (selectedView!=='resource' || filters?.status?.value!=='APPROVED')"
               (change)="selectAllChange($event)" [(ngModel)]="allSelected">
@@ -74,7 +95,6 @@
             <div class="sort-icon-container">
               <p>Employee Id</p>
               <p-sortIcon field="employeeId" class="sortable-icon" (click)="sortTableValues('employeeId')"></p-sortIcon>
-
             </div>
           </th>
 
@@ -103,13 +123,13 @@
           </th>
 
           <th *ngIf="showApprovedColumn()">
-            <div  class="sort-icon-container">
+            <div class="sort-icon-container">
               <p>Approved By</p>
               <p-sortIcon field="approvedBy" class="sortable-icon" (click)="sortTableValues('approvedBy')"></p-sortIcon>
             </div>
           </th>
 
-          <th *ngIf="showRejectedColumn()" >
+          <th *ngIf="showRejectedColumn()">
             <div class="sort-icon-container">
               <p>Rejected By</p>
               <p-sortIcon field="rejectedBy" class="sortable-icon" (click)="sortTableValues('rejectedBy')"></p-sortIcon>
@@ -117,7 +137,7 @@
           </th>
 
           <th>
-            <div  class="sort-icon-container">
+            <div class="sort-icon-container">
               <p>Exception Date</p>
               <p-sortIcon field="exceptionDate" class="sortable-icon"
                 (click)="sortTableValues('exceptionDate')"></p-sortIcon>
@@ -140,21 +160,24 @@
             </div>
           </th>
 
-          <th >
+          <th>
             <div class="sort-icon-container">
               <p>Status</p>
               <p-sortIcon field="status" class="sortable-icon" (click)="sortTableValues('status')"></p-sortIcon>
             </div>
           </th>
 
-          <th *ngIf="selectedView === 'self'">Action</th>
+          <th *ngIf="selectedView === 'self'"
+            style="width: 80px !important; min-width: 80px !important; max-width: 80px !important;">Action</th>
         </tr>
       </ng-template>
 
 
       <ng-template pTemplate="body" let-req>
         <tr [ngClass]="req.checked ? 'row-checked' : ''">
-          <td style="text-align: center;" *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
+          <!-- ✅ FIXED: merged duplicate style attributes into one -->
+          <td *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')"
+            style="width: 60px !important; min-width: 60px !important; max-width: 60px !important; text-align: center;">
             <input type="checkbox" [checked]="req.checked"
               [disabled]="((req.status === 'APPROVED' && role!='ADMIN' && role!=='MANAGER' && department !=='HR' ) || (department!=='HR' && role!= 'ADMIN' && selectedView!=='resource')) ||(selectedView=='resource' && req.status=='APPROVED') "
               (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
@@ -177,13 +200,11 @@
               {{ req.status }}
             </span>
           </td>
-          <!-- <td>{{ req.remarks }}</td> -->
-          <td *ngIf="selectedView === 'self'">
+          <td *ngIf="selectedView === 'self'"
+            style="width: 80px !important; min-width: 80px !important; max-width: 80px !important;">
             <div>
-              <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" class="trash-btn"
-                icon="pi pi-trash" class="delete-btn" pButton type="button">
-
-
+              <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" icon="pi pi-trash"
+                class="delete-btn" pButton type="button">
               </button>
             </div>
           </td>
@@ -192,8 +213,7 @@
 
       <ng-template pTemplate="paginatorleft">
         <span>
-          <!-- Total Records: {{ totalRecords }} -->
-          <span *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE')">
+          <span *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
             Selected Records: {{ selectedRequests.length }}
           </span>
         </span>
@@ -203,7 +223,7 @@
   </div>
 
   <!-- BULK ACTION BUTTONS -->
-  <div class="action-buttons" style="display: flex; gap: 20px; margin-top: 20px; justify-content: space-between;"
+  <div class="action-buttons" style="display: flex; width: 90%; margin-top: 20px; justify-content: space-between;"
     *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all'))  ">
     <div style="flex: 1;">
       <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
@@ -215,33 +235,24 @@
     </div>
   </div>
 </div>
+
 <style>
   .delete-btn {
     background: #ff4d4f !important;
     border: none;
     color: #fff;
-
-    &:hover {
-      background: #d9363e !important;
-    }
-    
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
   }
-/* 🔥 Override global fixed column width */
-::ng-deep .dashboard-table .p-datatable-thead > tr > th,
-::ng-deep .dashboard-table .p-datatable-tbody > tr > td {
-  width: auto !important;
-  min-width: unset !important;
-  max-width: unset !important;
-}
 
-/* 🔥 Force table to fit screen */
-::ng-deep .dashboard-table table {
-  width: 100% !important;
-  table-layout: fixed;
-}
+  .delete-btn:hover {
+    background: #d9363e !important;
+  }
 
-/* 🔥 Remove horizontal scroll */
-::ng-deep .dashboard-table .p-datatable-wrapper {
-  overflow-x: hidden !important;
-}
+  ::ng-deep .dashboard-table .p-datatable-thead>tr>th {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
 </style>
