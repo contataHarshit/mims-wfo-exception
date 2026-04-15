@@ -52,6 +52,8 @@ body {
 .p-button.p-button-success {
   background-color: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
+  height: 37px;
+  font-size: 0.7rem;
 }
 
 .p-dropdown:not(.p-disabled):hover {
@@ -75,6 +77,8 @@ body {
   /* subtle shadow */
   cursor: pointer;
   transition: all 0.3s ease;
+  height: 37px;
+  font-size: 0.7rem;
   /* smooth hover transition */
 }
 

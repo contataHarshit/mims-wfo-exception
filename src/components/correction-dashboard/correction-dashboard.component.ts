@@ -35,7 +35,7 @@ interface CorrectionRequest {
     CommonSelectComponent,
     CommonFormActionComponent,
     ManagerEmployeeFilterComponent,
-    CalendarModule
+    CalendarModule,
   ],
   templateUrl: "./correction-dashboard.component.html",
   styleUrl: "../../shared/dashboard-common.scss",
@@ -49,8 +49,8 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private http: HttpService,
     private constants: ConstantService,
-    private commonService: CommonService
-  ) { }
+    private commonService: CommonService,
+  ) {}
 
   /* ---------------- FILTERS ---------------- */
   filters = {
@@ -58,7 +58,6 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     employee: null as any,
     fromDate: null as string | null,
     toDate: null as string | null,
-
   };
 
   managerList: any[] = [];
@@ -120,7 +119,7 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     // ---------- EMPLOYEE FALLBACK (VALID) ----------
     if (!this.employeeList.length) {
       const cachedEmployees = JSON.parse(
-        localStorage.getItem("allEmployeeData") || "[]"
+        localStorage.getItem("allEmployeeData") || "[]",
       );
 
       this.employeeList = cachedEmployees.map((e: any) => ({
@@ -153,7 +152,6 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     if (this.filters.toDate) {
       params.set("toDate", this.filters.toDate);
     }
-
 
     const url = `${this.constants.auditExceptionRequest}?${params.toString()}`;
     console.log("url--------", url);
@@ -208,7 +206,14 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
       fromDate: null,
       toDate: null,
     };
+
+    // ✅ Reapply default (last 30 days)
+    this.setDefaultDateRange();
+
     this.page = 1;
+    this.selectedRequests = [];
+    this.allSelected = false;
+
     this.loadRejectedRequests();
   }
 
@@ -221,7 +226,7 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
       this.selectedRequests.push(row);
     } else {
       this.selectedRequests = this.selectedRequests.filter(
-        (r) => r.id !== row.id
+        (r) => r.id !== row.id,
       );
       this.allSelected = false;
     }
@@ -248,17 +253,21 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
     this.commonService.setLoading(true);
 
     this.http
-      .postData({
-        exceptionIds,
-        status: "APPROVED",
-      }, this.constants.auditExceptionRequest + "/approve")
+      .postData(
+        {
+          exceptionIds,
+          status: "APPROVED",
+        },
+        this.constants.auditExceptionRequest + "/approve",
+      )
       .subscribe({
         next: (res: any) => {
           this.commonService.setLoading(false);
           if (res.success) {
             this.toastr.success(
-              `${exceptionIds.length} request${exceptionIds.length > 1 ? "s" : ""
-              } approved successfully`
+              `${exceptionIds.length} request${
+                exceptionIds.length > 1 ? "s" : ""
+              } approved successfully`,
             );
             this.loadRejectedRequests();
           } else {
@@ -267,7 +276,7 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
         },
         error: (err: any) => {
           this.toastr.error(
-            err?.error?.error || err?.error?.errors || "Bulk approval failed"
+            err?.error?.error || err?.error?.errors || "Bulk approval failed",
           );
           this.commonService.setLoading(false);
         },
@@ -360,5 +369,4 @@ export class CorrectionDashboardComponent implements OnInit, OnDestroy {
 
     this.updateDateLimits();
   }
-
 }

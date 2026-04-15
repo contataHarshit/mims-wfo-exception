@@ -1,7 +1,6 @@
 .manager-employee-inline {
     display: flex;
-    margin-top: 6px;
-    gap: 10vw;
+    gap: 0.5vw;
     /* min-width: 40vw; */
     max-width: 50vw !important;
     justify-content: space-between !important;
@@ -10,14 +9,13 @@
 }
 
 .form-row {
-    width: 20vw;
     display: flex;
     flex-direction: column;
 }
 
 label {
-  font-size: 13px;
-  font-weight: bold;
-  margin-bottom: 6px;
-  color: #374151;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #374151;
 }

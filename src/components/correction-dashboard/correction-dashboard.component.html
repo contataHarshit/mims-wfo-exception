@@ -2,19 +2,18 @@
 
     <!-- FILTER CARD -->
     <div class="dashboard-filter">
-
-        <div class="form-grid">
+        <div style="gap: 1rem 1.25rem; align-items: end; display: flex;">
 
             <div>
                 <app-manager-employee-filter [(managerValue)]="filters.manager" [(employeeValue)]="filters.employee"
-                    gap="2vw">
+                    gap="1.5vw">
                 </app-manager-employee-filter>
             </div>
 
             <div class="form-row">
                 <label>From date</label>
                 <input type="date" class="date-input" [(ngModel)]="filters.fromDate" [max]="maxFromDate"
-                    dateFormat="dd/mm/yy" (change)="onDateChange()" />
+                    (change)="onDateChange()" />
             </div>
 
             <div class="form-row">
@@ -25,11 +24,8 @@
 
         </div>
 
-
-
         <app-common-form-action (submit)="applyFilter()" (reset)="resetFilters()">
         </app-common-form-action>
-
     </div>
 
 
@@ -40,9 +36,25 @@
             [rowsPerPageOptions]="[10, 20, 50]" scrollable="true" scrollHeight="70vh" class="dashboard-table"
             (onLazyLoad)="onPageChange($event)">
 
+            <!-- ✅ IMPORTANT: controls actual column widths -->
+            <ng-template pTemplate="colgroup">
+                <colgroup>
+                    <col style="width: 60px; min-width: 60px; max-width: 60px;">
+                    <col style="width: 180px;">
+                    <col style="width: 180px;">
+                    <col style="width: 180px;">
+                    <col style="width: 180px;">
+                    <col style="width: 180px;">
+                    <col style="width: 180px;">
+                    <col style="width: 180px;">
+                    <col style="width: 180px;">
+                </colgroup>
+            </ng-template>
+
+            <!-- HEADER -->
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 60px;">
+                    <th style="width: 60px; text-align: center;min-width: 60px; max-width: 60px;">
                         <input type="checkbox" [(ngModel)]="allSelected" (change)="selectAllChange($event)" />
                     </th>
 
@@ -57,9 +69,12 @@
                 </tr>
             </ng-template>
 
+            <!-- BODY -->
             <ng-template pTemplate="body" let-row>
                 <tr [ngClass]="row.checked ? 'row-checked' : ''">
-                    <td>
+
+                    <!-- ✅ FIXED WIDTH CELL -->
+                    <td style="width: 60px; min-width: 60px; max-width: 60px; text-align: center;">
                         <input type="checkbox" [checked]="row.checked" (change)="toggleSelection(row, $event)" />
                     </td>
 
@@ -73,6 +88,7 @@
                     <td>
                         <span class="status-rejected">REJECTED</span>
                     </td>
+
                     <td>{{ row.rejectedBy || 'NA' }}</td>
                 </tr>
             </ng-template>
@@ -80,6 +96,7 @@
         </p-table>
 
     </div>
+
 
     <!-- ACTION BAR -->
     <div class="action-bar">
@@ -89,22 +106,3 @@
     </div>
 
 </div>
-<style>
-    ::ng-deep .dashboard-table .p-datatable-thead>tr>th,
-    ::ng-deep .dashboard-table .p-datatable-tbody>tr>td {
-        width: auto !important;
-        min-width: unset !important;
-        max-width: unset !important;
-    }
-
-    /* 🔥 Force table to fit screen */
-    ::ng-deep .dashboard-table table {
-        width: 100% !important;
-        table-layout: fixed;
-    }
-
-    /* 🔥 Remove horizontal scroll */
-    ::ng-deep .dashboard-table .p-datatable-wrapper {
-        overflow-x: hidden !important;
-    }
-</style>
