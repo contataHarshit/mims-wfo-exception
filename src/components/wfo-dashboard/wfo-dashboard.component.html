@@ -3,7 +3,8 @@
   <div class="dashboard-filter">
 
     <!-- ROW 1 -->
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5vw; "[ngStyle]="{'justify-content': selectedView==='self' ? 'left' : 'space-between'}">
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5vw; "
+      [ngStyle]="{'justify-content': selectedView==='self' ? 'left' : ''}">
       <div class="filter-row ">
         <div class="filter-span-2">
           <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
@@ -56,30 +57,35 @@
 
 
   <button pButton label="Export" icon="pi pi-file-excel" class="p-button-info" (click)="export()"
-    style="height: 37px; font-size: 0.7rem;align-self: flex-start; margin-left: 5%;">
+    style="height: 37px; font-size: 0.7rem;align-self: flex-start;">
   </button>
   <!-- TABLE SECTION -->
   <div class="dashboard-table-card" style="margin-top: 20px;">
     <p-table #dt [value]="exceptionRequests" [paginator]="true" [rows]="limit" [totalRecords]="totalRecords"
-      [rowsPerPageOptions]="[10, 20, 50]" scrollable="true" scrollHeight="50vh" class="dashboard-table"
+      [rowsPerPageOptions]="[10, 20, 50]" scrollable="true" scrollHeight="100vh" class="dashboard-table"
       [responsiveLayout]="'scroll'" sortMode="multiple" (onLazyLoad)="onLazyLoad($event)" [lazy]="true">
 
       <!-- ✅ COLGROUP FIX: Controls actual rendered column widths in PrimeNG scrollable table -->
       <ng-template pTemplate="colgroup">
         <colgroup>
+          <!-- Checkbox -->
           <col *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')"
             style="width: 60px; min-width: 60px; max-width: 60px;">
-          <col style="width: 180px; min-width: 180px;"><!-- Employee Id -->
-          <col style="width: 180px; min-width: 180px;"><!-- Employee Name -->
-          <col style="width: 180px; min-width: 180px;"><!-- Designation -->
-          <col style="width: 180px; min-width: 180px;"><!-- Manager Name -->
-          <col *ngIf="showApprovedColumn()" style="width: 180px; min-width: 180px;"><!-- Approved By -->
-          <col *ngIf="showRejectedColumn()" style="width: 180px; min-width: 180px;"><!-- Rejected By -->
-          <col style="width: 180px; min-width: 180px;"><!-- Exception Date -->
-          <col style="width: 180px; min-width: 180px;"><!-- Primary Reason -->
-          <col style="width: 180px; min-width: 180px;"><!-- Submission Date -->
-          <col style="width: 180px; min-width: 180px;"><!-- Status -->
-          <col *ngIf="selectedView === 'self'" style="width: 60px; min-width: 60px;max-width: 60px;"><!-- Action -->
+
+          <!-- All normal columns -->
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col *ngIf="showApprovedColumn()" style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col *ngIf="showRejectedColumn()" style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+
+          <!-- Delete column -->
+          <col *ngIf="selectedView === 'self'" style="width: 60px; min-width: 60px; max-width: 60px;">
         </colgroup>
       </ng-template>
 
@@ -223,7 +229,7 @@
   </div>
 
   <!-- BULK ACTION BUTTONS -->
-  <div class="action-buttons" style="display: flex; width: 90%; margin-top: 20px; justify-content: space-between;"
+  <div class="action-buttons" style="display: flex; width: 100%; margin-top: 20px; justify-content: space-between;"
     *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all'))  ">
     <div style="flex: 1;">
       <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
@@ -241,9 +247,10 @@
     background: #ff4d4f !important;
     border: none;
     color: #fff;
-    width: 60px;
-    min-width: 60px;
-    max-width: 60px;
+    margin: 5px;
+    font-size: 0.5rem;
+    padding: 6px;
+    width: 30px;
   }
 
   .delete-btn:hover {

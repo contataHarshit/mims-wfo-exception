@@ -6,9 +6,9 @@
 /* ================= PAGE ================= */
 
 .dashboard-page {
-  padding: 1.25rem 2rem;
+  padding: 0.5rem;
   background-color: #f4f6f8;
-  min-height: calc(100vh - 60px);
+  min-height: calc(90vh - 60px);
   font-family: Segoe UI, sans-serif;
   display: flex;
   flex-direction: column;
@@ -23,7 +23,11 @@
   border-radius: 10px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 1rem;
-  width: 90%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: end;
 }
 
 .dashboard-filter .form-grid {
@@ -70,7 +74,7 @@
   border-radius: 10px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  width: 90%;
+  width: 100%;
 }
 
 /* ================= ACTION BAR ================= */
@@ -97,9 +101,13 @@
     text-align: center;
     border: 1px solid #e5e7eb;
     padding: 10px;
-    width: 180px;
-    min-width: 180px;
-    max-width: 180px;
+    width: 150px;
+    min-width: 150px;
+    max-width: 150px;
+    height: 40px;
+    /* max-height: 40px; */
+    /* min-height: 40px; */
+    padding: 0;
   }
 
   /* Cells */
@@ -109,10 +117,13 @@
     border: 1px solid #e5e7eb;
     font-size: 0.7rem;
     padding: 10px;
-    width: 180px;
-    min-width: 180px;
-    max-width: 180px;
-    height: 1vh;
+    width: 150px;
+    min-width: 150px;
+    max-width: 150px;
+    height: 40px;
+    /* max-height: 40px; */
+    /* min-height: 40px; */
+    padding: 0;
   }
 
   /* Row colors */
@@ -175,7 +186,6 @@
 
 ::ng-deep .p-paginator {
   justify-content: flex-end;
-  margin-top: 0.75rem;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -317,7 +327,6 @@ p {
   overflow-wrap: anywhere;
   /* modern browsers */
   max-width: 250px;
-  height: 1vh;
   /* optional: controls column width */
 
 }
@@ -350,4 +359,8 @@ p {
   gap: 8px;
   width: 150px;
   height: 30px;
+}
+
+::ng-deep .p-datatable-wrapper {
+  max-height: unset !important;
 }
