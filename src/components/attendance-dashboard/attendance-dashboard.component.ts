@@ -18,6 +18,7 @@ import { ToastrService } from "ngx-toastr";
 import { AddManualAttendanceComponent } from "../add-manual-attendance/add-manual-attendance.component";
 import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
 import { DuplicateResponsePopupComponent } from "../../popup/duplicate-response-popup/duplicate-response-popup.component";
+import { Environment } from "../../environments/environment";
 @Component({
   selector: "app-attendance-dashboard",
   standalone: true,
@@ -105,8 +106,8 @@ export class CsvUploadComponent {
     const diff =
       Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    if (diff > 99) {
-      this.toastr.error("Maximum allowed date range is 99 days.");
+    if (diff > Environment.attendanceVariable) {
+      this.toastr.error(`Maximum allowed date range is ${Environment.attendanceVariable} days.`);
       this.form.patchValue({ toDate: null });
       this.dayCount = 0;
       return;
