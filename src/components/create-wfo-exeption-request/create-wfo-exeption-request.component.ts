@@ -111,7 +111,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     private messageService: MessageService,
     private toastr: ToastrService,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+  ) { }
 
   async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -260,8 +260,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
           this.commonService.setLoading(false);
           this.toastr.error(
             err?.error?.error ||
-              err?.error?.errors ||
-              "Failed to load disabled dates."
+            err?.error?.errors ||
+            "Failed to load disabled dates."
           );
         },
       });
@@ -521,8 +521,8 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
           console.error("Submission Error:", err);
           this.toastr.error(
             err?.error?.error ||
-              err?.error?.errors ||
-              "An error occurred during submission."
+            err?.error?.errors ||
+            "An error occurred during submission."
           );
         },
       });
@@ -538,7 +538,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
 
   getAllowedDateRange(): { minDate: Date; maxDate: Date } {
     const today = new Date();
-    const minDate = addDays(today, -99);
+    const minDate = addDays(today, -199);
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
     const maxDate = endOfMonth(nextMonth);
     return { minDate, maxDate };
@@ -563,13 +563,13 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     this.loadFormData(event.month, event.year, true);
   }
   @HostListener('document:click', ['$event'])
-onDocumentClick(event: Event) {
-  const target = event.target as HTMLElement;
-  const isCalendar = target.closest('.p-calendar');
-  const isDatepicker = target.closest('.p-datepicker');
-  
-  if (isCalendar || isDatepicker) {
-    // Calendar interaction - could add scroll lock here if needed
+  onDocumentClick(event: Event) {
+    const target = event.target as HTMLElement;
+    const isCalendar = target.closest('.p-calendar');
+    const isDatepicker = target.closest('.p-datepicker');
+
+    if (isCalendar || isDatepicker) {
+      // Calendar interaction - could add scroll lock here if needed
+    }
   }
-}
 }

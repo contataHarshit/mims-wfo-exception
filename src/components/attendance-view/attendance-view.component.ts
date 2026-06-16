@@ -13,6 +13,7 @@ import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-fi
 import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
 import { MatDialog } from "@angular/material/dialog";
 import { DuplicateResponsePopupComponent } from "../../popup/duplicate-response-popup/duplicate-response-popup.component";
+import { Environment } from "../../environments/environment";
 
 @Component({
   selector: "app-attendance-view",
@@ -108,8 +109,8 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   get rangeLabel(): string {
     const start = this.weekOffset + 1;
-    const end = Math.min(this.weekOffset + 7, 99);
-    return `Days ${start}–${end} of 99`;
+    const end = Math.min(this.weekOffset + 7, Environment.attendanceVariable);
+    return `Days ${start}–${end} of ${Environment.attendanceVariable}`;
   }
 
   canGoPrevious(): boolean {
