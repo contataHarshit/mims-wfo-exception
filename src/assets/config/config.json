@@ -4,5 +4,10 @@
     { "label": "Personal Work", "value": "Personal Work" },
     { "label": "Travel", "value": "Travel" },
     { "label": "Other", "value": "other" }
+  ],
+  "OdReasonList": [
+    { "label": "Client Meeting", "value": "Client Meeting" },
+    { "label": "Interview", "value": "Interview" },
+    { "label": "Other", "value": "other" }
   ]
 }

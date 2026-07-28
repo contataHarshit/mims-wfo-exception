@@ -18,16 +18,16 @@
     </div>
 
     <div class="exception-section">
-      <h4 class="section-title">Work From Home Details</h4>
+      <h4 class="section-title">{{tab=="create-request"?"Work From Home Details":"On Duty Details"}}</h4>
 
-      <p-table [value]="formData.exceptions" dataKey="index" class="p-datatable-gridlines"
+      <p-table [value]="formData.rows" dataKey="index" class="p-datatable-gridlines"
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
             <th>#</th>
             <th>Select Date(s) <span style="color: red;">*</span></th>
-            <th>Reason <span style="color: red;">*</span></th>
-            <th>Remarks <span style="color: red;">*</span></th>
+            <th>{{tab=="create-request"?"Work From Home Reason":"On Duty Reason"}} <span style="color: red;">*</span></th>
+            <th>{{tab=="create-request"?"Work From Home Remarks":"On Duty Remarks"}} <span style="color: red;">*</span></th>
             <th>Action</th>
           </tr>
         </ng-template>
@@ -63,9 +63,9 @@
             <td>
               <div style="display: flex; justify-content: space-around;">
                 <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
-                  (click)="deleteIndex(i)" *ngIf="formData.exceptions.length > 1"></button>
+                  (click)="deleteIndex(i)" *ngIf="formData.rows.length > 1"></button>
                 <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"
-                  (click)="addMore()" *ngIf="i === formData.exceptions.length - 1"></button>
+                  (click)="addMore()" *ngIf="i === formData.rows.length - 1"></button>
               </div>
             </td>
           </tr>

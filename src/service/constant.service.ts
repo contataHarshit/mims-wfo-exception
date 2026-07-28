@@ -28,5 +28,9 @@ export class ConstantService {
 
   sendMail = this.baseUrl + "api/wfh/non-compliance";
 
+  onDutyRequest=this.baseUrl + "api/onduty-requests"
+
+  od_DisabledDates=this.onDutyRequest+"/disabled-dates"
+
   constructor() {}
 }

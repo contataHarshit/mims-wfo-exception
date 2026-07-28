@@ -108,7 +108,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         this.isDashboardPage = url
           .split("?")[0]
           .split("-")[0]
-          .includes("dashboard");
+          .includes("dashboard") || url
+          .split("?")[0]
+          .split("-")[0]
+          .includes("od");
         this.isAttendanceDashboardPage = url
           .split("?")[0]
           .split("-")[0]
@@ -187,6 +190,11 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         path: "",
         isActive: false,
       });
+      this.tabs.push({
+        label: "Create OD Request",
+        path: "on-duty-request",
+        isActive: false,
+      });
     }
 
     // Dashboard tab for all users
@@ -195,6 +203,11 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       path: "dashboard",
       isActive: false,
     });
+    this.tabs.push({
+      label: "OD Dashboard",
+      path: "od-dashboard",
+      isActive: false,
+    }); 
 
     // HR Admin Dashboard for HR department or ADMIN role
     if (department === "HR" || role === "ADMIN") {

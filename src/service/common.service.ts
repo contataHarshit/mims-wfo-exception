@@ -13,7 +13,7 @@ import { ToastrService } from "ngx-toastr";
   providedIn: "root",
 })
 export class CommonService {
-  header: string = "WFH Request";
+  header: string = "WFH/OD Request";
   public config: any;
   private configLoaded = false; // Track if config is already loaded
 
@@ -73,6 +73,7 @@ export class CommonService {
   private managerEmployeeDataSubject = new BehaviorSubject<any[]>([]);
   managerEmployeeData$ = this.managerEmployeeDataSubject.asObservable();
   selectedView = "self";
+  viewOptions :any= [];
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private http: HttpClient,
@@ -87,12 +88,13 @@ export class CommonService {
   // ============================================
 
   /** Set loading state */
-  setLoading(value: boolean) {
-    // Only log in development
-    if (!value || this.loadingSubject.value !== value) {
+setLoading(value: boolean) {
+  Promise.resolve().then(() => {
+    if (this.loadingSubject.value !== value) {
       this.loadingSubject.next(value);
     }
-  }
+  });
+}
 
   /** Get loading state */
   get loading() {

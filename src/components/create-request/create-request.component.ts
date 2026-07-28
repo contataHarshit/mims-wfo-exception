@@ -32,28 +32,13 @@ import { addDays, endOfMonth } from "date-fns";
 import { finalize, takeUntil, filter, take } from "rxjs/operators";
 import { Subject } from "rxjs";
 import { CommonFormActionComponent } from "../../common/common-form-action/common-form-action.component";
-interface ExceptionEntry {
-  dateRange: Date[];
-  exceptionRequestedDays: string;
-  primaryReason: any;
-  remarks: string;
-  showOtherReason?: boolean;
-  otherReason?: string;
-}
+import { Router, NavigationEnd } from '@angular/router';
 
-interface FormData {
-  employeeId: string;
-  employeeName: string;
-  projectName: string[];
-  projectManager: string;
-  exceptions: ExceptionEntry[];
-  employeeNumber: any;
-}
 
 @Component({
-  selector: "app-create-wfo-exeption-request",
-  templateUrl: "./create-wfo-exeption-request.component.html",
-  styleUrls: ["./create-wfo-exeption-request.component.scss"],
+  selector: "app-create-request",
+  templateUrl: "./create-request.component.html",
+  styleUrls: ["./create-request.component.scss"],
   standalone: true,
   imports: [
     CommonModule,
@@ -72,18 +57,18 @@ interface FormData {
   ],
   providers: [MessageService],
 })
-export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
+export class CreateRequestComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private formDataLoadedOnce = false;
   private isDataLoaded = false;
 
-  formData: FormData = {
+  formData:any = {
     employeeId: "",
     employeeName: "",
     projectName: [],
     projectManager: "",
     employeeNumber: "",
-    exceptions: [
+    rows: [
       {
         dateRange: [],
         exceptionRequestedDays: "",
@@ -102,7 +87,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   reasonList: any = [];
   maxSelectableDate: any;
   minSelectableDate: any;
-
+  tab: string = "create-request";
   constructor(
     private cdr: ChangeDetectorRef,
     private http: HttpService,
@@ -110,6 +95,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     private commonService: CommonService,
     private messageService: MessageService,
     private toastr: ToastrService,
+    private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) { }
 
@@ -117,8 +103,16 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
 
     this.commonService.setLoading(true);
+    this.updateTab(this.router.url);
 
-    // Subscribe to employee data changes
+    this.router.events
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.updateTab(this.router.url);
+      });
     this.commonService.employeeName$
       .pipe(takeUntil(this.destroy$))
       .subscribe((name) => {
@@ -150,16 +144,10 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         }
         this.cdr.detectChanges();
       });
-
-    // CRITICAL: Wait for authentication to complete before making API calls
     await this.waitForAuthComplete();
-
-    // Now it's safe to load form data
     this.loadFormData();
-
-    // Populate employee info from the service
     this.populateEmployeeInfo();
-    this.reasonList = this.commonService.config.reasonList || [];
+    this.reasonList = this.tab === "create-request" ? this.commonService.config.reasonList : this.commonService.config.OdReasonList || [];
   }
 
   ngOnDestroy(): void {
@@ -238,8 +226,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     this.maxSelectableDate = maxDate;
 
     // Fetch disabled dates
+    const url = this.tab === "create-request" ? this.constant.selectedDates : this.constant.od_DisabledDates;
     this.http
-      .getData(`${this.constant.selectedDates}?month=${month}&year=${year}`)
+      .getData(`${url}?month=${month}&year=${year}`)
       .pipe(finalize(() => this.commonService.setLoading(false)))
       .subscribe({
         next: (res: any) => {
@@ -267,25 +256,14 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
       });
   }
 
-  onPrimaryReasonChange(exception: ExceptionEntry, value: any) {
-    // if (value.value === "other" || value.value === "Other") {
-    //   exception.showOtherReason = true;
-    //   exception.otherReason = "";
-    //   exception.primaryReason = null;
-
-    //   setTimeout(() => {
-    //     exception.primaryReason = null;
-    //     this.cdr.detectChanges();
-    //   }, 0);
-    // } else {
+  onPrimaryReasonChange(exception: any, value: any) {
     exception.primaryReason = value;
     exception.showOtherReason = false;
     exception.otherReason = "";
     this.cdr.detectChanges();
-    // }
   }
 
-  confirmOtherReason(exception: ExceptionEntry) {
+  confirmOtherReason(exception: any) {
     const entered = exception.otherReason?.trim();
     if (!entered) {
       this.toastr.warning("Please enter a reason.");
@@ -304,7 +282,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  cancelOtherReason(exception: ExceptionEntry) {
+  cancelOtherReason(exception: any) {
     exception.otherReason = "";
     exception.primaryReason = null;
     exception.showOtherReason = false;
@@ -312,11 +290,11 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   }
 
   addMore() {
-    for (let i = 0; i < this.formData.exceptions.length; i++) {
+    for (let i = 0; i < this.formData.rows.length; i++) {
       if (
-        this.formData.exceptions[i].dateRange.length == 0 ||
-        !this.formData.exceptions[i].primaryReason ||
-        !this.formData.exceptions[i].remarks
+        this.formData.rows[i].dateRange.length == 0 ||
+        !this.formData.rows[i].primaryReason ||
+        !this.formData.rows[i].remarks
       ) {
         this.toastr.warning(
           "Please fill the existing empty row before adding a new one."
@@ -324,7 +302,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         return;
       }
     }
-    this.formData.exceptions.push({
+    this.formData.rows.push({
       dateRange: [],
       exceptionRequestedDays: "",
       primaryReason: null,
@@ -338,10 +316,10 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   }
 
   deleteIndex(i: number) {
-    this.formData.exceptions.splice(i, 1);
+    this.formData.rows.splice(i, 1);
 
-    if (this.formData.exceptions.length === 0) {
-      this.formData.exceptions.push({
+    if (this.formData.rows.length === 0) {
+      this.formData.rows.push({
         dateRange: [],
         exceptionRequestedDays: "",
         primaryReason: null,
@@ -356,7 +334,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   }
 
   resetForm(showToast = true) {
-    this.formData.exceptions = [
+    this.formData.rows = [
       {
         dateRange: [],
         exceptionRequestedDays: "",
@@ -376,9 +354,9 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     if (!selectedDates || selectedDates.length === 0) return;
 
     const sortedDates = selectedDates.sort((a, b) => a.getTime() - b.getTime());
-    const sourceRow = this.formData.exceptions[rowIndex];
+    const sourceRow = this.formData.rows[rowIndex];
 
-    this.formData.exceptions[rowIndex] = {
+    this.formData.rows[rowIndex] = {
       ...sourceRow,
       dateRange: [sortedDates[0]],
     };
@@ -389,7 +367,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
       : null;
 
     for (let i = 1; i < sortedDates.length; i++) {
-      const newRow: ExceptionEntry = {
+      const newRow: any = {
         dateRange: [sortedDates[i]],
         exceptionRequestedDays: "",
         primaryReason: filledReason ? { ...filledReason } : null,
@@ -398,7 +376,7 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
         otherReason: "",
       };
 
-      this.formData.exceptions.splice(rowIndex + i, 0, newRow);
+      this.formData.rows.splice(rowIndex + i, 0, newRow);
     }
 
     this.updateDisabledDates();
@@ -412,44 +390,47 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
     const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
-  updateDisabledDates() {
-    const combined: Date[] = [];
+updateDisabledDates() {
+  const combined: Date[] = [];
 
-    if (this.apiDisabledDates?.length) {
-      combined.push(...this.apiDisabledDates.map((d) => new Date(d)));
-    }
-
-    this.formData.exceptions.forEach((ex) => {
-      if (ex.dateRange?.length > 0) {
-        ex.dateRange.forEach((date) => {
-          const normalized = new Date(date);
-          normalized.setHours(0, 0, 0, 0);
-          combined.push(normalized);
-        });
-      }
-    });
-
-    if (this.minSelectableDate && this.maxSelectableDate) {
-      const weekends = this.getWeekendsBetween(
-        this.minSelectableDate,
-        this.maxSelectableDate
-      );
-      combined.push(...weekends);
-    }
-
-    const map = new Map<string, Date>();
-    combined.forEach((d) => {
-      const key = d.toISOString().split("T")[0];
-      if (!map.has(key)) map.set(key, d);
-    });
-
-    this.disabledDates = Array.from(map.values());
+  // Backend disabled dates
+  if (this.apiDisabledDates?.length) {
+    combined.push(...this.apiDisabledDates.map(d => {
+      const date = new Date(d);
+      date.setHours(0, 0, 0, 0);
+      return date;
+    }));
   }
+
+  // Already selected dates
+  this.formData.rows.forEach((ex:any) => {
+    ex.dateRange?.forEach((date: Date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      combined.push(d);
+    });
+  });
+
+  // Always disable Saturdays & Sundays
+  combined.push(
+    ...this.getWeekendsBetween(
+      this.minSelectableDate,
+      this.maxSelectableDate
+    )
+  );
+
+  // Remove duplicates
+  this.disabledDates = Array.from(
+    new Map(
+      combined.map(d => [d.toDateString(), d])
+    ).values()
+  );
+}
 
   validateForm(): boolean {
     const seenDates = new Set<string>();
 
-    for (const [i, ex] of this.formData.exceptions.entries()) {
+    for (const [i, ex] of this.formData.rows.entries()) {
       if (
         !ex.dateRange?.length ||
         !ex.primaryReason ||
@@ -478,31 +459,59 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const payload = {
-      exceptions: this.formData.exceptions
-        .filter((ex) => ex.dateRange && ex.dateRange.length > 0)
-        .map((ex) => {
-          const date = new Date(ex.dateRange[0]);
-          const formatted =
-            date.getFullYear() +
-            "-" +
-            String(date.getMonth() + 1).padStart(2, "0") +
-            "-" +
-            String(date.getDate()).padStart(2, "0");
+    const payload =
+    this.tab === "create-request"
+      ? {
+          exceptions: this.formData.rows
+            .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
+            .map((ex: any) => {
+              const date = new Date(ex.dateRange[0]);
+              const formatted =
+                date.getFullYear() +
+                "-" +
+                String(date.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(date.getDate()).padStart(2, "0");
 
-          return {
-            selectedDate: formatted,
-            primaryReason:
-              typeof ex.primaryReason === "object"
-                ? ex.primaryReason?.value || ex.primaryReason?.label || ""
-                : ex.primaryReason || "",
-            remarks: ex.remarks?.trim() || "",
-          };
-        }),
-    };
+              return {
+                selectedDate: formatted,
+                primaryReason:
+                  typeof ex.primaryReason === "object"
+                    ? ex.primaryReason?.value ||
+                      ex.primaryReason?.label ||
+                      ""
+                    : ex.primaryReason || "",
+                remarks: ex.remarks?.trim() || "",
+              };
+            }),
+        }
+      : {
+          requests: this.formData.rows
+            .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
+            .map((ex: any) => {
+              const date = new Date(ex.dateRange[0]);
+              const formatted =
+                date.getFullYear() +
+                "-" +
+                String(date.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(date.getDate()).padStart(2, "0");
 
+              return {
+                odRequestDate: formatted,
+                odReason:
+                  typeof ex.primaryReason === "object"
+                    ? ex.primaryReason?.value ||
+                      ex.primaryReason?.label ||
+                      ""
+                    : ex.primaryReason || "",
+                remarks: ex.remarks?.trim() || "",
+              };
+            }),
+        };
+        const url = this.tab === "create-request" ? this.constant.exceptionRequest : this.constant.onDutyRequest;
     this.http
-      .postData(payload, this.constant.exceptionRequest)
+      .postData(payload, url)
       .pipe(
         finalize(() => {
           this.commonService.setLoading(false);
@@ -561,6 +570,13 @@ export class CreateWfoExeptionRequestComponent implements OnInit, OnDestroy {
   }
   onMonthYearChanged(event: { month: number; year: number }) {
     this.loadFormData(event.month, event.year, true);
+  }
+  private updateTab(url: string): void {
+    if (url.includes('create-request')) {
+      this.tab = 'create-request';
+    } else if (url.includes('on-duty-request')) {
+      this.tab = 'on-duty-request';
+    }
   }
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event) {
