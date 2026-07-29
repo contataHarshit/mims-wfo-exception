@@ -88,14 +88,14 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     private constants: ConstantService,
     private route: ActivatedRoute,
     @Inject(PLATFORM_ID) private platformId: Object,
-  ) { }
+  ) {}
 
   ngOnInit() {
     this.commonService.selectedView = "self";
 
     if (!isPlatformBrowser(this.platformId)) return;
 
-    this.commonService.loadConfig().finally(() => { });
+    this.commonService.loadConfig().finally(() => {});
 
     this.router.events
       .pipe(
@@ -105,18 +105,15 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       .subscribe((event) => {
         const navEnd = event as NavigationEnd;
         const url = navEnd.urlAfterRedirects;
-        this.isDashboardPage = url
-          .split("?")[0]
-          .split("-")[0]
-          .includes("dashboard") || url
-          .split("?")[0]
-          .split("-")[0]
-          .includes("od");
+        this.isDashboardPage =
+          url.split("?")[0].split("-")[0].includes("dashboard") ||
+          url.split("?")[0].split("-")[0].includes("od");
         this.isAttendanceDashboardPage = url
           .split("?")[0]
           .split("-")[0]
           .includes("attendance");
         this.updateActiveTabs(url);
+        this.addAllOptionForOD();
       });
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -156,10 +153,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         this.commonService.setLoading(false);
         this.hasLoadedData = true;
         this.isAuthenticating = false;
-        this.loadRoleSpecificData(this.role).finally(() => { });
+        this.loadRoleSpecificData(this.role).finally(() => {});
       }
     }
-    if (localStorage.getItem("department") === "HR" || localStorage.getItem("role") === "ADMIN") {
+    if (
+      localStorage.getItem("department") === "HR" ||
+      localStorage.getItem("role") === "ADMIN"
+    ) {
       this.addAllOption();
       if (this.role === "EMPLOYEE") {
         this.viewOptions = this.viewOptions.filter(
@@ -167,7 +167,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         );
       }
       console.log("Hr ");
-
     }
   }
 
@@ -207,7 +206,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       label: "OD Dashboard",
       path: "od-dashboard",
       isActive: false,
-    }); 
+    });
 
     // HR Admin Dashboard for HR department or ADMIN role
     if (department === "HR" || role === "ADMIN") {
@@ -258,8 +257,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         localStorage.setItem("role", this.role);
         localStorage.setItem("department", this.department);
         localStorage.setItem("employeeNumber", this.employeeNumber);
-        if (localStorage.getItem("department") === "HR" || localStorage.getItem("role") === "ADMIN") {
-
+        if (
+          localStorage.getItem("department") === "HR" ||
+          localStorage.getItem("role") === "ADMIN"
+        ) {
           this.addAllOption();
           if (this.role === "EMPLOYEE") {
             this.viewOptions = this.viewOptions.filter(
@@ -267,7 +268,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
             );
           }
           console.log("Hr 1");
-
         }
         console.log("init tabs");
 
@@ -352,6 +352,21 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     }
   }
 
+  addAllOptionForOD() {
+    this.viewOptions = [
+      { label: "Self", value: "self" },
+      { label: "Resource", value: "resource" },
+    ];
+
+    if (
+      (this.role === "MANAGER" &&
+        this.department === "RMG" &&
+        this.router.url.includes("od")) ||
+      this.department == "HR"
+    ) {
+      this.addAllOption();
+    }
+  }
   private addAllOption() {
     if (!this.viewOptions.some((o) => o.value === "all")) {
       this.viewOptions.unshift({ label: "All", value: "all" });

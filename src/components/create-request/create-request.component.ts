@@ -32,8 +32,7 @@ import { addDays, endOfMonth } from "date-fns";
 import { finalize, takeUntil, filter, take } from "rxjs/operators";
 import { Subject } from "rxjs";
 import { CommonFormActionComponent } from "../../common/common-form-action/common-form-action.component";
-import { Router, NavigationEnd } from '@angular/router';
-
+import { Router, NavigationEnd } from "@angular/router";
 
 @Component({
   selector: "app-create-request",
@@ -53,7 +52,7 @@ import { Router, NavigationEnd } from '@angular/router';
     MultiSelectModule,
     DateRangePickerComponent,
     CommonSelectComponent,
-    CommonFormActionComponent
+    CommonFormActionComponent,
   ],
   providers: [MessageService],
 })
@@ -62,7 +61,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   private formDataLoadedOnce = false;
   private isDataLoaded = false;
 
-  formData:any = {
+  formData: any = {
     employeeId: "",
     employeeName: "",
     projectName: [],
@@ -96,8 +95,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     private messageService: MessageService,
     private toastr: ToastrService,
     private router: Router,
-    @Inject(PLATFORM_ID) private platformId: Object
-  ) { }
+    @Inject(PLATFORM_ID) private platformId: Object,
+  ) {}
 
   async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -107,8 +106,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     this.router.events
       .pipe(
-        filter(event => event instanceof NavigationEnd),
-        takeUntil(this.destroy$)
+        filter((event) => event instanceof NavigationEnd),
+        takeUntil(this.destroy$),
       )
       .subscribe(() => {
         this.updateTab(this.router.url);
@@ -147,7 +146,10 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     await this.waitForAuthComplete();
     this.loadFormData();
     this.populateEmployeeInfo();
-    this.reasonList = this.tab === "create-request" ? this.commonService.config.reasonList : this.commonService.config.OdReasonList || [];
+    this.reasonList =
+      this.tab === "create-request"
+        ? this.commonService.config.reasonList
+        : this.commonService.config.OdReasonList || [];
   }
 
   ngOnDestroy(): void {
@@ -178,7 +180,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       this.commonService.userDataLoaded$
         .pipe(
           filter((loaded) => loaded === true), // Only proceed when loaded is true
-          take(1) // Take only the first emission and unsubscribe
+          take(1), // Take only the first emission and unsubscribe
         )
         .subscribe(() => {
           this.isDataLoaded = true;
@@ -215,7 +217,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   private loadFormData(
     month: number = new Date().getMonth() + 1,
     year: number = new Date().getFullYear(),
-    sendRequest = false
+    sendRequest = false,
   ): void {
     if (this.formDataLoadedOnce && !sendRequest) return; // prevent duplicate loads
     this.formDataLoadedOnce = true;
@@ -226,14 +228,18 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.maxSelectableDate = maxDate;
 
     // Fetch disabled dates
-    const url = this.tab === "create-request" ? this.constant.selectedDates : this.constant.od_DisabledDates;
+    const url =
+      this.tab === "create-request"
+        ? this.constant.selectedDates
+        : this.constant.od_DisabledDates;
     this.http
       .getData(`${url}?month=${month}&year=${year}`)
       .pipe(finalize(() => this.commonService.setLoading(false)))
       .subscribe({
         next: (res: any) => {
-          if (res?.success && res.data?.dates) {
-            this.apiDisabledDates = res.data.dates.map((dateStr: string) => {
+          const dates = res?.data?.dates || res?.data?.disabledDates;
+          if (res?.success && dates && Array.isArray(dates)) {
+            this.apiDisabledDates = dates?.map((dateStr: string) => {
               const date = new Date(dateStr);
               date.setHours(0, 0, 0, 0);
               return date;
@@ -249,8 +255,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
           this.commonService.setLoading(false);
           this.toastr.error(
             err?.error?.error ||
-            err?.error?.errors ||
-            "Failed to load disabled dates."
+              err?.error?.errors ||
+              "Failed to load disabled dates.",
           );
         },
       });
@@ -297,7 +303,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
         !this.formData.rows[i].remarks
       ) {
         this.toastr.warning(
-          "Please fill the existing empty row before adding a new one."
+          "Please fill the existing empty row before adding a new one.",
         );
         return;
       }
@@ -390,42 +396,42 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
-updateDisabledDates() {
-  const combined: Date[] = [];
+  updateDisabledDates() {
+    const combined: Date[] = [];
 
-  // Backend disabled dates
-  if (this.apiDisabledDates?.length) {
-    combined.push(...this.apiDisabledDates.map(d => {
-      const date = new Date(d);
-      date.setHours(0, 0, 0, 0);
-      return date;
-    }));
-  }
+    // Backend disabled dates
+    if (this.apiDisabledDates?.length) {
+      combined.push(
+        ...this.apiDisabledDates.map((d) => {
+          const date = new Date(d);
+          date.setHours(0, 0, 0, 0);
+          return date;
+        }),
+      );
+    }
 
-  // Already selected dates
-  this.formData.rows.forEach((ex:any) => {
-    ex.dateRange?.forEach((date: Date) => {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      combined.push(d);
+    // Already selected dates
+    this.formData.rows.forEach((ex: any) => {
+      ex.dateRange?.forEach((date: Date) => {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        combined.push(d);
+      });
     });
-  });
 
-  // Always disable Saturdays & Sundays
-  combined.push(
-    ...this.getWeekendsBetween(
-      this.minSelectableDate,
-      this.maxSelectableDate
-    )
-  );
+    // Always disable Saturdays & Sundays
+    combined.push(
+      ...this.getWeekendsBetween(
+        this.minSelectableDate,
+        this.maxSelectableDate,
+      ),
+    );
 
-  // Remove duplicates
-  this.disabledDates = Array.from(
-    new Map(
-      combined.map(d => [d.toDateString(), d])
-    ).values()
-  );
-}
+    // Remove duplicates
+    this.disabledDates = Array.from(
+      new Map(combined.map((d) => [d.toDateString(), d])).values(),
+    );
+  }
 
   validateForm(): boolean {
     const seenDates = new Set<string>();
@@ -460,62 +466,61 @@ updateDisabledDates() {
     }
 
     const payload =
-    this.tab === "create-request"
-      ? {
-          exceptions: this.formData.rows
-            .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
-            .map((ex: any) => {
-              const date = new Date(ex.dateRange[0]);
-              const formatted =
-                date.getFullYear() +
-                "-" +
-                String(date.getMonth() + 1).padStart(2, "0") +
-                "-" +
-                String(date.getDate()).padStart(2, "0");
+      this.tab === "create-request"
+        ? {
+            exceptions: this.formData.rows
+              .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
+              .map((ex: any) => {
+                const date = new Date(ex.dateRange[0]);
+                const formatted =
+                  date.getFullYear() +
+                  "-" +
+                  String(date.getMonth() + 1).padStart(2, "0") +
+                  "-" +
+                  String(date.getDate()).padStart(2, "0");
 
-              return {
-                selectedDate: formatted,
-                primaryReason:
-                  typeof ex.primaryReason === "object"
-                    ? ex.primaryReason?.value ||
-                      ex.primaryReason?.label ||
-                      ""
-                    : ex.primaryReason || "",
-                remarks: ex.remarks?.trim() || "",
-              };
-            }),
-        }
-      : {
-          requests: this.formData.rows
-            .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
-            .map((ex: any) => {
-              const date = new Date(ex.dateRange[0]);
-              const formatted =
-                date.getFullYear() +
-                "-" +
-                String(date.getMonth() + 1).padStart(2, "0") +
-                "-" +
-                String(date.getDate()).padStart(2, "0");
+                return {
+                  selectedDate: formatted,
+                  primaryReason:
+                    typeof ex.primaryReason === "object"
+                      ? ex.primaryReason?.value || ex.primaryReason?.label || ""
+                      : ex.primaryReason || "",
+                  remarks: ex.remarks?.trim() || "",
+                };
+              }),
+          }
+        : {
+            requests: this.formData.rows
+              .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
+              .map((ex: any) => {
+                const date = new Date(ex.dateRange[0]);
+                const formatted =
+                  date.getFullYear() +
+                  "-" +
+                  String(date.getMonth() + 1).padStart(2, "0") +
+                  "-" +
+                  String(date.getDate()).padStart(2, "0");
 
-              return {
-                odRequestDate: formatted,
-                odReason:
-                  typeof ex.primaryReason === "object"
-                    ? ex.primaryReason?.value ||
-                      ex.primaryReason?.label ||
-                      ""
-                    : ex.primaryReason || "",
-                remarks: ex.remarks?.trim() || "",
-              };
-            }),
-        };
-        const url = this.tab === "create-request" ? this.constant.exceptionRequest : this.constant.onDutyRequest;
+                return {
+                  odRequestDate: formatted,
+                  odReason:
+                    typeof ex.primaryReason === "object"
+                      ? ex.primaryReason?.value || ex.primaryReason?.label || ""
+                      : ex.primaryReason || "",
+                  remarks: ex.remarks?.trim() || "",
+                };
+              }),
+          };
+    const url =
+      this.tab === "create-request"
+        ? this.constant.exceptionRequest
+        : this.constant.onDutyRequest;
     this.http
       .postData(payload, url)
       .pipe(
         finalize(() => {
           this.commonService.setLoading(false);
-        })
+        }),
       )
       .subscribe({
         next: (res: any) => {
@@ -530,8 +535,8 @@ updateDisabledDates() {
           console.error("Submission Error:", err);
           this.toastr.error(
             err?.error?.error ||
-            err?.error?.errors ||
-            "An error occurred during submission."
+              err?.error?.errors ||
+              "An error occurred during submission.",
           );
         },
       });
@@ -572,17 +577,17 @@ updateDisabledDates() {
     this.loadFormData(event.month, event.year, true);
   }
   private updateTab(url: string): void {
-    if (url.includes('create-request')) {
-      this.tab = 'create-request';
-    } else if (url.includes('on-duty-request')) {
-      this.tab = 'on-duty-request';
+    if (url.includes("create-request")) {
+      this.tab = "create-request";
+    } else if (url.includes("on-duty-request")) {
+      this.tab = "on-duty-request";
     }
   }
-  @HostListener('document:click', ['$event'])
+  @HostListener("document:click", ["$event"])
   onDocumentClick(event: Event) {
     const target = event.target as HTMLElement;
-    const isCalendar = target.closest('.p-calendar');
-    const isDatepicker = target.closest('.p-datepicker');
+    const isCalendar = target.closest(".p-calendar");
+    const isDatepicker = target.closest(".p-datepicker");
 
     if (isCalendar || isDatepicker) {
       // Calendar interaction - could add scroll lock here if needed

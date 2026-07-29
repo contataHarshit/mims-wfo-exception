@@ -56,7 +56,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     private constants: ConstantService,
     private toastr: ToastrService,
     private ngZone: NgZone,
-    public router: Router
+    public router: Router,
   ) {}
 
   allRequests: any[] = [];
@@ -198,7 +198,9 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     this.commonService.managerEmployeeData$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: any[]) => {
-        this.reasonList = this.commonService.config?.reasonList || [];
+        this.reasonList = this.router.url.includes("od")
+          ? this.commonService.config?.OdReasonList
+          : this.commonService.config?.reasonList || [];
         if (data && data.length > 0 && this.selectedView === "resource") {
           this.employeeList = data.map((item: any) => ({
             label: `${item.FullName}(${item.EmployeeNumber})`,
@@ -387,20 +389,23 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
-    const url = this.router.url.includes("od") ? `${this.constants.onDutyRequest}/?${params.toString()}` : `${this.constants.exceptionRequest}/paginated?${params.toString()}`;
-
+    const url = this.router.url.includes("od")
+      ? `${this.constants.onDutyRequest}/?${params.toString()}`
+      : `${this.constants.exceptionRequest}/paginated?${params.toString()}`;
 
     this.http
       .getData(url)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: async (res: any) => {
+          console.log("res--------->", res);
+
           if (res.success) {
-            const exceptions = res.data.exceptions || [];
+            const rows = res.data.exceptions || res.data.onDutyRequests;
 
             // If exporting, just download CSV and return early
             if (exporting) {
-              await this.commonService.downloadCSV(exceptions);
+              await this.commonService.downloadCSV(rows);
               this.commonService.setLoading(false);
               this.isLoadingData = false;
               return;
@@ -409,62 +414,50 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
             // Only update UI state when NOT exporting
             this.disableSelectAll = false;
             this.allSelected = false;
-         this.allRequests = (
-  res?.data?.exceptions
-    ? res.data.exceptions
-    : res?.data?.onDutyRequests || []
-).map((item: any) => ({
-  id: item.id,
+            this.allRequests = rows.map((item: any) => ({
+              id: item.id,
 
-  employeeId: res?.data?.exceptions
-    ? item.employeeNumber
-    : item.employee?.EmployeeNumber,
+              employeeId: item.employeeNumber || "-N/A-",
 
-  employeeName: res?.data?.exceptions
-    ? item.employee
-    : `${item.employee?.FirstName || ""} ${item.employee?.LastName || ""}`.trim(),
+              employeeName: item.employee || "-N/A-",
 
-  designation: res?.data?.exceptions
-    ? item.designation || "-"
-    : "-",
+              designation: item.designation || "-N/A-",
 
-  exceptionDate: res?.data?.exceptions
-    ? this.formatDate(item.selectedDate)
-    : this.formatDate(item.odRequestDate),
+              exceptionDate: res?.data?.exceptions
+                ? this.formatDate(item.selectedDate)
+                : this.formatDate(item.odRequestDate),
 
-  primaryReason: res?.data?.exceptions
-    ? item.primaryReason
-    : item.odReason,
+              primaryReason: res?.data?.exceptions
+                ? item.primaryReason
+                : item.odReason,
 
-  submissionDate: item.submissionDate
-    ? this.formatDate(item.submissionDate)
-    : null,
+              submissionDate: item.submissionDate
+                ? this.formatDate(item.submissionDate)
+                : null,
 
-  exceptionRequestedDays: res?.data?.exceptions
-    ? item.requestedDays
-    : null,
+              exceptionRequestedDays: res?.data?.exceptions
+                ? item.requestedDays
+                : null,
 
-  exceptionApprovedDays: res?.data?.exceptions
-    ? item.approvedDays
-    : null,
+              exceptionApprovedDays: res?.data?.exceptions
+                ? item.approvedDays
+                : null,
 
-  status: item.currentStatus || "PENDING",
+              status: item.currentStatus || "PENDING",
 
-  approvedBy: item.approvedBy || "-",
-  rejectedBy: item.rejectedBy || "-",
+              approvedBy: item.approvedBy || "-",
+              rejectedBy: item.rejectedBy || "-",
 
-  managerName: res?.data?.exceptions
-    ? item.manager || "-"
-    : `${item.manager?.FirstName || ""} ${item.manager?.LastName || ""}`.trim(),
+              managerName: item.manager || "-N/A-",
 
-  managerRemarks: res?.data?.exceptions
-    ? item.managerRemarks
-    : item.reviewRemarks,
+              managerRemarks: res?.data?.exceptions
+                ? item.managerRemarks
+                : item.reviewRemarks,
 
-  remarks: item.remarks || "-",
+              remarks: item.remarks || "-",
 
-  checked: false,
-}));
+              checked: false,
+            }));
 
             let tempHash: any = {};
             for (let i = 0; i < this.allRequests.length; i++) {
@@ -482,7 +475,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
               }
             }
 
-            this.totalRecords = res.data.pagination?.total || exceptions.length;
+            this.totalRecords = res.data.pagination?.total || rows.length;
             this.selectedRequests = [];
           } else {
             if (!exporting) {
@@ -578,11 +571,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
 
     if (req.checked) {
       // Add to selected requests if not already present
-      if (
-        !this.selectedRequests.find(
-          (r: any) => r.id === req.id,
-        )
-      ) {
+      if (!this.selectedRequests.find((r: any) => r.id === req.id)) {
         this.selectedRequests.push(req);
       }
     } else {
@@ -612,8 +601,10 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     if (this.remarks) {
       payload.remarks = this.remarks;
     }
-
-    this.http.putData(this.constants.exceptionRequest, payload).subscribe({
+    const url = this.router.url.includes("od")
+      ? this.constants.onDutyRequest
+      : this.constants.exceptionRequest;
+    this.http.putData(url, payload).subscribe({
       next: (res: any) => {
         if (res.success) {
           this.toastr.success(
@@ -669,21 +660,28 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
             result.approvedDays || request.exceptionApprovedDays || 1,
         };
 
-        this.http.putData(this.router.url.includes("od") ? `${this.constants.onDutyRequest}` : `${this.constants.exceptionRequest}`, payload).subscribe({
-          next: (res: any) => {
-            if (res.success) {
-              this.toastr.success("Request updated successfully");
-              this.resetTableSorting();
-              this.getAllRequest();
-            } else {
+        this.http
+          .putData(
+            this.router.url.includes("od")
+              ? `${this.constants.onDutyRequest}`
+              : `${this.constants.exceptionRequest}`,
+            payload,
+          )
+          .subscribe({
+            next: (res: any) => {
+              if (res.success) {
+                this.toastr.success("Request updated successfully");
+                this.resetTableSorting();
+                this.getAllRequest();
+              } else {
+                this.toastr.error("Error updating request. Please try again.");
+              }
+            },
+            error: (err: any) => {
               this.toastr.error("Error updating request. Please try again.");
-            }
-          },
-          error: (err: any) => {
-            this.toastr.error("Error updating request. Please try again.");
-            console.error("PUT API Error:", err);
-          },
-        });
+              console.error("PUT API Error:", err);
+            },
+          });
       }
     });
   }
@@ -696,28 +694,28 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         title: "Confirm Delete",
       },
     });
-    const url = this.router.url.includes("od") ? `${this.constants.onDutyRequest}/${req.id}` : `${this.constants.exceptionRequest}/${req.id}`;
+    const url = this.router.url.includes("od")
+      ? `${this.constants.onDutyRequest}/${req.id}`
+      : `${this.constants.exceptionRequest}/${req.id}`;
     dialogRef.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        this.http
-          .deleteData(url)
-          .subscribe({
-            next: (res: any) => {
-              if (res.success) {
-                this.toastr.success("Record deleted successfully");
-                this.resetTableSorting();
-                this.getAllRequest();
-              }
-            },
-            error: (err: any) => {
-              this.toastr.error(
-                err?.error?.error ||
-                  err?.error?.errors ||
-                  "Error deleting record. Please try again.",
-              );
-              console.error("DELETE API Error:", err);
-            },
-          });
+        this.http.deleteData(url).subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              this.toastr.success("Record deleted successfully");
+              this.resetTableSorting();
+              this.getAllRequest();
+            }
+          },
+          error: (err: any) => {
+            this.toastr.error(
+              err?.error?.error ||
+                err?.error?.errors ||
+                "Error deleting record. Please try again.",
+            );
+            console.error("DELETE API Error:", err);
+          },
+        });
       }
     });
   }
