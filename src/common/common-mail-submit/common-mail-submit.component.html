@@ -4,12 +4,12 @@
     <div class="mail-buttons">
         <button pButton type="button" class="p-button-info send-button" (click)="onSendWeekly()" style="gap: 0;"
             [disabled]="commonService.disableSendMail">
-            Send <span class="small-span">(Last Week)</span>
+            <span>Send</span> <span class="small-span">(Last Week)</span>
         </button>
 
         <button pButton type="button" class="p-button-help send-button" (click)="onSendMonthly()" style="gap: 0;"
             [disabled]="commonService.disableSendMail">
-            Send <span class="small-span">(Last Month)</span>
+            <span>Send</span> <span class="small-span">(Last Month)</span>
         </button>
     </div>
 
