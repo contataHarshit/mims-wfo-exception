@@ -405,7 +405,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
       payloadMap[employeeNumber].dates.push({
         date,
-        value: value ? value.replaceAll(" ", "") : null,
+        value: value && value.length ? value.replaceAll(" ", "") : "",
       });
     });
 
@@ -444,6 +444,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
             this.toastr.success(res?.data?.message || "Attendance updated");
             this.commonService.setLoading(false);
             this.editedMap.clear();
+            this.fetchAttendance()
           } else {
             this.toastr.error("Update failed");
           }
