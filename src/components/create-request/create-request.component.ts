@@ -552,9 +552,22 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
   getAllowedDateRange(): { minDate: Date; maxDate: Date } {
     const today = new Date();
+
+    // Allow last 199 days for both pages
     const minDate = addDays(today, -199);
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-    const maxDate = endOfMonth(nextMonth);
+
+    let maxDate: Date;
+
+    if (this.tab === "on-duty-request") {
+      // OD Request -> do not allow future dates
+      maxDate = new Date(today);
+      maxDate.setHours(23, 59, 59, 999);
+    } else {
+      // WFH Request -> allow till end of next month
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+      maxDate = endOfMonth(nextMonth);
+    }
+
     return { minDate, maxDate };
   }
 

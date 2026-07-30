@@ -144,7 +144,7 @@
 
           <th>
             <div class="sort-icon-container">
-              <p>Exception Date</p>
+              <p>{{router.url.includes("od")?"OD Date":"Exception Date"}}</p>
               <p-sortIcon field="exceptionDate" class="sortable-icon"
                 (click)="sortTableValues('exceptionDate')"></p-sortIcon>
             </div>
@@ -152,7 +152,7 @@
 
           <th>
             <div class="sort-icon-container">
-              <p>Primary Reason</p>
+              <p>{{router.url.includes("od")?"On Duty Reason":"Primary Reason"}}</p>
               <p-sortIcon field="primaryReason" class="sortable-icon"
                 (click)="sortTableValues('primaryReason')"></p-sortIcon>
             </div>
@@ -184,9 +184,26 @@
           <!-- ✅ FIXED: merged duplicate style attributes into one -->
           <td *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')"
             style="width: 60px !important; min-width: 60px !important; max-width: 60px !important; text-align: center;">
-            <input type="checkbox" [checked]="req.checked"
-              [disabled]="((req.status === 'APPROVED' && role!='ADMIN' && role!=='MANAGER' && department !=='HR' ) || (department!=='HR' && role!= 'ADMIN' && selectedView!=='resource')) ||(selectedView=='resource' && req.status=='APPROVED') "
-              (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
+            <input type="checkbox" [checked]="req.checked" [disabled]="
+    !(department === 'RMG' && role === 'MANAGER') &&
+    (
+      (
+        req.status === 'APPROVED' &&
+        role != 'ADMIN' &&
+        role !== 'MANAGER' &&
+        department !== 'HR'
+      ) ||
+      (
+        department !== 'HR' &&
+        role != 'ADMIN' &&
+        selectedView !== 'resource'
+      ) ||
+      (
+        selectedView == 'resource' &&
+        req.status == 'APPROVED'
+      )
+    )
+  " (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
           </td>
           <td>{{ req.employeeId }}</td>
           <td>{{ req.employeeName }}</td>
@@ -230,7 +247,7 @@
 
   <!-- BULK ACTION BUTTONS -->
   <div class="action-buttons" style="display: flex; width: 100%; margin-top: 20px; justify-content: space-between;"
-    *ngIf="selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all'))  ">
+    *ngIf="allRequests.length && selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all'))  ">
     <div style="flex: 1;">
       <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
     </div>

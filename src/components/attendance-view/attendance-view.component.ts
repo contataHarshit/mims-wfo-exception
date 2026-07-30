@@ -52,8 +52,8 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     managerId: ["ALL"],
   });
 
-  selectedEmployee: string | null = null;
-  selectedManager: string | null = null;
+  selectedEmployee: any = null;
+  selectedManager: any = null;
 
   weekOffset = 0;
   page: number = 1;
@@ -78,7 +78,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   editedMap = new Map<
     string,
-    { employeeNumber: string; date: string; value: string | undefined }
+    { employeeNumber: string; date: string; value: any }
   >();
 
   ngOnDestroy(): void {
@@ -215,7 +215,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   /* ---------------- GET LAST WEEK API ---------------- */
-  private extractValue(val: any): string | null {
+  private extractValue(val: any): any {
     if (!val) return null;
     if (typeof val === "string") return val;
     if (typeof val === "object" && val.value) return val.value;
@@ -255,10 +255,12 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
           this.totalRecords = res.data.total;
 
           this.tableData = res.data.data.map((emp: any) => {
-            const attendance: Record<string, string | undefined> = {};
+            const attendance: any = {};
+            const originalAttendance: any = {};
 
             (emp.dates || []).forEach((d: any) => {
               attendance[d.OfficeAttendanceDate] = d.AttendanceValue;
+              originalAttendance[d.OfficeAttendanceDate] = d.AttendanceValue;
             });
 
             return {
@@ -267,6 +269,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
               managerName: emp.ManagerName,
               email: emp.EmployeeEmail,
               attendance,
+              originalAttendance,
             };
           });
         },
@@ -363,21 +366,23 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   markEdited(row: any, date: string) {
-    const rawValue = row.attendance[date];
-    const normalizedValue = this.normalizeValue(rawValue);
+    const currentValue = this.normalizeValue(row.attendance[date]);
+    const originalValue = this.normalizeValue(row.originalAttendance?.[date]);
 
-    if (normalizedValue === null) {
-      this.editedMap.delete(`${row.email}-${date}`);
+    const key = `${row.email}-${date}`;
+
+    // Remove edit if value is same as original
+    if (currentValue === originalValue) {
+      this.editedMap.delete(key);
       this.editedCells.delete(`${row.employeeNumber}-${date}`);
       return;
     }
 
-    const key = `${row.email}-${date}`;
-
+    // Store edit (including null when cleared)
     this.editedMap.set(key, {
       employeeNumber: row.employeeNumber,
       date,
-      value: normalizedValue,
+      value: currentValue,
     });
 
     this.editedCells.add(`${row.employeeNumber}-${date}`);
@@ -400,9 +405,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
       payloadMap[employeeNumber].dates.push({
         date,
-        value: !value?.replaceAll(" ", "").length
-          ? null
-          : value.replaceAll(" ", ""),
+        value: value ? value.replaceAll(" ", "") : null,
       });
     });
 
@@ -530,7 +533,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.fetchAttendance();
   }
 
-  private normalizeValue(value: string | undefined | null): string | null {
+  private normalizeValue(value: any): any {
     if (!value) return null;
 
     const trimmed = value.replaceAll(" ", "");

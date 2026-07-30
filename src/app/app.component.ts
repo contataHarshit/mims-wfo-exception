@@ -145,6 +145,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
         // Initialize tabs based on stored role/department
         this.initializeTabs(this.role, this.department);
+        this.addAllOptionForOD();
         this.showTabs = true;
 
         this.commonService.setRole(storedRole);
@@ -155,18 +156,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         this.isAuthenticating = false;
         this.loadRoleSpecificData(this.role).finally(() => {});
       }
-    }
-    if (
-      localStorage.getItem("department") === "HR" ||
-      localStorage.getItem("role") === "ADMIN"
-    ) {
-      this.addAllOption();
-      if (this.role === "EMPLOYEE") {
-        this.viewOptions = this.viewOptions.filter(
-          (o) => o.value !== "resource",
-        );
-      }
-      console.log("Hr ");
     }
   }
 
@@ -257,22 +246,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         localStorage.setItem("role", this.role);
         localStorage.setItem("department", this.department);
         localStorage.setItem("employeeNumber", this.employeeNumber);
-        if (
-          localStorage.getItem("department") === "HR" ||
-          localStorage.getItem("role") === "ADMIN"
-        ) {
-          this.addAllOption();
-          if (this.role === "EMPLOYEE") {
-            this.viewOptions = this.viewOptions.filter(
-              (o) => o.value !== "resource",
-            );
-          }
-          console.log("Hr 1");
-        }
-        console.log("init tabs");
 
         // Initialize tabs immediately after authentication
         this.initializeTabs(this.role, this.department);
+        this.addAllOptionForOD();
         this.showTabs = true; // Show tabs now that they're properly initialized
 
         this.commonService.setRole(this.role);
@@ -358,14 +335,29 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       { label: "Resource", value: "resource" },
     ];
 
-    if (
-      (this.role === "MANAGER" &&
-        this.department === "RMG" &&
-        this.router.url.includes("od")) ||
-      this.department == "HR"
-    ) {
-      this.addAllOption();
+    this.commonService.selectedView = "self";
+
+    const isODDashboard = this.router.url.includes("od-dashboard");
+
+    if (isODDashboard) {
+      // ===== OD Dashboard Rules =====
+      if (
+        this.role === "ADMIN" ||
+        this.department === "HR" ||
+        (this.role === "MANAGER" && this.department === "RMG")
+      ) {
+        this.addAllOption();
+      }
+    } else {
+      // ===== WFH Dashboard Rules =====
+      if (this.role === "ADMIN" || this.department === "HR") {
+        this.addAllOption();
+      }
     }
+    if (this.role === "EMPLOYEE") {
+      this.viewOptions = this.viewOptions.filter((o) => o.value !== "resource");
+    }
+    this.commonService.selectedView = "self";
   }
   private addAllOption() {
     if (!this.viewOptions.some((o) => o.value === "all")) {

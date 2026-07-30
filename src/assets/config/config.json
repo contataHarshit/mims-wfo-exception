@@ -6,8 +6,8 @@
     { "label": "Other", "value": "other" }
   ],
   "OdReasonList": [
-    { "label": "Client Meeting", "value": "Client Meeting" },
-    { "label": "Interview", "value": "Interview" },
+    { "label": "Client site visit", "value": "Client site visit" },
+    { "label": "Onsite Interview", "value": "Onsite Interview" },
     { "label": "Other", "value": "other" }
   ]
 }

@@ -105,12 +105,7 @@
               </div>
             </th>
 
-            <th style="min-width:120px">
-              <div class="sort-icon-container">
-                OD Days
-                <p-sortIcon field="odDays" (click)="onSortClick('odDays')" class="sortable-icon"></p-sortIcon>
-              </div>
-            </th>
+
 
             <th style="min-width:120px">
               <div class="sort-icon-container">
@@ -133,6 +128,12 @@
               </div>
             </th>
 
+            <th style="min-width:120px">
+              <div class="sort-icon-container">
+                OD Days
+                <p-sortIcon field="odDays" (click)="onSortClick('odDays')" class="sortable-icon"></p-sortIcon>
+              </div>
+            </th>
             <th style="min-width:150px">
               <div class="sort-icon-container">
                 Total Exceptions
@@ -181,6 +182,7 @@
             <td style="text-align:center">{{ rec.workingDays }}</td>
             <td style="text-align:center">{{ rec.presentDays }}</td>
             <td style="text-align:center">{{ rec.leaveDays }}</td>
+            <td style="text-align:center">{{ rec.odDays }}</td>
             <td style="text-align:center">{{ rec.TOTAL }}</td>
             <td style="text-align:center">{{ rec.APPROVED }}</td>
             <td style="text-align:center">{{ rec.REJECTED }}</td>
