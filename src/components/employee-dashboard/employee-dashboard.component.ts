@@ -96,22 +96,24 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   department: string = "";
   allSelected: boolean = false;
 
+  get isResourceView(): boolean {
+    return this.selectedView === "resource" || this.selectedView === "downline";
+  }
+
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
     this.role = localStorage.getItem("role") || "";
     this.department = localStorage.getItem("department") || "";
-    if (this.role == "ADMIN") {
-      this.selectedView = "all";
-      this.commonService.selectedView = "all";
-      this.commonService.viewChange$.next("all");
-      localStorage.setItem("selectedView", "all");
-    } else {
-      this.selectedView = "self";
-      this.commonService.selectedView = "self";
-      this.commonService.viewChange$.next("self");
-      localStorage.setItem("selectedView", "self");
-    }
+    const savedView = localStorage.getItem("selectedView");
+    const validSavedView = ["self", "resource", "downline", "all"].includes(savedView || "")
+      ? savedView
+      : null;
+    this.selectedView =
+      (validSavedView || (this.role === "ADMIN" ? "all" : "self")) as string;
+    this.commonService.selectedView = this.selectedView;
+    this.commonService.viewChange$.next(this.selectedView);
+    localStorage.setItem("selectedView", this.selectedView);
     // Load employee list from localStorage FIRST
     this.loadEmployeeListFromCache();
 
@@ -136,11 +138,17 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         const previousView = this.selectedView;
         this.filters.status = "PENDING";
         this.allSelected = false;
-        this.selectedView = localStorage.getItem("selectedView") || "self";
+        const emittedView = newView || localStorage.getItem("selectedView") || "self";
+        this.selectedView = ["self", "resource", "downline", "all"].includes(
+          emittedView,
+        )
+          ? emittedView
+          : "self";
+        localStorage.setItem("selectedView", this.selectedView);
         if (this.selectedView === "self") {
           this.setManagerForSelfView();
         }
-        if (this.selectedView === "resource") {
+        if (this.isResourceView) {
           let temp = JSON.parse(localStorage.getItem("employeeData") || "null");
           this.filters.employeeName = null;
           this.filters.managerName = {
@@ -158,7 +166,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
           if (this.selectedView === "self") {
             this.setManagerForSelfView();
           }
-          if (this.selectedView === "resource") {
+          if (this.isResourceView) {
             let temp = JSON.parse(
               localStorage.getItem("employeeData") || "null",
             );
@@ -201,7 +209,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         this.reasonList = this.router.url.includes("od")
           ? this.commonService.config?.OdReasonList
           : this.commonService.config?.reasonList || [];
-        if (data && data.length > 0 && this.selectedView === "resource") {
+        if (data && data.length > 0 && this.isResourceView) {
           this.employeeList = data.map((item: any) => ({
             label: `${item.FullName}(${item.EmployeeNumber})`,
             value: item.EmployeeNumber,
@@ -469,7 +477,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
               if (
                 Object.keys(tempHash)[0] == "REJECTED" ||
                 (Object.keys(tempHash)[0] == "APPROVED" &&
-                  this.selectedView === "resource")
+                  this.isResourceView)
               ) {
                 this.disableSelectAll = true;
               }
@@ -751,11 +759,11 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     const isApproved = req.status === "APPROVED";
     const isNotAdmin = this.role !== "ADMIN" && this.role !== "MANAGER";
     const isNotHR = this.department !== "HR";
-    const isResourceView = this.selectedView === "resource";
+    const isResourceView = this.isResourceView;
 
     return (
       (isApproved && isNotAdmin && isNotHR) ||
-      (isNotHR && this.role !== "ADMIN" && this.selectedView !== "resource") ||
+      (isNotHR && this.role !== "ADMIN" && !isResourceView) ||
       (isResourceView && req.status === "APPROVED")
     );
   }

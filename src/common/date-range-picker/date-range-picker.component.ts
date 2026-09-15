@@ -37,6 +37,7 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   @Input() disabledDates: Date[] = [];
   @Input() minDate: Date | null = null;
   @Input() maxDate: Date | null = null;
+  @Input() selectionMode: "multiple" | "range" = "multiple";
 
   @Output() rangeChange = new EventEmitter<Date[]>();
   @Output() okClick = new EventEmitter<Date[]>();
@@ -89,19 +90,22 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   }
 
   onCalendarHide() {
-    this.cancelSelection(false);
+    this.tempSelection = [...this.lastApplied];
   }
 
   confirmSelection() {
-    this.range = [...this.tempSelection];
-    this.lastApplied = [...this.tempSelection];
+    const selected = this.tempSelection.filter((date): date is Date => !!date);
+    this.range =
+      this.selectionMode === "range" ? selected.slice(0, 2) : selected;
+    this.lastApplied = [...this.range];
+    this.tempSelection = [...this.range];
     this.rangeChange.emit(this.range);
     this.okClick.emit(this.range);
     this.hideCalendar();
   }
 
   cancelSelection(manual: boolean = false) {
-    this.tempSelection = [];
+    this.tempSelection = [...this.lastApplied];
     this.hideCalendar();
   }
 
@@ -116,14 +120,18 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   get displayText(): string {
     if (!this.range?.length) return "";
 
-    return this.range
-      .map((d) => {
-        const day = d.getDate();
-        const month = d.toLocaleDateString("en-GB", { month: "short" }); // Use "short" for abbreviated month
-        const year = d.getFullYear();
-        return `${day} ${month} ${year}`;
-      })
-      .join(", ");
+    if (this.selectionMode === "range" && this.range.length > 1) {
+      return `${this.formatDate(this.range[0])} - ${this.formatDate(this.range[1])}`;
+    }
+
+    return this.range.map((date) => this.formatDate(date)).join(", ");
+  }
+
+  private formatDate(date: Date): string {
+    const day = date.getDate();
+    const month = date.toLocaleDateString("en-GB", { month: "short" });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
   }
 
   openCalendar() {

@@ -84,6 +84,12 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   projectList: any[] = [];
 
   reasonList: any = [];
+  employeeList: any[] = [];
+  requestTypeList = [
+    { label: "Permanent Work From Home", value: "PERMANENT_WFH" },
+    { label: "Date Range", value: "DATE_RANGE" },
+  ];
+  selectedView = "self";
   maxSelectableDate: any;
   minSelectableDate: any;
   tab: string = "create-request";
@@ -103,6 +109,37 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     this.commonService.setLoading(true);
     this.updateTab(this.router.url);
+
+    const savedView = localStorage.getItem("selectedView");
+    this.selectedView =
+      savedView === "resource"
+        ? "downline"
+        : savedView || this.commonService.selectedView || "self";
+    this.commonService.selectedView = this.selectedView;
+    if (this.isResourceView) this.resetRows();
+    this.loadEmployeeListFromStorage();
+    this.commonService.viewChange$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((view) => {
+        const nextView = view || "self";
+        if (this.selectedView === nextView) return;
+        this.selectedView = nextView;
+        const { minDate, maxDate } = this.getAllowedDateRange();
+        this.minSelectableDate = minDate;
+        this.maxSelectableDate = maxDate;
+        this.resetRows();
+        this.loadEmployeeListFromStorage();
+        this.cdr.detectChanges();
+      });
+
+    this.commonService.allEmployeeData$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((employees) => this.setEmployeeList(employees));
+    this.commonService.managerEmployeeData$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((employees) => {
+        if (this.isResourceSelection) this.setEmployeeList(employees);
+      });
 
     this.router.events
       .pipe(
@@ -269,6 +306,17 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  onResourceEmployeeChange(row: any, value: any): void {
+    row.employeeNumber = value?.value ?? value;
+    this.cdr.detectChanges();
+  }
+
+  onResourceRequestTypeChange(row: any, value: any): void {
+    row.requestType = value?.value ?? value;
+    if (row.requestType === "PERMANENT_WFH") row.dateRange = [];
+    this.cdr.detectChanges();
+  }
+
   confirmOtherReason(exception: any) {
     const entered = exception.otherReason?.trim();
     if (!entered) {
@@ -296,6 +344,15 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   }
 
   addMore() {
+    if (this.isResourceView) {
+      if (!this.validateResourceRow(this.formData.rows[this.formData.rows.length - 1])) {
+        return;
+      }
+      this.formData.rows.push(this.createRow());
+      this.cdr.detectChanges();
+      return;
+    }
+
     for (let i = 0; i < this.formData.rows.length; i++) {
       if (
         this.formData.rows[i].dateRange.length == 0 ||
@@ -324,32 +381,14 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   deleteIndex(i: number) {
     this.formData.rows.splice(i, 1);
 
-    if (this.formData.rows.length === 0) {
-      this.formData.rows.push({
-        dateRange: [],
-        exceptionRequestedDays: "",
-        primaryReason: null,
-        remarks: "",
-        showOtherReason: false,
-        otherReason: "",
-      });
-    }
+    if (this.formData.rows.length === 0) this.formData.rows.push(this.createRow());
 
     this.updateDisabledDates();
     this.cdr.detectChanges();
   }
 
   resetForm(showToast = true) {
-    this.formData.rows = [
-      {
-        dateRange: [],
-        exceptionRequestedDays: "",
-        primaryReason: null,
-        remarks: "",
-        showOtherReason: false,
-        otherReason: "",
-      },
-    ];
+    this.resetRows();
     this.loadFormData();
     this.cdr.detectChanges();
     this.updateDisabledDates();
@@ -361,6 +400,13 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     const sortedDates = selectedDates.sort((a, b) => a.getTime() - b.getTime());
     const sourceRow = this.formData.rows[rowIndex];
+
+    if (this.isResourceView) {
+      sourceRow.dateRange = sortedDates;
+      this.updateDisabledDates();
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.formData.rows[rowIndex] = {
       ...sourceRow,
@@ -434,6 +480,10 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   }
 
   validateForm(): boolean {
+    if (this.isResourceView) {
+      return this.formData.rows.every((row: any) => this.validateResourceRow(row));
+    }
+
     const seenDates = new Set<string>();
 
     for (const [i, ex] of this.formData.rows.entries()) {
@@ -465,8 +515,22 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const payload =
-      this.tab === "create-request"
+    const payload = this.isResourceView
+      ? {
+          requests: this.formData.rows.map((row: any) => ({
+            employeeNumber: row.employeeNumber?.value || row.employeeNumber,
+            requestType: row.requestType,
+            ...(row.requestType === "DATE_RANGE"
+              ? {
+                  startDate: this.convertToISODate(row.dateRange[0]),
+                  endDate: this.convertToISODate(
+                    row.dateRange[row.dateRange.length - 1],
+                  ),
+                }
+              : {}),
+          })),
+        }
+      : this.tab === "create-request"
         ? {
             exceptions: this.formData.rows
               .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
@@ -550,8 +614,15 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     return selectedProjects.join(", ");
   }
 
-  getAllowedDateRange(): { minDate: Date; maxDate: Date } {
+  getAllowedDateRange(): { minDate: Date; maxDate: Date | null } {
     const today = new Date();
+
+    if (this.isResourceView) {
+      return {
+        minDate: new Date(today.getFullYear(), today.getMonth(), 1),
+        maxDate: null,
+      };
+    }
 
     // Allow last 199 days for both pages
     const minDate = addDays(today, -199);
@@ -571,8 +642,10 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     return { minDate, maxDate };
   }
 
-  getWeekendsBetween(start: Date, end: Date): Date[] {
+  getWeekendsBetween(start: Date | null, end: Date | null): Date[] {
     const dates: Date[] = [];
+    if (!start || !end) return dates;
+
     let current = new Date(start);
     current.setHours(0, 0, 0, 0);
 
@@ -590,11 +663,91 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.loadFormData(event.month, event.year, true);
   }
   private updateTab(url: string): void {
+    const previousTab = this.tab;
     if (url.includes("create-request")) {
       this.tab = "create-request";
     } else if (url.includes("on-duty-request")) {
       this.tab = "on-duty-request";
     }
+
+    if (
+      previousTab !== this.tab &&
+      this.isResourceSelection &&
+      this.tab === "on-duty-request"
+    ) {
+      this.formData.rows.forEach((row: any) => {
+        row.requestType = "DATE_RANGE";
+      });
+      this.cdr.detectChanges();
+    }
+  }
+
+  get isResourceView(): boolean {
+    return this.isResourceSelection;
+  }
+
+  get isResourceSelection(): boolean {
+    return this.selectedView === "resource" || this.selectedView === "downline";
+  }
+
+  private createRow(): any {
+    return this.isResourceView
+      ? {
+          employeeNumber: null,
+          requestType: this.tab === "on-duty-request" ? "DATE_RANGE" : null,
+          dateRange: [],
+        }
+      : {
+          dateRange: [],
+          exceptionRequestedDays: "",
+          primaryReason: null,
+          remarks: "",
+          showOtherReason: false,
+          otherReason: "",
+        };
+  }
+
+  private resetRows(): void {
+    this.formData.rows = [this.createRow()];
+    this.updateDisabledDates();
+  }
+
+  private setEmployeeList(employees: any[] = []): void {
+    if (!this.isResourceSelection || !employees.length) return;
+    this.employeeList = employees.map((employee: any) => ({
+      label: `${employee.FullName || employee.fullName || employee.employeeName} (${employee.EmployeeNumber || employee.employeeNumber})`,
+      value: employee.EmployeeNumber || employee.employeeNumber,
+    }));
+    this.cdr.detectChanges();
+  }
+
+  private loadEmployeeListFromStorage(): void {
+    if (!this.isResourceView) return;
+
+    const storedEmployees =
+      localStorage.getItem("allEmployeeData") ||
+      localStorage.getItem("managerEmployeeData");
+
+    if (!storedEmployees) return;
+
+    try {
+      const employees = JSON.parse(storedEmployees);
+      if (Array.isArray(employees)) this.setEmployeeList(employees);
+    } catch (error) {
+      console.error("Error parsing employee data from localStorage:", error);
+    }
+  }
+
+  private validateResourceRow(row: any): boolean {
+    if (!row?.employeeNumber || !row?.requestType) {
+      this.toastr.warning("Please select an employee and request type.");
+      return false;
+    }
+    if (row.requestType === "DATE_RANGE" && row.dateRange?.length < 2) {
+      this.toastr.warning("Please select a date range.");
+      return false;
+    }
+    return true;
   }
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: Event) {

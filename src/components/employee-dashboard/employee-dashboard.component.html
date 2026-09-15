@@ -93,7 +93,7 @@
         <tr>
           <th *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
             <input type="checkbox"
-              *ngIf="!disableSelectAll && (selectedView!=='resource' || filters?.status?.value!=='APPROVED')"
+              *ngIf="!disableSelectAll && (!isResourceView || filters?.status?.value!=='APPROVED')"
               (change)="selectAllChange($event)" [(ngModel)]="allSelected">
           </th>
 
@@ -196,10 +196,10 @@
       (
         department !== 'HR' &&
         role != 'ADMIN' &&
-        selectedView !== 'resource'
+        !isResourceView
       ) ||
       (
-        selectedView == 'resource' &&
+        isResourceView &&
         req.status == 'APPROVED'
       )
     )

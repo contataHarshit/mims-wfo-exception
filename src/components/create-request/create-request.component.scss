@@ -84,6 +84,27 @@
   padding: 0.45rem;
 }
 
+.resource-table th,
+.resource-table td {
+  width: 33.33%;
+}
+
+.resource-table th:last-child,
+.resource-table td:last-child {
+  width: 110px;
+}
+
+.resource-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.not-applicable {
+  color: #777;
+  font-size: 0.75rem;
+}
+
 /* TEXTAREA */
 textarea {
   min-height: 34px;

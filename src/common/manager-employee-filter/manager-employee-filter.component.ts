@@ -82,7 +82,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     if (
       changes["managerValue"]?.currentValue !==
         changes["managerValue"]?.previousValue &&
-      this.currentView !== "resource"
+      this.currentView !== "downline" && this.currentView !== "resource"
     ) {
       this.filterEmployeesByManager(this.managerValue);
       return;
@@ -90,7 +90,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     if (this.currentView === "all" && !this.managerValue) {
       this.employeeList = this.mapEmployees(this.allEmployees);
     }
-    if (this.currentView === "resource") {
+    if (this.currentView === "downline" || this.currentView === "resource") {
       let temp = JSON.parse(
         localStorage.getItem("managerEmployeeData") || "[]",
       );
@@ -155,7 +155,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   }
 
   onEmployeeChange(employeeEmpNo: any) {
-    if (this.currentView === "resource" && this.managerValue) {
+    if ((this.currentView === "downline" || this.currentView === "resource") && this.managerValue) {
       this.employeeValue = employeeEmpNo;
       this.employeeValueChange.emit(employeeEmpNo);
       return;

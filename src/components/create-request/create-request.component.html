@@ -20,7 +20,7 @@
     <div class="exception-section">
       <h4 class="section-title">{{tab=="create-request"?"Work From Home Details":"On Duty Details"}}</h4>
 
-      <p-table [value]="formData.rows" dataKey="index" class="p-datatable-gridlines"
+      <p-table *ngIf="!isResourceView" [value]="formData.rows" dataKey="index" class="p-datatable-gridlines"
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
@@ -62,6 +62,48 @@
 
             <td>
               <div style="display: flex; justify-content: space-around;">
+                <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
+                  (click)="deleteIndex(i)" *ngIf="formData.rows.length > 1"></button>
+                <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"
+                  (click)="addMore()" *ngIf="i === formData.rows.length - 1"></button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <p-table *ngIf="isResourceView" [value]="formData.rows" dataKey="index" class="p-datatable-gridlines resource-table"
+        [tableStyle]="{ 'min-width': '100%' }">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Employee <span style="color: red;">*</span></th>
+            <th>Request Type <span style="color: red;">*</span></th>
+            <th>Date Range</th>
+            <th>Action</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-e let-i="rowIndex">
+          <tr>
+            <td>
+              <app-common-select [options]="employeeList" bindValue="value" [value]="e.employeeNumber"
+                placeholder="Select Employee" (valueChange)="onResourceEmployeeChange(e, $event)"></app-common-select>
+            </td>
+            <td>
+              <app-common-select [options]="requestTypeList" bindValue="value" [value]="e.requestType"
+                placeholder="Select Request Type"
+                [disabled]="tab === 'on-duty-request' || !e.employeeNumber"
+                (valueChange)="onResourceRequestTypeChange(e, $event)"></app-common-select>
+            </td>
+            <td>
+              <app-date-range-picker *ngIf="e.requestType === 'DATE_RANGE'" [(range)]="e.dateRange"
+                selectionMode="range"
+                [disabledDates]="disabledDates" [minDate]="minSelectableDate" [maxDate]="maxSelectableDate"
+                (okClick)="onMultiDateConfirm($event, i)" (monthYearChange)="onMonthYearChanged($event)"
+                style="width: 12vw;"></app-date-range-picker>
+              <span *ngIf="e.requestType === 'PERMANENT_WFH'" class="not-applicable">Not applicable</span>
+            </td>
+            <td>
+              <div class="resource-actions">
                 <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
                   (click)="deleteIndex(i)" *ngIf="formData.rows.length > 1"></button>
                 <button pButton icon="pi pi-plus" class="p-button-rounded p-button-success p-button-sm"

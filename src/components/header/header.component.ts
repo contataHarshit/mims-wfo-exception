@@ -1,19 +1,24 @@
 // src/app/components/header/header.component.ts
-import { Component, Input } from "@angular/core";
+import { Component, EventEmitter, Input, Output } from "@angular/core";
 import { Router } from "@angular/router";
 import { ConfirmPopupComponent } from "../../popup/confirm-popup/confirm-popup.component";
 import { MatDialog } from "@angular/material/dialog";
+import { CommonModule } from "@angular/common";
 
 @Component({
   selector: "app-header",
   standalone: true,
+  imports: [CommonModule],
   templateUrl: "./header.component.html",
   styleUrls: ["./header.component.scss"],
 })
 export class HeaderComponent {
   @Input() header: string = "";
   @Input() role: string = "";
-
+  @Input() dashboardMode: "wfh" | "od" = "wfh";
+  @Input() dashboardModeReady = false;
+  @Output() dashboardModeChange = new EventEmitter<"wfh" | "od">();
+  
   constructor(private router: Router, private dialog: MatDialog) {}
   close() {
     // Clear app data
@@ -39,5 +44,9 @@ export class HeaderComponent {
       }
     });
     
+  }
+  onViewChange(event: Event) {
+    const mode = (event.target as HTMLSelectElement).value as "wfh" | "od";
+    this.dashboardModeChange.emit(mode);
   }
 }
