@@ -97,9 +97,14 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   allSelected: boolean = false;
 
   get isResourceView(): boolean {
-    return this.selectedView === "resource" || this.selectedView === "downline";
+    return this.selectedView === "resource";
   }
-
+  get isDownlineView():boolean {
+    return this.selectedView ==="downline"
+  }
+  get isOdDashboard(): boolean {
+    return this.router.url.split("?")[0].split("/").includes("od-dashboard");
+  }
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
@@ -206,7 +211,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     this.commonService.managerEmployeeData$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: any[]) => {
-        this.reasonList = this.router.url.includes("od")
+        this.reasonList = this.isOdDashboard
           ? this.commonService.config?.OdReasonList
           : this.commonService.config?.reasonList || [];
         if (data && data.length > 0 && this.isResourceView) {
@@ -397,9 +402,9 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
-    const url = this.router.url.includes("od")
-      ? `${this.constants.onDutyRequest}/?${params.toString()}`
-      : `${this.constants.exceptionRequest}/paginated?${params.toString()}`;
+    const url = (this.isOdDashboard && !this.isDownlineView)
+      ? `${this.constants.onDutyRequests}/?${params.toString()}`:(this.isOdDashboard && this.isDownlineView)?`${this.constants.odRequests}/?${params.toString()}`
+      :(!this.isOdDashboard && !this.isDownlineView) ?`${this.constants.exceptionRequest}/paginated?${params.toString()}`:`${this.constants.wfhRequest}?${params.toString()}`;
 
     this.http
       .getData(url)
@@ -409,7 +414,20 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
           console.log("res--------->", res);
 
           if (res.success) {
-            const rows = res.data.exceptions || res.data.onDutyRequests;
+            // Each dashboard endpoint uses a different collection name, and some
+            // paginated endpoints wrap that collection in a `data` property.
+            // Always normalize it to an array before consuming it below.
+            const requestCollection =
+              res?.data?.exceptions ??
+              res?.data?.onDutyRequests ??
+              res?.data?.odRequests ??
+              res?.data?.wfhRequests ??
+              res?.data?.requests;
+            const rows = Array.isArray(requestCollection)
+              ? requestCollection
+              : Array.isArray(requestCollection?.data)
+                ? requestCollection.data
+                : [];
 
             // If exporting, just download CSV and return early
             if (exporting) {
@@ -483,7 +501,11 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
               }
             }
 
-            this.totalRecords = res.data.pagination?.total || rows.length;
+            this.totalRecords =
+              res?.data?.pagination?.total ??
+              requestCollection?.pagination?.total ??
+              requestCollection?.total ??
+              rows.length;
             this.selectedRequests = [];
           } else {
             if (!exporting) {
@@ -609,9 +631,10 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     if (this.remarks) {
       payload.remarks = this.remarks;
     }
-    const url = this.router.url.includes("od")
-      ? this.constants.onDutyRequest
-      : this.constants.exceptionRequest;
+        const url = (this.isOdDashboard && !this.isDownlineView)
+      ? `${this.constants.onDutyRequests}`:(this.isOdDashboard && this.isDownlineView)?`${this.constants.odRequests}/status`
+      :(!this.isOdDashboard && !this.isDownlineView) ?`${this.constants.exceptionRequest}`:`${this.constants.wfhRequestStatus}`;
+
     this.http.putData(url, payload).subscribe({
       next: (res: any) => {
         if (res.success) {
@@ -670,8 +693,8 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
 
         this.http
           .putData(
-            this.router.url.includes("od")
-              ? `${this.constants.onDutyRequest}`
+            this.isOdDashboard
+              ? `${this.constants.onDutyRequests}`
               : `${this.constants.exceptionRequest}`,
             payload,
           )
@@ -702,9 +725,10 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         title: "Confirm Delete",
       },
     });
-    const url = this.router.url.includes("od")
-      ? `${this.constants.onDutyRequest}/${req.id}`
-      : `${this.constants.exceptionRequest}/${req.id}`;
+        const url = (this.isOdDashboard && !this.isDownlineView)
+      ? `${this.constants.onDutyRequests}/${req.id}`:(this.isOdDashboard && this.isDownlineView)?`${this.constants.odRequests}/${req.id}`
+      :(!this.isOdDashboard && !this.isDownlineView) ?`${this.constants.exceptionRequest}/${req.id}`:`${this.constants.wfhRequest}/${req.id}`;
+
     dialogRef.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
         this.http.deleteData(url).subscribe({

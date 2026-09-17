@@ -267,10 +267,12 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     // Fetch disabled dates
     const url =
       this.tab === "create-request"
-        ? this.constant.selectedDates
-        : this.constant.od_DisabledDates;
+        ? `${this.constant.selectedDates}?month=${month}&year=${year}`
+        : `${this.constant.onDutyDisabledDates}?fromDate=${this.toDateParam(
+            new Date(year, month - 1, 1),
+          )}&toDate=${this.toDateParam(new Date(year, month, 0))}`;
     this.http
-      .getData(`${url}?month=${month}&year=${year}`)
+      .getData(url)
       .pipe(finalize(() => this.commonService.setLoading(false)))
       .subscribe({
         next: (res: any) => {
@@ -442,6 +444,13 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
+
+  private toDateParam(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
   updateDisabledDates() {
     const combined: Date[] = [];
 
@@ -465,9 +474,10 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Always disable Saturdays & Sundays
+    // OD availability is governed by the API (including Fridays and Saturdays).
+    // Keep the existing WFH weekend rule local to the WFH form only.
     combined.push(
-      ...this.getWeekendsBetween(
+      ...this.getNonWorkingDaysBetween(
         this.minSelectableDate,
         this.maxSelectableDate,
       ),
@@ -515,45 +525,76 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const payload = this.isResourceView
-      ? {
-          requests: this.formData.rows.map((row: any) => ({
-            employeeNumber: row.employeeNumber?.value || row.employeeNumber,
-            requestType: row.requestType,
-            ...(row.requestType === "DATE_RANGE"
-              ? {
-                  startDate: this.convertToISODate(row.dateRange[0]),
-                  endDate: this.convertToISODate(
-                    row.dateRange[row.dateRange.length - 1],
-                  ),
-                }
-              : {}),
-          })),
-        }
-      : this.tab === "create-request"
-        ? {
-            exceptions: this.formData.rows
-              .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
-              .map((ex: any) => {
-                const date = new Date(ex.dateRange[0]);
-                const formatted =
-                  date.getFullYear() +
-                  "-" +
-                  String(date.getMonth() + 1).padStart(2, "0") +
-                  "-" +
-                  String(date.getDate()).padStart(2, "0");
+    const isWfhRequest = this.tab === "create-request";
 
-                return {
-                  selectedDate: formatted,
-                  primaryReason:
-                    typeof ex.primaryReason === "object"
-                      ? ex.primaryReason?.value || ex.primaryReason?.label || ""
-                      : ex.primaryReason || "",
-                  remarks: ex.remarks?.trim() || "",
-                };
-              }),
+    if (isWfhRequest) {
+      const wfhPayloads = this.formData.rows
+        .filter(
+          (row: any) =>
+            row.requestType === "PERMANENT_WFH" ||
+            (row.dateRange && row.dateRange.length > 0),
+        )
+        .map((row: any) => {
+          const employeeNumber = this.isResourceView
+            ? row.employeeNumber?.value || row.employeeNumber
+            : this.formData.employeeNumber;
+
+          const isPermanent = this.isResourceView
+            ? row.requestType === "PERMANENT_WFH"
+            : false;
+
+          if (isPermanent) {
+            return { employeeNumber, isPermanent: true };
           }
-        : {
+
+          return {
+            employeeNumber,
+            fromDate: this.convertToISODate(row.dateRange[0]),
+            toDate: this.convertToISODate(
+              row.dateRange[row.dateRange.length - 1],
+            ),
+            isPermanent: false,
+          };
+        });
+
+      if (!wfhPayloads.length) {
+        this.toastr.warning("Please select a valid WFH date range or permanent option.");
+        this.commonService.setLoading(false);
+        return;
+      }
+
+      const requests$ = wfhPayloads.map((payload: any) =>
+        this.http.postData(payload, this.constant.wfhRequest),
+      );
+
+      import("rxjs").then(({ forkJoin }) => {
+        forkJoin(requests$)
+          .pipe(
+            finalize(() => {
+              this.commonService.setLoading(false);
+            }),
+          )
+          .subscribe({
+            next: () => {
+              this.toastr.success("WFH request submitted successfully!");
+              this.resetForm(false);
+            },
+            error: (err) => {
+              console.error("WFH Submission Error:", err);
+              this.toastr.error(
+                err?.error?.error ||
+                  err?.error?.errors ||
+                  "An error occurred while submitting the WFH request.",
+              );
+            },
+          });
+      });
+      return;
+    }
+
+    const payload =
+      this.tab === "on-duty-request"
+        ? {
             requests: this.formData.rows
               .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
               .map((ex: any) => {
@@ -574,11 +615,31 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
                   remarks: ex.remarks?.trim() || "",
                 };
               }),
+          }
+        : {
+            exceptions: this.formData.rows
+              .filter((ex: any) => ex.dateRange && ex.dateRange.length > 0)
+              .map((ex: any) => {
+                const date = new Date(ex.dateRange[0]);
+                const formatted =
+                  date.getFullYear() +
+                  "-" +
+                  String(date.getMonth() + 1).padStart(2, "0") +
+                  "-" +
+                  String(date.getDate()).padStart(2, "0");
+
+                return {
+                  selectedDate: formatted,
+                  primaryReason:
+                    typeof ex.primaryReason === "object"
+                      ? ex.primaryReason?.value || ex.primaryReason?.label || ""
+                      : ex.primaryReason || "",
+                  remarks: ex.remarks?.trim() || "",
+                };
+              }),
           };
-    const url =
-      this.tab === "create-request"
-        ? this.constant.exceptionRequest
-        : this.constant.onDutyRequest;
+
+    const url = this.constant.onDutyRequests;
     this.http
       .postData(payload, url)
       .pipe(
@@ -642,7 +703,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     return { minDate, maxDate };
   }
 
-  getWeekendsBetween(start: Date | null, end: Date | null): Date[] {
+  getNonWorkingDaysBetween(start: Date | null, end: Date | null): Date[] {
     const dates: Date[] = [];
     if (!start || !end) return dates;
 
@@ -651,7 +712,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     while (current <= end) {
       const day = current.getDay();
-      if (day === 0 || day === 6) {
+      const isOnDutyRequest = this.tab === "on-duty-request";
+      if (isOnDutyRequest ? day === 5 || day === 6 : day === 0 || day === 6) {
         dates.push(new Date(current));
       }
       current.setDate(current.getDate() + 1);

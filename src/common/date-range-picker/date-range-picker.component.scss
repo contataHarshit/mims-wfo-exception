@@ -26,6 +26,20 @@
   display: none;
 }
 
+/*
+ * Months can contain five or six visible weeks. Reserve space for six so
+ * opening August, September, etc. never changes the calendar overlay height
+ * or moves the OK/Cancel controls.
+ */
+::ng-deep .custom-calendar-panel {
+  min-height: 29rem;
+}
+
+::ng-deep .custom-calendar-panel .p-datepicker-calendar {
+  height: 18rem;
+  table-layout: fixed;
+}
+
 .popup-buttons {
   display: flex;
   justify-content: flex-end;

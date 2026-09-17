@@ -10,6 +10,10 @@ export class ConstantService {
 
   exceptionRequest = this.baseUrl + "api/exception-requests";
 
+  wfhRequest = this.baseUrl + "api/wfh-requests";
+
+  wfhRequestStatus = this.wfhRequest + "/status";
+
   employeeData = this.baseUrl + "api/employee";
 
   mangerEmployeeData = this.employeeData + "/manager";
@@ -28,9 +32,11 @@ export class ConstantService {
 
   sendMail = this.baseUrl + "api/wfh/non-compliance";
 
-  onDutyRequest=this.baseUrl + "api/onduty-requests"
+  onDutyRequests = this.baseUrl + "api/onduty-requests";
 
-  od_DisabledDates=this.onDutyRequest+"/disabled-dates"
+  onDutyDisabledDates = this.onDutyRequests + "/disabled-dates";
+
+  odRequests = this.baseUrl + "api/od-requests";
 
   constructor() {}
 }
