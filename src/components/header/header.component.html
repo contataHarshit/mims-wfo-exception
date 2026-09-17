@@ -3,8 +3,8 @@
   <span class="header-title">{{header}}</span>
   <select *ngIf="dashboardModeReady" id="dashboard-mode" [value]="dashboardMode" (change)="onViewChange($event)"
     class="dashboard-mode-select" aria-label="Select workflow">
-    <option value="wfh">WFH Dashboard</option>
-    <option value="od">OD Dashboard</option>
+    <option value="wfh">WFH</option>
+    <option value="od">OD</option>
   </select>
   <button (click)="close()" class="logout-btn">Close</button>
 </h2>

@@ -30,6 +30,7 @@ interface HrAdminRecord {
   holidaysDays?: number;
   leaveDays?: number;
   deficiencyDays?: number;
+  wfhStatus?: string;
 }
 
 @Component({
@@ -336,6 +337,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
               leaveDays: item.leaveDays || 0,
               deficiencyDays: item.deficiencyDays || 0,
               odDays: item.odDays || 0,
+              wfhStatus: item.wfhStatus || "N/A",
             }));
 
             this.buildDeficiencyDaysOptions(this.allHrData);
