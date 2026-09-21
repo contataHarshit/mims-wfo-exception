@@ -1,6 +1,5 @@
 <app-header [header]="commonService.header" [role]="role" [dashboardMode]="dashboardMode"
-  [dashboardModeReady]="dashboardModeReady"
-  (dashboardModeChange)="onDashboardModeChange($event)"></app-header>
+  [dashboardModeReady]="dashboardModeReady" (dashboardModeChange)="onDashboardModeChange($event)"></app-header>
 
 <div class="tabs-wrapper" [class.hidden]="!(commonService.loading === false || token)">
   <div class="tabs">
@@ -8,14 +7,15 @@
       {{ item.label }}
     </button>
     <div class="select-wrapper"
-      *ngIf="((isDashboardPage && (role === 'MANAGER' || department === 'HR' || role === 'ADMIN')) || isAttendanceDashboardPage || isRequestPage)">
+      *ngIf="((isDashboardPage && (role === 'MANAGER' || department === 'HR' || role === 'ADMIN')) || isAttendanceDashboardPage || (isRequestPage && role !== 'EMPLOYEE'))">
       <div *ngIf="isDashboardPage || isRequestPage" class="select-view-wrapper">
-        <label for="" class="approvalView">{{isDashboardPage ? (isOdDashboardPage ? "OD Request View:" : "WFH Request View:") : "Request View:" }}&nbsp;</label>
+        <label for="" class="approvalView">{{isDashboardPage ? (isOdDashboardPage ? "OD Request View:" : "WFH Request
+          View:") : "Request View:" }}&nbsp;</label>
         <select [(ngModel)]="commonService.selectedView" (change)="onViewChange($event)" class="styled-select">
           <option *ngFor="let option of displayedViewOptions" [value]="option.value">{{option.label}}</option>
         </select>
       </div>
-      
+
       <select [(ngModel)]="commonService.attendanceView" (change)="onViewChange($event,true)" class="styled-select"
         *ngIf="isAttendanceDashboardPage">
         <option value="all" *ngFor="let option of attendanceViewOptions" [value]="option.value">{{option.label}}

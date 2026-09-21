@@ -87,7 +87,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   isAuthenticating = true;
   private hasLoadedData = false;
-  isRequestPage: boolean= false;
+  isRequestPage: boolean = false;
 
   constructor(
     public commonService: CommonService,
@@ -98,9 +98,9 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {
     if (isPlatformBrowser(this.platformId)) {
-      const savedDashboardMode = localStorage.getItem("dashboardMode");
       this.dashboardMode =
-        savedDashboardMode === "od" || this.router.url.includes("od")
+        this.router.url.includes("od-dashboard") ||
+        this.router.url.includes("on-duty-request")
           ? "od"
           : "wfh";
     }
@@ -109,14 +109,17 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    const savedDashboardMode = localStorage.getItem("dashboardMode");
     this.dashboardMode =
-      savedDashboardMode === "od" || this.router.url.includes("od")
+      this.router.url.includes("od-dashboard") ||
+      this.router.url.includes("on-duty-request")
         ? "od"
         : "wfh";
     this.dashboardModeReady = true;
 
     this.commonService.loadConfig().finally(() => {});
+    // View selection is intentionally not persisted between page loads.
+    localStorage.removeItem("selectedView");
+    localStorage.removeItem("dashboardMode");
 
     this.router.events
       .pipe(
@@ -126,8 +129,8 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       .subscribe((event) => {
         const navEnd = event as NavigationEnd;
         const url = navEnd.urlAfterRedirects;
-        console.log("url---------->",url);
-        
+        console.log("url---------->", url);
+
         this.isDashboardPage =
           url.split("?")[0].split("-")[0].includes("dashboard") ||
           url.split("?")[0].split("-")[0].includes("od");
@@ -137,19 +140,15 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
           .split("-")[0]
           .includes("attendance");
         const currentPath = url.split("?")[0].replace(/^\/+/, "");
-        this.isRequestPage = ["", "create-request", "on-duty-request"].includes(currentPath);
+        this.isRequestPage = ["", "create-request", "on-duty-request"].includes(
+          currentPath,
+        );
         this.syncDashboardModeWithUrl(url);
         if (this.isRequestPage) {
-          const savedView = localStorage.getItem("selectedView");
-          const requestView = savedView === "resource" ? "downline" : savedView;
-          const selectedView =
-            requestView === "downline" ? "downline" : "self";
-
-          if (this.commonService.selectedView !== selectedView) {
-            this.commonService.selectedView = selectedView;
-            this.commonService.viewChange$.next(selectedView);
-          }
-          localStorage.setItem("selectedView", selectedView);
+          this.setView("self");
+        } else if (["dashboard", "od-dashboard"].includes(currentPath)) {
+          this.setDefaultViewByRole(this.role);
+          this.commonService.viewChange$.next(this.commonService.selectedView);
         }
         this.updateActiveTabs(url);
         this.addAllOptionForOD();
@@ -231,14 +230,17 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       isActive: false,
     });
 
-    // HR Admin Dashboard for HR department or ADMIN role
-    if ((department === "HR" || role === "ADMIN") && this.dashboardMode === "wfh") {
+    // HR Admin Dashboard for HR department or ADMIN role in both workflows
+    if (department === "HR" || role === "ADMIN") {
       this.tabs.push({
         label: "HR Admin Dashboard",
         path: "hr-admin-dashboard",
         isActive: false,
       });
-      if ((role === "MANAGER" && department === "HR") || role === "ADMIN") {
+      if (
+        this.dashboardMode === "wfh" &&
+        ((role === "MANAGER" && department === "HR") || role === "ADMIN")
+      ) {
         this.tabs.push({
           label: "Correction Dashboard",
           path: "correction-dashboard",
@@ -247,10 +249,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       }
     }
 
-    // Attendance Dashboard for ACCOUNTS department employees or ADMIN
+    // Attendance Dashboard is available only in the WFH workflow.
     if (
-      (department === "ACCOUNTS" && role === "EMPLOYEE") ||
-      role === "ADMIN"
+      this.dashboardMode === "wfh" &&
+      ((department === "ACCOUNTS" && role === "EMPLOYEE") || role === "ADMIN")
     ) {
       this.tabs.push({
         label: "Attendance Dashboard",
@@ -294,16 +296,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
           });
         }
 
-        const savedView = localStorage.getItem("selectedView");
-        if (savedView) {
-          this.commonService.selectedView = savedView as
-            | "self"
-            | "resource"
-            | "downline"
-            | "all";
-        } else {
-          this.setDefaultViewByRole(this.role);
-        }
+        this.setDefaultViewByRole(this.role);
 
         this.commonService.viewChange$.next(this.commonService.selectedView);
 
@@ -326,7 +319,11 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     ];
 
     if (role === "ADMIN") {
-      this.addAllOption();
+      this.viewOptions = [
+        { label: "All", value: "all" },
+        { label: "Downline", value: "downline" },
+      ];
+      this.commonService.selectedView = "all";
       return;
     }
 
@@ -334,43 +331,43 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       this.addAllOption();
       if (role === "EMPLOYEE") {
         this.viewOptions = this.viewOptions.filter(
-          (o) => o.value !== "downline" && o.value !== "resource",
+          (o) => o.value !== "resource",
         );
       }
+      this.commonService.selectedView = "self";
       return;
     }
 
     if (role === "MANAGER") {
-      const savedView = localStorage.getItem("selectedView");
-      const selectedView =
-        savedView === "resource" || savedView === "downline" ? savedView : "self";
-      this.commonService.selectedView = selectedView;
-      localStorage.setItem("selectedView", selectedView);
+      this.commonService.selectedView = "self";
       return;
     }
 
     if (role === "EMPLOYEE") {
       this.viewOptions = this.viewOptions.filter((o) => o.value === "self");
       this.commonService.selectedView = "self";
-      localStorage.setItem("selectedView", "self");
       return;
     }
 
-    const savedView = localStorage.getItem("selectedView");
-    const normalizedView = savedView;
-    if (
-      normalizedView === "all" ||
-      normalizedView === "self" ||
-      normalizedView === "resource" ||
-      normalizedView === "downline"
-    ) {
-      this.commonService.selectedView = normalizedView;
-    } else {
-      this.commonService.selectedView = "self";
-    }
+    this.commonService.selectedView = "self";
   }
 
   addAllOptionForOD() {
+    if (this.role === "ADMIN") {
+      this.viewOptions = [
+        { label: "All", value: "all" },
+        { label: "Downline", value: "downline" },
+      ];
+      if (
+        !this.viewOptions.some(
+          (option) => option.value === this.commonService.selectedView,
+        )
+      ) {
+        this.commonService.selectedView = "all";
+      }
+      return;
+    }
+
     this.viewOptions = [
       { label: "Self", value: "self" },
       { label: "Resource", value: "resource" },
@@ -395,9 +392,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       }
     }
     if (this.role === "EMPLOYEE") {
-      this.viewOptions = this.viewOptions.filter(
-        (o) => o.value !== "downline" && o.value !== "resource",
-      );
+      this.viewOptions = this.viewOptions.filter((o) => o.value !== "resource");
     }
     const selectedView = this.commonService.selectedView;
     const allowedView = this.viewOptions.some(
@@ -405,7 +400,6 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     );
     if (!allowedView) {
       this.commonService.selectedView = "self";
-      localStorage.setItem("selectedView", "self");
     }
   }
   private addAllOption() {
@@ -431,33 +425,19 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         };
         this.commonService.setEmployeeData(employeeData);
         localStorage.setItem("employeeData", JSON.stringify(employeeData));
-
-        if (
-          this.role == "ADMIN" ||
-          localStorage.getItem("department") === "HR" ||
-          (this.department == "ACCOUNTS" && role === "EMPLOYEE")
-        ) {
-          const managerRes: any = await firstValueFrom(
-            this.http.getData(this.constants.managerList),
-          );
-          if (managerRes?.success && managerRes.data?.managers) {
-            this.commonService.setManagerList(managerRes.data.managers);
-          }
-        }
       }
 
       if (role === "MANAGER") {
         await this.loadManagerData();
       }
 
-      if (localStorage.getItem("department") === "HR" || role === "ADMIN") {
-        await this.loadAllEmployeeData();
-      }
-
-      if (
-        (this.department == "ACCOUNTS" && role === "EMPLOYEE") ||
-        role === "ADMIN"
-      ) {
+      const needsAllStyleFilters =
+        role === "MANAGER" ||
+        role === "ADMIN" ||
+        localStorage.getItem("department") === "HR" ||
+        (this.department === "ACCOUNTS" && role === "EMPLOYEE");
+      if (needsAllStyleFilters) {
+        await this.loadManagerList();
         await this.loadAllEmployeeData();
       }
 
@@ -527,24 +507,27 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
 
   onDashboardModeChange(mode: "wfh" | "od"): void {
     this.dashboardMode = mode;
-    localStorage.setItem("dashboardMode", mode);
     this.initializeTabs(this.role, this.department);
-    this.router.navigate([mode === "wfh" ? "" : "on-duty-request"], {
+    this.router.navigate([mode === "wfh" ? "dashboard" : "od-dashboard"], {
       queryParamsHandling: "preserve",
     });
   }
 
   private syncDashboardModeWithUrl(url: string): void {
     const path = url.split("?")[0];
-    const urlMode = path.includes("od-dashboard") || path.includes("on-duty-request")
-      ? "od"
-      : path.includes("dashboard") || path === "" || path.includes("create-request")
-        ? "wfh"
-        : this.dashboardMode;
+    const isHrAdminDashboard = path.includes("hr-admin-dashboard");
+    const urlMode = isHrAdminDashboard
+      ? this.dashboardMode
+      : path.includes("od-dashboard") || path.includes("on-duty-request")
+        ? "od"
+        : path.includes("dashboard") ||
+            path === "" ||
+            path.includes("create-request")
+          ? "wfh"
+          : this.dashboardMode;
 
     if (this.dashboardMode !== urlMode) {
       this.dashboardMode = urlMode;
-      localStorage.setItem("dashboardMode", urlMode);
       if (this.role) this.initializeTabs(this.role, this.department);
     }
   }
@@ -594,12 +577,36 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       return;
     }
     this.commonService.selectedView = event.target.value;
-    localStorage.setItem("selectedView", this.commonService.selectedView);
     this.commonService.viewChange$.next(this.commonService.selectedView);
+  }
+
+  private async loadManagerList() {
+    if (this.commonService.managerList.length > 0) {
+      return;
+    }
+
+    try {
+      const res: any = await firstValueFrom(
+        this.http.getData(this.constants.managerList),
+      );
+      if (res?.success && res.data?.managers) {
+        this.commonService.setManagerList(res.data.managers);
+      }
+    } catch (err) {
+      console.error("Manager List API Error:", err);
+    }
+  }
+
+  private setView(view: "all" | "self" | "resource" | "downline"): void {
+    this.commonService.selectedView = view;
+    this.commonService.viewChange$.next(view);
   }
 
   get displayedViewOptions() {
     if (!this.isRequestPage) return this.viewOptions;
+    if (this.role === "EMPLOYEE" && this.department === "HR") {
+      return this.viewOptions.filter((option) => option.value === "self");
+    }
     return this.viewOptions.filter(
       (option) => option.value === "self" || option.value === "downline",
     );

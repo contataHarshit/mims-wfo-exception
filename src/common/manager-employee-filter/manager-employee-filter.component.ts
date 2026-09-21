@@ -1,21 +1,18 @@
 import {
   Component,
   EventEmitter,
-  Inject,
   Input,
   OnDestroy,
   OnInit,
   Output,
-  PLATFORM_ID,
   OnChanges,
   SimpleChanges,
 } from "@angular/core";
-import { CommonModule, isPlatformBrowser } from "@angular/common";
+import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { CommonSelectComponent } from "../common-select/common-select.component";
 import { CommonService } from "../../service/common.service";
 import { Subject, takeUntil } from "rxjs";
-import { log } from "util";
 
 @Component({
   selector: "app-manager-employee-filter",
@@ -40,10 +37,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   employeeList: any[] = [];
   private allEmployees: any[] = [];
 
-  constructor(
-    private commonService: CommonService,
-    @Inject(PLATFORM_ID) private platformId: Object,
-  ) {}
+  constructor(private commonService: CommonService) {}
   currentView: string = "";
   ngOnInit(): void {
     // MANAGERS (already formatted from service)
@@ -70,9 +64,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   }
   ngOnChanges(changes: SimpleChanges): void {
     // ✅ When employee filter is disabled (SELF VIEW)
-    if (isPlatformBrowser(this.platformId)) {
-      this.currentView = localStorage.getItem("selectedView") || "self";
-    }
+    this.currentView = this.commonService.selectedView || "self";
     if (
       changes["employeeDisabled"]?.currentValue === true &&
       !this.employeeValue
@@ -82,15 +74,18 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     if (
       changes["managerValue"]?.currentValue !==
         changes["managerValue"]?.previousValue &&
-      this.currentView !== "downline" && this.currentView !== "resource"
+      this.currentView !== "resource"
     ) {
       this.filterEmployeesByManager(this.managerValue);
       return;
     }
-    if (this.currentView === "all" && !this.managerValue) {
+    if (
+      (this.currentView === "all" || this.currentView === "downline") &&
+      !this.managerValue
+    ) {
       this.employeeList = this.mapEmployees(this.allEmployees);
     }
-    if (this.currentView === "downline" || this.currentView === "resource") {
+    if (this.currentView === "resource") {
       let temp = JSON.parse(
         localStorage.getItem("managerEmployeeData") || "[]",
       );
@@ -104,7 +99,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       this.employeeList = this.mapEmployees(temp);
     }
     if (
-      this.currentView == "all" &&
+      (this.currentView === "all" || this.currentView === "downline") &&
       changes["employeeValue"]?.currentValue !==
         changes["employeeValue"]?.previousValue
     ) {
@@ -112,7 +107,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     }
   }
   private setSelfEmployee() {
-    if (localStorage.getItem("selectedView") == "self") {
+    if (this.currentView === "self") {
       const storedEmployee = localStorage.getItem("employeeData");
       if (!storedEmployee) return;
 
@@ -155,7 +150,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   }
 
   onEmployeeChange(employeeEmpNo: any) {
-    if ((this.currentView === "downline" || this.currentView === "resource") && this.managerValue) {
+    if (this.currentView === "resource" && this.managerValue) {
       this.employeeValue = employeeEmpNo;
       this.employeeValueChange.emit(employeeEmpNo);
       return;

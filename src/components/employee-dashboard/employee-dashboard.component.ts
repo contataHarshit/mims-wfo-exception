@@ -99,26 +99,32 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   get isResourceView(): boolean {
     return this.selectedView === "resource";
   }
-  get isDownlineView():boolean {
-    return this.selectedView ==="downline"
+  get isDownlineView(): boolean {
+    return this.selectedView === "downline";
+  }
+  get isAllLikeView(): boolean {
+    return this.selectedView === "all" || this.isDownlineView;
   }
   get isOdDashboard(): boolean {
     return this.router.url.split("?")[0].split("/").includes("od-dashboard");
+  }
+
+  /**
+   * The WFH downline API has a different response contract from the
+   * exception and OD dashboard APIs. Keep its mapping isolated so the
+   * existing dashboard views continue to consume their current contracts.
+   */
+  get isWfhDownlineView(): boolean {
+    return !this.isOdDashboard && this.isDownlineView;
   }
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
     this.role = localStorage.getItem("role") || "";
     this.department = localStorage.getItem("department") || "";
-    const savedView = localStorage.getItem("selectedView");
-    const validSavedView = ["self", "resource", "downline", "all"].includes(savedView || "")
-      ? savedView
-      : null;
-    this.selectedView =
-      (validSavedView || (this.role === "ADMIN" ? "all" : "self")) as string;
+    this.selectedView = (this.role === "ADMIN" ? "all" : "self") as string;
     this.commonService.selectedView = this.selectedView;
     this.commonService.viewChange$.next(this.selectedView);
-    localStorage.setItem("selectedView", this.selectedView);
     // Load employee list from localStorage FIRST
     this.loadEmployeeListFromCache();
 
@@ -143,13 +149,12 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         const previousView = this.selectedView;
         this.filters.status = "PENDING";
         this.allSelected = false;
-        const emittedView = newView || localStorage.getItem("selectedView") || "self";
+        const emittedView = newView || "self";
         this.selectedView = ["self", "resource", "downline", "all"].includes(
           emittedView,
         )
           ? emittedView
           : "self";
-        localStorage.setItem("selectedView", this.selectedView);
         if (this.selectedView === "self") {
           this.setManagerForSelfView();
         }
@@ -161,7 +166,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
             value: temp?.employeeNumber,
           };
         }
-        if (this.selectedView === "all") {
+        if (this.isAllLikeView) {
           this.filters.managerName = null;
           this.filters.employeeName = null;
         }
@@ -200,7 +205,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     this.commonService.allEmployeeData$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: any[]) => {
-        if (data && data.length > 0 && this.selectedView === "all") {
+        if (data && data.length > 0 && this.isAllLikeView) {
           this.employeeList = data.map((item: any) => ({
             label: `${item.FullName}(${item.EmployeeNumber})`,
             value: item.EmployeeNumber,
@@ -227,13 +232,6 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     // Cleanup subscriptions
     this.filters.managerName = null;
     this.filters.employeeName = null;
-    if (localStorage.getItem("role") == "ADMIN") {
-      localStorage.setItem("selectedView", "all");
-      this.commonService.selectedView = "all";
-    } else {
-      localStorage.setItem("selectedView", "self");
-      this.commonService.selectedView = "self";
-    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -402,9 +400,14 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
-    const url = (this.isOdDashboard && !this.isDownlineView)
-      ? `${this.constants.onDutyRequests}/?${params.toString()}`:(this.isOdDashboard && this.isDownlineView)?`${this.constants.odRequests}/?${params.toString()}`
-      :(!this.isOdDashboard && !this.isDownlineView) ?`${this.constants.exceptionRequest}/paginated?${params.toString()}`:`${this.constants.wfhRequest}?${params.toString()}`;
+    const url =
+      this.isOdDashboard && !this.isDownlineView
+        ? `${this.constants.onDutyRequests}/?${params.toString()}`
+        : this.isOdDashboard && this.isDownlineView
+          ? `${this.constants.odRequests}/?${params.toString()}`
+          : !this.isOdDashboard && !this.isDownlineView
+            ? `${this.constants.exceptionRequest}/paginated?${params.toString()}`
+            : `${this.constants.wfhRequest}?${params.toString()}`;
 
     this.http
       .getData(url)
@@ -422,7 +425,8 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
               res?.data?.onDutyRequests ??
               res?.data?.odRequests ??
               res?.data?.wfhRequests ??
-              res?.data?.requests;
+              res?.data?.requests ??
+              res?.data?.data;
             const rows = Array.isArray(requestCollection)
               ? requestCollection
               : Array.isArray(requestCollection?.data)
@@ -443,19 +447,29 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
             this.allRequests = rows.map((item: any) => ({
               id: item.id,
 
-              employeeId: item.employeeNumber || "-N/A-",
+              employeeId: this.isWfhDownlineView
+                ? item.employee?.EmployeeNumber || "-N/A-"
+                : item.employeeNumber || "-N/A-",
 
-              employeeName: item.employee || "-N/A-",
+              employeeName: this.isWfhDownlineView
+                ? this.getEmployeeName(item.employee)
+                : item.employee || "-N/A-",
 
               designation: item.designation || "-N/A-",
 
-              exceptionDate: res?.data?.exceptions
-                ? this.formatDate(item.selectedDate)
-                : this.formatDate(item.odRequestDate),
+              exceptionDate: this.isWfhDownlineView
+                ? this.getWfhDate(item)
+                : res?.data?.exceptions
+                  ? this.formatDate(item.selectedDate)
+                  : this.formatDate(item.odRequestDate),
 
-              primaryReason: res?.data?.exceptions
-                ? item.primaryReason
-                : item.odReason,
+              primaryReason: this.isWfhDownlineView
+                ? item.isPermanent
+                  ? "Permanent WFH"
+                  : item.reason || item.wfhReason || "WFH"
+                : res?.data?.exceptions
+                  ? item.primaryReason
+                  : item.odReason,
 
               submissionDate: item.submissionDate
                 ? this.formatDate(item.submissionDate)
@@ -471,10 +485,16 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
 
               status: item.currentStatus || "PENDING",
 
-              approvedBy: item.approvedBy || "-",
-              rejectedBy: item.rejectedBy || "-",
+              approvedBy: this.isWfhDownlineView
+                ? this.getEmployeeName(item.approvedBy)
+                : item.approvedBy || "-",
+              rejectedBy: this.isWfhDownlineView
+                ? this.getEmployeeName(item.rejectedBy)
+                : item.rejectedBy || "-",
 
-              managerName: item.manager || "-N/A-",
+              managerName: this.isWfhDownlineView
+                ? this.getEmployeeName(item.manager)
+                : item.manager || "-N/A-",
 
               managerRemarks: res?.data?.exceptions
                 ? item.managerRemarks
@@ -491,11 +511,14 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
                 tempHash[this.allRequests[i].status] = true;
               }
             }
-            if (Object.keys(tempHash).length == 1) {
+            if (this.isDownlineView) {
+              // Downline supports bulk selection regardless of the standard
+              // resource/role restrictions applied to other views.
+              this.disableSelectAll = false;
+            } else if (Object.keys(tempHash).length == 1) {
               if (
                 Object.keys(tempHash)[0] == "REJECTED" ||
-                (Object.keys(tempHash)[0] == "APPROVED" &&
-                  this.isResourceView)
+                (Object.keys(tempHash)[0] == "APPROVED" && this.isResourceView)
               ) {
                 this.disableSelectAll = true;
               }
@@ -503,6 +526,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
 
             this.totalRecords =
               res?.data?.pagination?.total ??
+              res?.data?.total ??
               requestCollection?.pagination?.total ??
               requestCollection?.total ??
               rows.length;
@@ -550,6 +574,28 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       month: "short",
       year: "numeric",
     });
+  }
+
+  private getEmployeeName(employee: any): string {
+    if (!employee) return "-";
+    if (typeof employee === "string") return employee;
+
+    return (
+      [employee.FirstName, employee.MiddleName, employee.LastName]
+        .filter((name) => !!name && name.trim())
+        .join(" ") || "-"
+    );
+  }
+
+  private getWfhDate(request: any): string {
+    if (request.isPermanent) return "Permanent";
+
+    const fromDate = this.formatDate(request.fromDate);
+    const toDate = this.formatDate(request.toDate);
+    if (fromDate === "-" && toDate === "-") return "-";
+    return fromDate === toDate || toDate === "-"
+      ? fromDate
+      : `${fromDate} - ${toDate}`;
   }
 
   onDateChange() {}
@@ -631,9 +677,14 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     if (this.remarks) {
       payload.remarks = this.remarks;
     }
-        const url = (this.isOdDashboard && !this.isDownlineView)
-      ? `${this.constants.onDutyRequests}`:(this.isOdDashboard && this.isDownlineView)?`${this.constants.odRequests}/status`
-      :(!this.isOdDashboard && !this.isDownlineView) ?`${this.constants.exceptionRequest}`:`${this.constants.wfhRequestStatus}`;
+    const url =
+      this.isOdDashboard && !this.isDownlineView
+        ? `${this.constants.onDutyRequests}`
+        : this.isOdDashboard && this.isDownlineView
+          ? `${this.constants.odRequests}/status`
+          : !this.isOdDashboard && !this.isDownlineView
+            ? `${this.constants.exceptionRequest}`
+            : `${this.constants.wfhRequestStatus}`;
 
     this.http.putData(url, payload).subscribe({
       next: (res: any) => {
@@ -725,9 +776,14 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         title: "Confirm Delete",
       },
     });
-        const url = (this.isOdDashboard && !this.isDownlineView)
-      ? `${this.constants.onDutyRequests}/${req.id}`:(this.isOdDashboard && this.isDownlineView)?`${this.constants.odRequests}/${req.id}`
-      :(!this.isOdDashboard && !this.isDownlineView) ?`${this.constants.exceptionRequest}/${req.id}`:`${this.constants.wfhRequest}/${req.id}`;
+    const url =
+      this.isOdDashboard && !this.isDownlineView
+        ? `${this.constants.onDutyRequests}/${req.id}`
+        : this.isOdDashboard && this.isDownlineView
+          ? `${this.constants.odRequests}/${req.id}`
+          : !this.isOdDashboard && !this.isDownlineView
+            ? `${this.constants.exceptionRequest}/${req.id}`
+            : `${this.constants.wfhRequest}/${req.id}`;
 
     dialogRef.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
@@ -780,6 +836,10 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     }
   }
   private isRowDisabled(req: any): boolean {
+    if (this.isDownlineView) {
+      return false;
+    }
+
     const isApproved = req.status === "APPROVED";
     const isNotAdmin = this.role !== "ADMIN" && this.role !== "MANAGER";
     const isNotHR = this.department !== "HR";
