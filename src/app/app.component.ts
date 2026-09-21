@@ -97,23 +97,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     private route: ActivatedRoute,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {
-    if (isPlatformBrowser(this.platformId)) {
-      this.dashboardMode =
-        this.router.url.includes("od-dashboard") ||
-        this.router.url.includes("on-duty-request")
-          ? "od"
-          : "wfh";
-    }
+    this.dashboardMode = "wfh";
   }
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    this.dashboardMode =
-      this.router.url.includes("od-dashboard") ||
-      this.router.url.includes("on-duty-request")
-        ? "od"
-        : "wfh";
+    this.dashboardMode = "wfh";
     this.dashboardModeReady = true;
 
     this.commonService.loadConfig().finally(() => {});
@@ -147,8 +137,14 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         if (this.isRequestPage) {
           this.setView("self");
         } else if (["dashboard", "od-dashboard"].includes(currentPath)) {
+          const defaultView = this.role === "ADMIN" ? "all" : "self";
+          this.commonService.selectedView = defaultView;
+          this.commonService.viewChange$.next(defaultView);
           this.setDefaultViewByRole(this.role);
-          this.commonService.viewChange$.next(this.commonService.selectedView);
+          if (this.role !== "ADMIN") {
+            this.commonService.selectedView = "self";
+            this.commonService.viewChange$.next("self");
+          }
         }
         this.updateActiveTabs(url);
         this.addAllOptionForOD();
@@ -177,7 +173,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       if (storedToken && storedRole && !this.hasLoadedData) {
         // Existing session - initialize tabs immediately
         this.token = storedToken;
-        this.role = storedRole;
+        this.role = storedRole.trim().toUpperCase();
         this.employeeNumber = localStorage.getItem("employeeNumber") || "";
         this.department = localStorage.getItem("department") || "";
 
@@ -186,7 +182,11 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
         this.addAllOptionForOD();
         this.showTabs = true;
 
-        this.commonService.setRole(storedRole);
+        this.router.navigate([this.role === "ADMIN" ? "dashboard" : ""], {
+          queryParams: this.getQueryParamsFromUrl(),
+        });
+
+        this.commonService.setRole(this.role);
         this.setDefaultViewByRole(this.role);
         this.commonService.viewChange$.next(this.commonService.selectedView);
         this.commonService.setLoading(false);
@@ -274,7 +274,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       .then((response: any) => {
         const employee = response?.data?.employee || {};
         this.token = response?.data?.token || null;
-        this.role = employee.role || "";
+        this.role = (employee.role || "").trim().toUpperCase();
         this.employeeNumber = employee.employeeNumber || "";
         this.department = employee.department || "";
 
@@ -294,6 +294,10 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
           this.router.navigate(["/dashboard"], {
             queryParams: this.getQueryParamsFromUrl(),
           });
+        } else {
+          this.router.navigate([""], {
+            queryParams: this.getQueryParamsFromUrl(),
+          });
         }
 
         this.setDefaultViewByRole(this.role);
@@ -311,7 +315,8 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   }
 
   setDefaultViewByRole(role: string) {
-    const department = localStorage.getItem("department") || "";
+    const defaultView = role === "ADMIN" ? "all" : "self";
+
     this.viewOptions = [
       { label: "Self", value: "self" },
       { label: "Resource", value: "resource" },
@@ -327,7 +332,7 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       return;
     }
 
-    if (department === "HR") {
+    if (this.department === "HR") {
       this.addAllOption();
       if (role === "EMPLOYEE") {
         this.viewOptions = this.viewOptions.filter(
@@ -349,10 +354,13 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
       return;
     }
 
-    this.commonService.selectedView = "self";
+    this.commonService.selectedView = defaultView;
+    this.commonService.viewChange$.next(defaultView);
   }
 
   addAllOptionForOD() {
+    const defaultView = this.role === "ADMIN" ? "all" : "self";
+
     if (this.role === "ADMIN") {
       this.viewOptions = [
         { label: "All", value: "all" },
@@ -394,12 +402,15 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     if (this.role === "EMPLOYEE") {
       this.viewOptions = this.viewOptions.filter((o) => o.value !== "resource");
     }
+
     const selectedView = this.commonService.selectedView;
     const allowedView = this.viewOptions.some(
       (option) => option.value === selectedView,
     );
-    if (!allowedView) {
-      this.commonService.selectedView = "self";
+
+    if (!allowedView || selectedView === "all") {
+      this.commonService.selectedView = defaultView;
+      this.commonService.viewChange$.next(defaultView);
     }
   }
   private addAllOption() {
@@ -502,14 +513,42 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
   }
 
   navigateTo(path: string) {
-    this.router.navigate([path], { queryParamsHandling: "preserve" });
+    const isDashboardRoute =
+      path === "dashboard" ||
+      path === "od-dashboard" ||
+      path === "hr-admin-dashboard";
+
+    if (isDashboardRoute) {
+      const defaultView = this.role === "ADMIN" ? "all" : "self";
+      this.commonService.selectedView = defaultView;
+      this.commonService.viewChange$.next(defaultView);
+    }
+
+    this.router.navigate([path], {
+      queryParams: this.getQueryParamsFromUrl()
+    });
   }
 
   onDashboardModeChange(mode: "wfh" | "od"): void {
     this.dashboardMode = mode;
     this.initializeTabs(this.role, this.department);
-    this.router.navigate([mode === "wfh" ? "dashboard" : "od-dashboard"], {
-      queryParamsHandling: "preserve",
+    const targetPath =
+      this.role === "ADMIN"
+        ? mode === "wfh"
+          ? "dashboard"
+          : "od-dashboard"
+        : mode === "wfh"
+          ? ""
+          : "on-duty-request";
+
+    if (targetPath === "dashboard" || targetPath === "od-dashboard") {
+      const defaultView = this.role === "ADMIN" ? "all" : "self";
+      this.commonService.selectedView = defaultView;
+      this.commonService.viewChange$.next(defaultView);
+    }
+
+    this.router.navigate([targetPath], {
+      queryParams: this.getQueryParamsFromUrl()
     });
   }
 
@@ -617,8 +656,18 @@ export class AppComponent implements DoCheck, OnInit, OnDestroy {
     const searchParams = new URLSearchParams(window.location.search);
 
     searchParams.forEach((value, key) => {
-      params[key] = value;
+      if (key.toLowerCase() !== "sessionid") {
+        params[key] = value;
+      }
     });
+
+    const sessionId =
+      searchParams.get("sessionid") ||
+      searchParams.get("sessionId") ||
+      localStorage.getItem("sessionid");
+    if (sessionId) {
+      params["sessionid"] = sessionId;
+    }
 
     return params;
   }

@@ -120,11 +120,13 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
-    this.role = localStorage.getItem("role") || "";
+    this.role = (
+      this.commonService.role || localStorage.getItem("role") || ""
+    )
+      .trim()
+      .toUpperCase();
     this.department = localStorage.getItem("department") || "";
-    this.selectedView = (this.role === "ADMIN" ? "all" : "self") as string;
-    this.commonService.selectedView = this.selectedView;
-    this.commonService.viewChange$.next(this.selectedView);
+    this.selectedView = this.commonService.selectedView || "self";
     // Load employee list from localStorage FIRST
     this.loadEmployeeListFromCache();
 
@@ -672,7 +674,15 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const ids = this.selectedRequests.map((r) => r.id);
+    const selectableRequests = this.selectedRequests.filter(
+      (request) => request.status !== "REJECTED" && !this.isRowDisabled(request),
+    );
+    if (selectableRequests.length === 0) {
+      this.toastr.warning("Please select at least one enabled request.");
+      return;
+    }
+
+    const ids = selectableRequests.map((r) => r.id);
     const payload: any = { ids, status };
     if (this.remarks) {
       payload.remarks = this.remarks;
@@ -835,10 +845,9 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       this.selectedRequests = [];
     }
   }
-  private isRowDisabled(req: any): boolean {
-    if (this.isDownlineView) {
-      return false;
-    }
+  isRowDisabled(req: any): boolean {
+    if (req.status === "REJECTED" || req.status === "APPROVED") return true;
+    if (this.isDownlineView) return req.status !== "PENDING";
 
     const isApproved = req.status === "APPROVED";
     const isNotAdmin = this.role !== "ADMIN" && this.role !== "MANAGER";
