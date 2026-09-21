@@ -1,9 +1,10 @@
-<p-calendar #calendar [(ngModel)]="tempSelection" [selectionMode]="selectionMode" [disabledDates]="internalDisabledDates"
-  [minDate]="minDate" [maxDate]="maxDate" [showIcon]="true" [appendTo]="'body'"
-  [hideOnDateTimeSelect]="selectionMode !== 'range'" panelStyleClass="custom-calendar-panel"
-  (onShow)="onCalendarShow()" (onHide)="onCalendarHide()" (onMonthChange)="onMonthOrYearChange($event)"
-  (onYearChange)="onMonthOrYearChange($event)" styleClass="hidden-calendar" placeholder="Select Dates"
-  inputId="datePickerInput" dateFormat="dd M yy" [readonlyInput]="true">
+<p-calendar #calendar [(ngModel)]="tempSelection" [selectionMode]="selectionMode"
+  [disabledDates]="internalDisabledDates" [minDate]="minDate" [maxDate]="maxDate" [showIcon]="true" [appendTo]="'body'"
+  [disabled]="disabled" [disabledDays]="disabledDays" [hideOnDateTimeSelect]="selectionMode !== 'range'"
+  panelStyleClass="custom-calendar-panel" (onShow)="onCalendarShow()" (onHide)="onCalendarHide()"
+  (onMonthChange)="onMonthOrYearChange($event)" (onYearChange)="onMonthOrYearChange($event)"
+  styleClass="hidden-calendar" placeholder="Select Dates" inputId="datePickerInput" dateFormat="dd M yy"
+  [readonlyInput]="true">
   <!-- Footer template -->
   <ng-template pTemplate="footer">
     <div class="popup-buttons">

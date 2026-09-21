@@ -8,7 +8,7 @@
       <div class="filter-row ">
         <div class="filter-span-2">
           <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
-            [managerDisabled]="selectedView !== 'all'" [employeeDisabled]="selectedView === 'self'">
+            [managerDisabled]="!isAllLikeView" [employeeDisabled]="selectedView === 'self'">
           </app-manager-employee-filter>
         </div>
 
@@ -35,8 +35,6 @@
           <input type="date" class="date-input" [(ngModel)]="filters.toDate" (change)="onDateChange()"
             [min]="filters.fromDate" />
         </div>
-
-
         <div class="form-row" *ngIf="selectedView !== 'self'">
           <label>Reason</label>
           <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
@@ -75,7 +73,7 @@
           <!-- All normal columns -->
           <col style="width: 150px; min-width: 150px; max-width: 150px;">
           <col style="width: 150px; min-width: 150px; max-width: 150px;">
-          <col style="width: 150px; min-width: 150px; max-width: 150px;">
+          <col *ngIf="!isWfhDownlineView" style="width: 150px; min-width: 150px; max-width: 150px;">
           <col style="width: 150px; min-width: 150px; max-width: 150px;">
           <col *ngIf="showApprovedColumn()" style="width: 150px; min-width: 150px; max-width: 150px;">
           <col *ngIf="showRejectedColumn()" style="width: 150px; min-width: 150px; max-width: 150px;">
@@ -85,15 +83,15 @@
           <col style="width: 150px; min-width: 150px; max-width: 150px;">
 
           <!-- Delete column -->
-          <col *ngIf="selectedView === 'self'" style="width: 60px; min-width: 60px; max-width: 60px;">
+          <col *ngIf="(selectedView === 'self' || isDownlineView) && !(department==='HR' && role==='EMPLOYEE')"
+            style="width: 60px; min-width: 60px; max-width: 60px;">
         </colgroup>
       </ng-template>
 
       <ng-template pTemplate="header">
         <tr>
           <th *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')">
-            <input type="checkbox"
-              *ngIf="!disableSelectAll && (!isResourceView || filters?.status?.value!=='APPROVED')"
+            <input type="checkbox" *ngIf="!disableSelectAll && (!isResourceView || filters?.status?.value!=='APPROVED')"
               (change)="selectAllChange($event)" [(ngModel)]="allSelected">
           </th>
 
@@ -112,7 +110,7 @@
             </div>
           </th>
 
-          <th>
+          <th *ngIf="!isWfhDownlineView">
             <div class="sort-icon-container">
               <p>Designation</p>
               <p-sortIcon field="designation" class="sortable-icon"
@@ -144,7 +142,7 @@
 
           <th>
             <div class="sort-icon-container">
-              <p>{{router.url.includes("od")?"OD Date":"Exception Date"}}</p>
+              <p>{{ isWfhDownlineView ? "WFH Date" : (router.url.includes("od") ? "OD Date" : "Exception Date") }}</p>
               <p-sortIcon field="exceptionDate" class="sortable-icon"
                 (click)="sortTableValues('exceptionDate')"></p-sortIcon>
             </div>
@@ -152,7 +150,8 @@
 
           <th>
             <div class="sort-icon-container">
-              <p>{{router.url.includes("od")?"On Duty Reason":"Primary Reason"}}</p>
+              <p>{{ isWfhDownlineView ? "WFH Type" : (router.url.includes("od") ? "On Duty Reason" : "Primary Reason")
+                }}</p>
               <p-sortIcon field="primaryReason" class="sortable-icon"
                 (click)="sortTableValues('primaryReason')"></p-sortIcon>
             </div>
@@ -173,7 +172,7 @@
             </div>
           </th>
 
-          <th *ngIf="selectedView === 'self'"
+          <th *ngIf="(selectedView === 'self' || isDownlineView) && !(department==='HR' && role==='EMPLOYEE')"
             style="width: 80px !important; min-width: 80px !important; max-width: 80px !important;">Action</th>
         </tr>
       </ng-template>
@@ -184,7 +183,7 @@
           <!-- ✅ FIXED: merged duplicate style attributes into one -->
           <td *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')"
             style="width: 60px !important; min-width: 60px !important; max-width: 60px !important; text-align: center;">
-            <input type="checkbox" [checked]="req.checked" [disabled]="
+            <input type="checkbox" [checked]="req.checked" [disabled]="!isDownlineView && (
     !(department === 'RMG' && role === 'MANAGER') &&
     (
       (
@@ -203,11 +202,11 @@
         req.status == 'APPROVED'
       )
     )
-  " (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
+  )" (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
           </td>
           <td>{{ req.employeeId }}</td>
           <td>{{ req.employeeName }}</td>
-          <td>{{ req.designation }}</td>
+          <td *ngIf="!isWfhDownlineView">{{ req.designation }}</td>
           <td>{{ req.managerName }}</td>
           <td *ngIf="showApprovedColumn()">{{ req.approvedBy || '-' }}</td>
           <td *ngIf="showRejectedColumn()">{{ req.rejectedBy || '-' }}</td>
@@ -223,7 +222,7 @@
               {{ req.status }}
             </span>
           </td>
-          <td *ngIf="selectedView === 'self'"
+          <td *ngIf="(selectedView === 'self' || isDownlineView) && !(department==='HR' && role==='EMPLOYEE')"
             style="width: 80px !important; min-width: 80px !important; max-width: 80px !important;">
             <div>
               <button (click)="deleteRow(req)" [disabled]="req.status !== 'PENDING'" icon="pi pi-trash"

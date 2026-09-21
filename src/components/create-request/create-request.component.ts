@@ -81,6 +81,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
   disabledDates: Date[] = [];
   apiDisabledDates: Date[] = [];
+  private resourceDisabledDateCache = new WeakMap<object, Date[]>();
   projectList: any[] = [];
 
   reasonList: any = [];
@@ -110,11 +111,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.commonService.setLoading(true);
     this.updateTab(this.router.url);
 
-    const savedView = localStorage.getItem("selectedView");
-    this.selectedView =
-      savedView === "resource"
-        ? "downline"
-        : savedView || this.commonService.selectedView || "self";
+    this.selectedView = "self";
     this.commonService.selectedView = this.selectedView;
     if (this.isResourceView) this.resetRows();
     this.loadEmployeeListFromStorage();
@@ -309,13 +306,19 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   }
 
   onResourceEmployeeChange(row: any, value: any): void {
-    row.employeeNumber = value?.value ?? value;
+    const employeeNumber = value?.value ?? value;
+    if (row.employeeNumber !== employeeNumber) {
+      row.dateRange = [];
+    }
+    row.employeeNumber = employeeNumber;
+    this.updateDisabledDates();
     this.cdr.detectChanges();
   }
 
   onResourceRequestTypeChange(row: any, value: any): void {
     row.requestType = value?.value ?? value;
     if (row.requestType === "PERMANENT_WFH") row.dateRange = [];
+    this.updateDisabledDates();
     this.cdr.detectChanges();
   }
 
@@ -347,10 +350,15 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
   addMore() {
     if (this.isResourceView) {
-      if (!this.validateResourceRow(this.formData.rows[this.formData.rows.length - 1])) {
+      if (
+        !this.validateResourceRow(
+          this.formData.rows[this.formData.rows.length - 1],
+        )
+      ) {
         return;
       }
       this.formData.rows.push(this.createRow());
+      this.updateDisabledDates();
       this.cdr.detectChanges();
       return;
     }
@@ -383,7 +391,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   deleteIndex(i: number) {
     this.formData.rows.splice(i, 1);
 
-    if (this.formData.rows.length === 0) this.formData.rows.push(this.createRow());
+    if (this.formData.rows.length === 0)
+      this.formData.rows.push(this.createRow());
 
     this.updateDisabledDates();
     this.cdr.detectChanges();
@@ -487,11 +496,159 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.disabledDates = Array.from(
       new Map(combined.map((d) => [d.toDateString(), d])).values(),
     );
+    this.refreshResourceDisabledDates();
+  }
+
+  /**
+   * Downline rows are independent per employee. A date selected for Anurag
+   * must not block another employee, but it must be unavailable in Anurag's
+   * other rows along with API dates and weekends.
+   */
+  getDisabledDatesForResourceRow(row: any, rowIndex: number): Date[] {
+    if (!this.isDownlineView) {
+      return this.disabledDates;
+    }
+
+    const cachedDates = this.resourceDisabledDateCache.get(row);
+    if (cachedDates) return cachedDates;
+
+    const disabledDates = this.buildDisabledDatesForResourceRow(row, rowIndex);
+    this.resourceDisabledDateCache.set(row, disabledDates);
+    return disabledDates;
+  }
+
+  private refreshResourceDisabledDates(): void {
+    this.resourceDisabledDateCache = new WeakMap<object, Date[]>();
+    if (!this.isDownlineView) return;
+
+    this.formData.rows.forEach((row: any, index: number) => {
+      this.resourceDisabledDateCache.set(
+        row,
+        this.buildDisabledDatesForResourceRow(row, index),
+      );
+    });
+  }
+
+  private buildDisabledDatesForResourceRow(row: any, rowIndex: number): Date[] {
+    const disabledDates = this.apiDisabledDates.map((date) =>
+      this.normalizeDate(date),
+    );
+    const employeeNumber = this.getEmployeeNumber(row);
+
+    if (employeeNumber) {
+      this.formData.rows.forEach((otherRow: any, otherIndex: number) => {
+        if (
+          otherIndex !== rowIndex &&
+          this.getEmployeeNumber(otherRow) === employeeNumber
+        ) {
+          disabledDates.push(...this.expandDateRange(otherRow.dateRange));
+        }
+      });
+    }
+
+    disabledDates.push(
+      ...this.getWeekendDatesBetween(
+        this.minSelectableDate,
+        this.maxSelectableDate,
+      ),
+    );
+
+    return Array.from(
+      new Map(
+        disabledDates.map((date) => [date.toDateString(), date]),
+      ).values(),
+    );
+  }
+
+  isEmployeePermanentInAnotherRow(row: any, rowIndex: number): boolean {
+    if (!this.isDownlineView) return false;
+
+    const employeeNumber = this.getEmployeeNumber(row);
+    return (
+      !!employeeNumber &&
+      this.formData.rows.some(
+        (otherRow: any, otherIndex: number) =>
+          otherIndex !== rowIndex &&
+          this.getEmployeeNumber(otherRow) === employeeNumber &&
+          otherRow.requestType === "PERMANENT_WFH",
+      )
+    );
+  }
+
+  getAvailableEmployeesForRow(row: any): any[] {
+    if (!this.isResourceView) return this.employeeList;
+
+    const currentEmployeeNumber = this.getEmployeeNumber(row);
+    const permanentlyAssignedEmployees = new Set(
+      this.formData.rows
+        .filter((otherRow: any) => otherRow.requestType === "PERMANENT_WFH")
+        .map((otherRow: any) => this.getEmployeeNumber(otherRow))
+        .filter(
+          (employeeNumber: string | null): employeeNumber is string =>
+            !!employeeNumber,
+        ),
+    );
+
+    if (!permanentlyAssignedEmployees.size) return this.employeeList;
+
+    return this.employeeList.filter((employee) => {
+      const employeeNumber = employee?.value ?? employee?.EmployeeNumber;
+      // Keep the current row's value available so its selection remains visible.
+      return (
+        employeeNumber === currentEmployeeNumber ||
+        !permanentlyAssignedEmployees.has(employeeNumber)
+      );
+    });
+  }
+
+  private getEmployeeNumber(row: any): string | null {
+    return row?.employeeNumber?.value ?? row?.employeeNumber ?? null;
+  }
+
+  private normalizeDate(value: Date | string): Date {
+    const date = new Date(value);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  private getWeekendDatesBetween(start: Date | null, end: Date | null): Date[] {
+    const dates: Date[] = [];
+    if (!start || !end) return dates;
+
+    const current = this.normalizeDate(start);
+    const lastDate = this.normalizeDate(end);
+    while (current <= lastDate) {
+      if (current.getDay() === 0 || current.getDay() === 6) {
+        dates.push(new Date(current));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  }
+
+  private expandDateRange(dateRange: Date[] = []): Date[] {
+    if (!dateRange.length) return [];
+
+    const start = this.normalizeDate(dateRange[0]);
+    const end = this.normalizeDate(dateRange[dateRange.length - 1]);
+    const dates: Date[] = [];
+
+    for (
+      const current = new Date(start);
+      current <= end;
+      current.setDate(current.getDate() + 1)
+    ) {
+      dates.push(new Date(current));
+    }
+
+    return dates;
   }
 
   validateForm(): boolean {
     if (this.isResourceView) {
-      return this.formData.rows.every((row: any) => this.validateResourceRow(row));
+      return this.formData.rows.every((row: any) =>
+        this.validateResourceRow(row),
+      );
     }
 
     const seenDates = new Set<string>();
@@ -527,7 +684,9 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     const isWfhRequest = this.tab === "create-request";
 
-    if (isWfhRequest) {
+    // The WFH-request contract is only for manager Downline submissions.
+    // Self WFH requests use the existing exception-request contract below.
+    if (isWfhRequest && this.isDownlineView) {
       const wfhPayloads = this.formData.rows
         .filter(
           (row: any) =>
@@ -558,7 +717,9 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
         });
 
       if (!wfhPayloads.length) {
-        this.toastr.warning("Please select a valid WFH date range or permanent option.");
+        this.toastr.warning(
+          "Please select a valid WFH date range or permanent option.",
+        );
         this.commonService.setLoading(false);
         return;
       }
@@ -589,6 +750,45 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
             },
           });
       });
+      return;
+    }
+
+    if (!isWfhRequest && this.isOdDownlineView) {
+      const requests = this.formData.rows.map((row: any) => ({
+        employeeNumber: row.employeeNumber?.value || row.employeeNumber,
+        odRequestDate: this.convertToISODate(row.dateRange[0]),
+        odReason:
+          typeof row.primaryReason === "object"
+            ? row.primaryReason?.value || row.primaryReason?.label || ""
+            : row.primaryReason || "",
+        remarks: row.remarks?.trim() || "",
+      }));
+
+      this.http
+        .postData({ requests }, this.constant.odRequests)
+        .pipe(
+          finalize(() => {
+            this.commonService.setLoading(false);
+          }),
+        )
+        .subscribe({
+          next: (res: any) => {
+            if (res?.success) {
+              this.toastr.success("OD requests submitted successfully!");
+              this.resetForm(false);
+            } else {
+              this.toastr.error(res?.errors || "OD request submission failed.");
+            }
+          },
+          error: (err) => {
+            console.error("OD Submission Error:", err);
+            this.toastr.error(
+              err?.error?.error ||
+                err?.error?.errors ||
+                "An error occurred while submitting the OD request.",
+            );
+          },
+        });
       return;
     }
 
@@ -639,7 +839,9 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
               }),
           };
 
-    const url = this.constant.onDutyRequests;
+    const url = isWfhRequest
+      ? this.constant.exceptionRequest
+      : this.constant.onDutyRequests;
     this.http
       .postData(payload, url)
       .pipe(
@@ -748,6 +950,14 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     return this.isResourceSelection;
   }
 
+  get isDownlineView(): boolean {
+    return this.selectedView === "downline";
+  }
+
+  get isOdDownlineView(): boolean {
+    return this.tab === "on-duty-request" && this.isDownlineView;
+  }
+
   get isResourceSelection(): boolean {
     return this.selectedView === "resource" || this.selectedView === "downline";
   }
@@ -801,6 +1011,20 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   }
 
   private validateResourceRow(row: any): boolean {
+    if (this.isOdDownlineView) {
+      if (
+        !row?.employeeNumber ||
+        !row?.dateRange?.length ||
+        !row?.primaryReason
+      ) {
+        this.toastr.warning(
+          "Please select an employee, date range, and OD reason.",
+        );
+        return false;
+      }
+      return true;
+    }
+
     if (!row?.employeeNumber || !row?.requestType) {
       this.toastr.warning("Please select an employee and request type.");
       return false;

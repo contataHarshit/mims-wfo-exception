@@ -38,6 +38,8 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   @Input() minDate: Date | null = null;
   @Input() maxDate: Date | null = null;
   @Input() selectionMode: "multiple" | "range" = "multiple";
+  @Input() disabled = false;
+  @Input() disabledDays: number[] = [];
 
   @Output() rangeChange = new EventEmitter<Date[]>();
   @Output() okClick = new EventEmitter<Date[]>();
@@ -147,7 +149,7 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   }>();
 
   onMonthOrYearChange(
-    event: CalendarMonthChangeEvent | CalendarYearChangeEvent
+    event: CalendarMonthChangeEvent | CalendarYearChangeEvent,
   ) {
     // Safely extract values (PrimeNG marks them as optional)
     const month = event.month ?? new Date().getMonth();

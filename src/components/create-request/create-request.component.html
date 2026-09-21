@@ -20,14 +20,16 @@
     <div class="exception-section">
       <h4 class="section-title">{{tab=="create-request"?"Work From Home Details":"On Duty Details"}}</h4>
 
-      <p-table *ngIf="!isResourceView" [value]="formData.rows" dataKey="index" class="p-datatable-gridlines"
+      <p-table *ngIf="!isResourceView" [value]="formData.rows" class="p-datatable-gridlines"
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
             <th>#</th>
             <th>Select Date(s) <span style="color: red;">*</span></th>
-            <th>{{tab=="create-request"?"Work From Home Reason":"On Duty Reason"}} <span style="color: red;">*</span></th>
-            <th>{{tab=="create-request"?"Work From Home Remarks":"On Duty Remarks"}} <span style="color: red;">*</span></th>
+            <th>{{tab=="create-request"?"Work From Home Reason":"On Duty Reason"}} <span style="color: red;">*</span>
+            </th>
+            <th>{{tab=="create-request"?"Work From Home Remarks":"On Duty Remarks"}} <span style="color: red;">*</span>
+            </th>
             <th>Action</th>
           </tr>
         </ng-template>
@@ -72,35 +74,47 @@
         </ng-template>
       </p-table>
 
-      <p-table *ngIf="isResourceView" [value]="formData.rows" dataKey="index" class="p-datatable-gridlines resource-table"
+      <p-table *ngIf="isResourceView" [value]="formData.rows" class="p-datatable-gridlines resource-table"
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
             <th>Employee <span style="color: red;">*</span></th>
-            <th>Request Type <span style="color: red;">*</span></th>
-            <th>Date Range</th>
+            <th>{{ isOdDownlineView ? 'Date Range' : 'Request Type' }} <span *ngIf="!isOdDownlineView"
+                style="color: red;">*</span></th>
+            <th>{{ isOdDownlineView ? 'OD Reason' : 'Date Range' }} <span *ngIf="isOdDownlineView"
+                style="color: red;">*</span></th>
             <th>Action</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-e let-i="rowIndex">
           <tr>
             <td>
-              <app-common-select [options]="employeeList" bindValue="value" [value]="e.employeeNumber"
+              <app-common-select [options]="getAvailableEmployeesForRow(e)" bindValue="value" [value]="e.employeeNumber"
                 placeholder="Select Employee" (valueChange)="onResourceEmployeeChange(e, $event)"></app-common-select>
             </td>
             <td>
-              <app-common-select [options]="requestTypeList" bindValue="value" [value]="e.requestType"
-                placeholder="Select Request Type"
+              <app-date-range-picker *ngIf="isOdDownlineView" [(range)]="e.dateRange" selectionMode="range"
+                [disabledDates]="getDisabledDatesForResourceRow(e, i)"
+                [disabled]="isEmployeePermanentInAnotherRow(e, i)" [disabledDays]="[0, 6]" [minDate]="minSelectableDate"
+                [maxDate]="maxSelectableDate" (okClick)="onMultiDateConfirm($event, i)"
+                (monthYearChange)="onMonthYearChanged($event)" style="width: 12vw;"></app-date-range-picker>
+              <app-common-select *ngIf="!isOdDownlineView" [options]="requestTypeList" bindValue="value"
+                [value]="e.requestType" placeholder="Select Request Type"
                 [disabled]="tab === 'on-duty-request' || !e.employeeNumber"
                 (valueChange)="onResourceRequestTypeChange(e, $event)"></app-common-select>
             </td>
             <td>
-              <app-date-range-picker *ngIf="e.requestType === 'DATE_RANGE'" [(range)]="e.dateRange"
-                selectionMode="range"
-                [disabledDates]="disabledDates" [minDate]="minSelectableDate" [maxDate]="maxSelectableDate"
-                (okClick)="onMultiDateConfirm($event, i)" (monthYearChange)="onMonthYearChanged($event)"
-                style="width: 12vw;"></app-date-range-picker>
-              <span *ngIf="e.requestType === 'PERMANENT_WFH'" class="not-applicable">Not applicable</span>
+              <div *ngIf="isOdDownlineView" class="stable-width">
+                <app-common-select [options]="reasonList" [value]="e.primaryReason" placeholder="Select OD Reason"
+                  [searchKey]="'label'" (valueChange)="onPrimaryReasonChange(e, $event)"></app-common-select>
+              </div>
+              <app-date-range-picker *ngIf="!isOdDownlineView && e.requestType === 'DATE_RANGE'" [(range)]="e.dateRange"
+                selectionMode="range" [disabledDates]="getDisabledDatesForResourceRow(e, i)"
+                [disabled]="isEmployeePermanentInAnotherRow(e, i)" [disabledDays]="isDownlineView ? [0, 6] : []"
+                [minDate]="minSelectableDate" [maxDate]="maxSelectableDate" (okClick)="onMultiDateConfirm($event, i)"
+                (monthYearChange)="onMonthYearChanged($event)" style="width: 12vw;"></app-date-range-picker>
+              <span *ngIf="!isOdDownlineView && e.requestType === 'PERMANENT_WFH'" class="not-applicable">Not
+                applicable</span>
             </td>
             <td>
               <div class="resource-actions">
