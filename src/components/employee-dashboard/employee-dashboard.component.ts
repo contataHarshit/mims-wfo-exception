@@ -120,11 +120,13 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
-    this.role = localStorage.getItem("role") || "";
+    this.role = (
+      this.commonService.role || localStorage.getItem("role") || ""
+    )
+      .trim()
+      .toUpperCase();
     this.department = localStorage.getItem("department") || "";
-    this.selectedView = (this.role === "ADMIN" ? "all" : "self") as string;
-    this.commonService.selectedView = this.selectedView;
-    this.commonService.viewChange$.next(this.selectedView);
+    this.selectedView = this.commonService.selectedView || "self";
     // Load employee list from localStorage FIRST
     this.loadEmployeeListFromCache();
 

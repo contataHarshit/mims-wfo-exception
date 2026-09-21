@@ -91,6 +91,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     { label: "Date Range", value: "DATE_RANGE" },
   ];
   selectedView = "self";
+  private selectedDownlineEmployeeNumber: string | null = null;
+  private selectedDownlineEmployeeIsManager = false;
   maxSelectableDate: any;
   minSelectableDate: any;
   tab: string = "create-request";
@@ -111,8 +113,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.commonService.setLoading(true);
     this.updateTab(this.router.url);
 
-    this.selectedView = "self";
-    this.commonService.selectedView = this.selectedView;
+    this.selectedView = this.commonService.selectedView || "self";
     if (this.isResourceView) this.resetRows();
     this.loadEmployeeListFromStorage();
     this.commonService.viewChange$
@@ -131,7 +132,9 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     this.commonService.allEmployeeData$
       .pipe(takeUntil(this.destroy$))
-      .subscribe((employees) => this.setEmployeeList(employees));
+      .subscribe((employees) => {
+        if (!this.isResourceSelection) this.setEmployeeList(employees);
+      });
     this.commonService.managerEmployeeData$
       .pipe(takeUntil(this.destroy$))
       .subscribe((employees) => {
@@ -252,6 +255,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     month: number = new Date().getMonth() + 1,
     year: number = new Date().getFullYear(),
     sendRequest = false,
+    employeeNumber: string | null = null,
+    isManager = false,
   ): void {
     if (this.formDataLoadedOnce && !sendRequest) return; // prevent duplicate loads
     this.formDataLoadedOnce = true;
@@ -262,9 +267,18 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.maxSelectableDate = maxDate;
 
     // Fetch disabled dates
+    const params = new URLSearchParams({
+      month: String(month),
+      year: String(year),
+    });
+    if (this.isDownlineView && this.tab === "create-request" && employeeNumber) {
+      params.set("employeeNumber", employeeNumber);
+      params.set("isManager", String(isManager));
+    }
+
     const url =
       this.tab === "create-request"
-        ? `${this.constant.selectedDates}?month=${month}&year=${year}`
+        ? `${this.constant.selectedDates}?${params.toString()}`
         : `${this.constant.onDutyDisabledDates}?fromDate=${this.toDateParam(
             new Date(year, month - 1, 1),
           )}&toDate=${this.toDateParam(new Date(year, month, 0))}`;
@@ -311,6 +325,25 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       row.dateRange = [];
     }
     row.employeeNumber = employeeNumber;
+    if (this.isDownlineView && this.tab === "create-request") {
+      this.selectedDownlineEmployeeNumber = employeeNumber || null;
+      const selectedEmployee = this.employeeList.find(
+        (employee) => employee.value === employeeNumber,
+      );
+      this.selectedDownlineEmployeeIsManager = String(
+        selectedEmployee?.designation || "",
+      )
+        .toLowerCase()
+        .includes("manager");
+      const currentDate = this.getCalendarMonth();
+      this.loadFormData(
+        currentDate.month,
+        currentDate.year,
+        true,
+        this.selectedDownlineEmployeeNumber,
+        this.selectedDownlineEmployeeIsManager,
+      );
+    }
     this.updateDisabledDates();
     this.cdr.detectChanges();
   }
@@ -729,7 +762,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       );
 
       import("rxjs").then(({ forkJoin }) => {
-        forkJoin(requests$)
+        forkJoin(requests$ as any[])
           .pipe(
             finalize(() => {
               this.commonService.setLoading(false);
@@ -754,41 +787,55 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     }
 
     if (!isWfhRequest && this.isOdDownlineView) {
-      const requests = this.formData.rows.map((row: any) => ({
-        employeeNumber: row.employeeNumber?.value || row.employeeNumber,
-        odRequestDate: this.convertToISODate(row.dateRange[0]),
-        odReason:
-          typeof row.primaryReason === "object"
-            ? row.primaryReason?.value || row.primaryReason?.label || ""
-            : row.primaryReason || "",
-        remarks: row.remarks?.trim() || "",
-      }));
+      const requests$ = this.formData.rows.map((row: any) => {
+        const dateRange = row.dateRange || [];
+        const payload = {
+          employeeNumber: row.employeeNumber?.value || row.employeeNumber,
+          fromDate: this.convertToISODate(dateRange[0]),
+          toDate: this.convertToISODate(dateRange[dateRange.length - 1]),
+          odReason:
+            typeof row.primaryReason === "object"
+              ? row.primaryReason?.value || row.primaryReason?.label || ""
+              : row.primaryReason || "",
+          remarks: row.remarks?.trim() || "",
+        };
 
-      this.http
-        .postData({ requests }, this.constant.odRequests)
-        .pipe(
-          finalize(() => {
-            this.commonService.setLoading(false);
-          }),
-        )
-        .subscribe({
-          next: (res: any) => {
-            if (res?.success) {
+        return this.http.postData(payload, this.constant.odRequests);
+      });
+
+      import("rxjs").then(({ forkJoin }) => {
+        forkJoin(requests$)
+          .pipe(
+            finalize(() => {
+              this.commonService.setLoading(false);
+            }),
+          )
+          .subscribe({
+            next: (responses: unknown) => {
+              const responseList = responses as any[];
+              const failedResponse = responseList.find(
+                (response) => !response?.success,
+              );
+              if (failedResponse) {
+                this.toastr.error(
+                  failedResponse.errors || "OD request submission failed.",
+                );
+                return;
+              }
+
               this.toastr.success("OD requests submitted successfully!");
               this.resetForm(false);
-            } else {
-              this.toastr.error(res?.errors || "OD request submission failed.");
-            }
-          },
-          error: (err) => {
-            console.error("OD Submission Error:", err);
-            this.toastr.error(
-              err?.error?.error ||
-                err?.error?.errors ||
-                "An error occurred while submitting the OD request.",
-            );
-          },
-        });
+            },
+            error: (err) => {
+              console.error("OD Submission Error:", err);
+              this.toastr.error(
+                err?.error?.error ||
+                  err?.error?.errors ||
+                  "An error occurred while submitting the OD request.",
+              );
+            },
+          });
+      });
       return;
     }
 
@@ -924,7 +971,19 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     return dates;
   }
   onMonthYearChanged(event: { month: number; year: number }) {
-    this.loadFormData(event.month, event.year, true);
+    this.loadFormData(
+      event.month,
+      event.year,
+      true,
+      this.isDownlineView ? this.selectedDownlineEmployeeNumber : null,
+      this.selectedDownlineEmployeeIsManager,
+    );
+  }
+
+  private getCalendarMonth(): { month: number; year: number } {
+    const selectedDate = this.formData.rows[0]?.dateRange?.[0];
+    const date = selectedDate ? new Date(selectedDate) : new Date();
+    return { month: date.getMonth() + 1, year: date.getFullYear() };
   }
   private updateTab(url: string): void {
     const previousTab = this.tab;
@@ -989,6 +1048,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     this.employeeList = employees.map((employee: any) => ({
       label: `${employee.FullName || employee.fullName || employee.employeeName} (${employee.EmployeeNumber || employee.employeeNumber})`,
       value: employee.EmployeeNumber || employee.employeeNumber,
+      designation: employee.designation || employee.Designation || "",
     }));
     this.cdr.detectChanges();
   }
@@ -996,9 +1056,9 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   private loadEmployeeListFromStorage(): void {
     if (!this.isResourceView) return;
 
-    const storedEmployees =
-      localStorage.getItem("allEmployeeData") ||
-      localStorage.getItem("managerEmployeeData");
+    const storedEmployees = this.isResourceSelection
+      ? localStorage.getItem("managerEmployeeData")
+      : localStorage.getItem("allEmployeeData");
 
     if (!storedEmployees) return;
 

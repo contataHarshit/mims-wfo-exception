@@ -183,7 +183,7 @@
           <!-- ✅ FIXED: merged duplicate style attributes into one -->
           <td *ngIf="selectedView !== 'self' && !(department==='HR' && role==='EMPLOYEE')"
             style="width: 60px !important; min-width: 60px !important; max-width: 60px !important; text-align: center;">
-            <input type="checkbox" [checked]="req.checked" [disabled]="!isDownlineView && (
+            <input type="checkbox" [checked]="req.checked" [disabled]="(isDownlineView && req.status !== 'PENDING') || req.status === 'APPROVED' || req.status === 'REJECTED' || (!isDownlineView && (
     !(department === 'RMG' && role === 'MANAGER') &&
     (
       (
@@ -202,7 +202,7 @@
         req.status == 'APPROVED'
       )
     )
-  )" (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
+  ))" (change)="toggleSelection(req, $event)" *ngIf="req.status !== 'REJECTED'" />
           </td>
           <td>{{ req.employeeId }}</td>
           <td>{{ req.employeeName }}</td>

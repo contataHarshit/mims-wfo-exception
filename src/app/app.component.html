@@ -11,8 +11,9 @@
       <div *ngIf="isDashboardPage || isRequestPage" class="select-view-wrapper">
         <label for="" class="approvalView">{{isDashboardPage ? (isOdDashboardPage ? "OD Request View:" : "WFH Request
           View:") : "Request View:" }}&nbsp;</label>
-        <select [(ngModel)]="commonService.selectedView" (change)="onViewChange($event)" class="styled-select">
-          <option *ngFor="let option of displayedViewOptions" [value]="option.value">{{option.label}}</option>
+        <select [value]="commonService.selectedView" (change)="onViewChange($event)" class="styled-select">
+          <option *ngFor="let option of displayedViewOptions" [value]="option.value"
+            [selected]="option.value === commonService.selectedView">{{option.label}}</option>
         </select>
       </div>
 
