@@ -108,7 +108,7 @@
                 <app-common-select [options]="reasonList" [value]="e.primaryReason" placeholder="Select OD Reason"
                   [searchKey]="'label'" (valueChange)="onPrimaryReasonChange(e, $event)"></app-common-select>
               </div>
-              <app-date-range-picker *ngIf="!isOdDownlineView && e.requestType === 'DATE_RANGE'" [(range)]="e.dateRange"
+              <app-date-range-picker *ngIf="!isOdDownlineView && e.requestType === 'SHORT_TERM'" [(range)]="e.dateRange"
                 selectionMode="range" [disabledDates]="getDisabledDatesForResourceRow(e, i)"
                 [disabled]="isEmployeePermanentInAnotherRow(e, i)" [disabledDays]="isDownlineView ? [0, 6] : []"
                 [minDate]="minSelectableDate" [maxDate]="maxSelectableDate" (okClick)="onMultiDateConfirm($event, i)"

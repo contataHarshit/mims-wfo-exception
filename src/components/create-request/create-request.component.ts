@@ -93,7 +93,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   employeeList: any[] = [];
   requestTypeList = [
     { label: "Permanent Work From Home", value: "PERMANENT_WFH" },
-    { label: "Date Range", value: "DATE_RANGE" },
+    { label: "Short-term Work From Home", value: "SHORT_TERM" },
   ];
   selectedView = "self";
   private selectedDownlineEmployeeNumber: string | null = null;
@@ -1015,7 +1015,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       this.tab === "on-duty-request"
     ) {
       this.formData.rows.forEach((row: any) => {
-        row.requestType = "DATE_RANGE";
+        row.requestType = "SHORT_TERM";
       });
       this.cdr.detectChanges();
     }
@@ -1041,7 +1041,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
     return this.isResourceView
       ? {
           employeeNumber: null,
-          requestType: this.tab === "on-duty-request" ? "DATE_RANGE" : null,
+          requestType: this.tab === "on-duty-request" ? "SHORT_TERM" : null,
           dateRange: [],
         }
       : {
@@ -1106,8 +1106,8 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       this.toastr.warning("Please select an employee and request type.");
       return false;
     }
-    if (row.requestType === "DATE_RANGE" && row.dateRange?.length < 2) {
-      this.toastr.warning("Please select a date range.");
+    if (row.requestType === "SHORT_TERM" && row.dateRange?.length < 2) {
+      this.toastr.warning("Please select a Short-term date range.");
       return false;
     }
     return true;

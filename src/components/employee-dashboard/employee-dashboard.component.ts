@@ -407,6 +407,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     }
 
     if(this.filters.wfhType) {
+      
       params.set("wfhType", this.filters.wfhType);
     }
     const url =
