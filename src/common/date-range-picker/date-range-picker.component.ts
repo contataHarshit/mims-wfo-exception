@@ -51,6 +51,7 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   lastApplied: Date[] = [];
   internalDisabledDates: Date[] = [];
   private handledClose = false;
+  private navigatingCalendar = false;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -101,7 +102,7 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
 
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: Event) {
-    if (!this.calendar?.overlayVisible) return;
+    if (!this.calendar?.overlayVisible || this.navigatingCalendar) return;
 
     const target = event.target as HTMLElement;
     const clickedInsideCalendar =
@@ -171,6 +172,11 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   onMonthOrYearChange(
     event: CalendarMonthChangeEvent | CalendarYearChangeEvent,
   ) {
+    this.navigatingCalendar = true;
+    setTimeout(() => {
+      this.navigatingCalendar = false;
+    });
+
     // Safely extract values (PrimeNG marks them as optional)
     const month = event.month ?? new Date().getMonth();
     const year = event.year ?? new Date().getFullYear();
