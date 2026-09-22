@@ -35,9 +35,15 @@
           <input type="date" class="date-input" [(ngModel)]="filters.toDate" (change)="onDateChange()"
             [min]="filters.fromDate" />
         </div>
-        <div class="form-row" *ngIf="selectedView !== 'self'">
+        <div class="form-row" *ngIf="selectedView !== 'self' && !isWfhDownlineView">
           <label>Reason</label>
           <app-common-select [options]="reasonList" [(value)]="filters.reason" placeholder="Select Reason"
+            style="width: 100%;">
+          </app-common-select>
+        </div>
+        <div class="form-row" *ngIf="isWfhDownlineView">
+          <label>WFH type</label>
+          <app-common-select [options]="wfhTypeList" [(value)]="filters.wfhType" placeholder="Select WFH Type"
             style="width: 100%;">
           </app-common-select>
         </div>
@@ -190,11 +196,11 @@
           <td>{{ req.employeeName }}</td>
           <td *ngIf="!isWfhDownlineView">{{ req.designation }}</td>
           <td>{{ req.managerName }}</td>
-          <td *ngIf="showApprovedColumn()">{{ req.approvedBy || '-' }}</td>
-          <td *ngIf="showRejectedColumn()">{{ req.rejectedBy || '-' }}</td>
-          <td>{{ req.exceptionDate }}</td>
-          <td>{{ req.primaryReason }}</td>
-          <td>{{ req.submissionDate }}</td>
+          <td *ngIf="showApprovedColumn()">{{ req.approvedBy || '-N/A-' }}</td>
+          <td *ngIf="showRejectedColumn()">{{ req.rejectedBy || '-N/A-' }}</td>
+          <td>{{ req.exceptionDate || '-N/A-' }}</td>
+          <td>{{ req.primaryReason || '-N/A-' }}</td>
+          <td>{{ req.submissionDate || '-N/A-' }}</td>
           <td>
             <span [ngClass]="{
               'status-pending': req.status === 'PENDING',
@@ -228,7 +234,7 @@
 
   <!-- BULK ACTION BUTTONS -->
   <div class="action-buttons" style="display: flex; width: 100%; margin-top: 20px; justify-content: space-between;"
-    *ngIf="allRequests.length && selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all'))  ">
+    *ngIf="(allRequests.length && selectedView !== 'self'  && !(department==='HR' && role==='EMPLOYEE') && (filters?.status?.value!=='REJECTED') && (filters?.status?.value!=='APPROVED' || (filters?.status?.value==='APPROVED' && selectedView=='all')) ) && !isAllRowDisabled() ">
     <div style="flex: 1;">
       <input type="text" placeholder="Remarks" [(ngModel)]="remarks" class="form-control" style="width: 30%;">
     </div>

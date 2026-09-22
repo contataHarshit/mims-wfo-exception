@@ -95,7 +95,10 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   remarks: string = "";
   department: string = "";
   allSelected: boolean = false;
-
+  wfhTypeList = [
+    { label: "Permanent ", value: "permanent" },
+    { label: "Date Range", value: "dateRange" },
+  ];
   get isResourceView(): boolean {
     return this.selectedView === "resource";
   }
@@ -107,6 +110,9 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   }
   get isOdDashboard(): boolean {
     return this.router.url.split("?")[0].split("/").includes("od-dashboard");
+  }
+  get isOdDownlineView(): boolean {
+    return this.isOdDashboard && this.isDownlineView;
   }
 
   /**
@@ -120,9 +126,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
-    this.role = (
-      this.commonService.role || localStorage.getItem("role") || ""
-    )
+    this.role = (this.commonService.role || localStorage.getItem("role") || "")
       .trim()
       .toUpperCase();
     this.department = localStorage.getItem("department") || "";
@@ -402,6 +406,9 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
+    if(this.filters.wfhType) {
+      params.set("wfhType", this.filters.wfhType);
+    }
     const url =
       this.isOdDashboard && !this.isDownlineView
         ? `${this.constants.onDutyRequests}/?${params.toString()}`
@@ -449,29 +456,36 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
             this.allRequests = rows.map((item: any) => ({
               id: item.id,
 
-              employeeId: this.isWfhDownlineView
-                ? item.employee?.EmployeeNumber || "-N/A-"
-                : item.employeeNumber || "-N/A-",
+              employeeId:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? item.employee?.EmployeeNumber ||
+                    item.EmployeeNumber ||
+                    "-N/A-"
+                  : item.employeeNumber || "-N/A-",
 
-              employeeName: this.isWfhDownlineView
-                ? this.getEmployeeName(item.employee)
-                : item.employee || "-N/A-",
+              employeeName:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.employee)
+                  : item.employee || "-N/A-",
 
               designation: item.designation || "-N/A-",
 
-              exceptionDate: this.isWfhDownlineView
-                ? this.getWfhDate(item)
-                : res?.data?.exceptions
-                  ? this.formatDate(item.selectedDate)
-                  : this.formatDate(item.odRequestDate),
+              exceptionDate:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getRequestDate(item)
+                  : res?.data?.exceptions
+                    ? this.formatDate(item.selectedDate)
+                    : this.formatDate(item.odRequestDate),
 
               primaryReason: this.isWfhDownlineView
                 ? item.isPermanent
                   ? "Permanent WFH"
                   : item.reason || item.wfhReason || "WFH"
-                : res?.data?.exceptions
-                  ? item.primaryReason
-                  : item.odReason,
+                : this.isOdDownlineView
+                  ? item.odReason || item.reason || "-"
+                  : res?.data?.exceptions
+                    ? item.primaryReason
+                    : item.odReason,
 
               submissionDate: item.submissionDate
                 ? this.formatDate(item.submissionDate)
@@ -487,16 +501,19 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
 
               status: item.currentStatus || "PENDING",
 
-              approvedBy: this.isWfhDownlineView
-                ? this.getEmployeeName(item.approvedBy)
-                : item.approvedBy || "-",
-              rejectedBy: this.isWfhDownlineView
-                ? this.getEmployeeName(item.rejectedBy)
-                : item.rejectedBy || "-",
+              approvedBy:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.approvedBy)
+                  : item.approvedBy || "-",
+              rejectedBy:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.rejectedBy)
+                  : item.rejectedBy || "-",
 
-              managerName: this.isWfhDownlineView
-                ? this.getEmployeeName(item.manager)
-                : item.manager || "-N/A-",
+              managerName:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.manager)
+                  : item.manager || "-N/A-",
 
               managerRemarks: res?.data?.exceptions
                 ? item.managerRemarks
@@ -600,6 +617,17 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       : `${fromDate} - ${toDate}`;
   }
 
+  private getRequestDate(request: any): string {
+    if (this.isWfhDownlineView) return this.getWfhDate(request);
+
+    const fromDate = this.formatDate(request.fromDate);
+    const toDate = this.formatDate(request.toDate);
+    if (fromDate === "-" && toDate === "-") return "-";
+    return fromDate === toDate || toDate === "-"
+      ? fromDate
+      : `${fromDate} - ${toDate}`;
+  }
+
   onDateChange() {}
 
   applyFilter() {
@@ -675,7 +703,8 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     }
 
     const selectableRequests = this.selectedRequests.filter(
-      (request) => request.status !== "REJECTED" && !this.isRowDisabled(request),
+      (request) =>
+        request.status !== "REJECTED" && !this.isRowDisabled(request),
     );
     if (selectableRequests.length === 0) {
       this.toastr.warning("Please select at least one enabled request.");
@@ -888,6 +917,11 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       field,
       this.currentSortOrder,
       dateFields.includes(field as string),
+    );
+  }
+  isAllRowDisabled(): any {
+    return this.allRequests.every(
+      (x: any) => this.isRowDisabled(x) || x.status === "REJECTED",
     );
   }
 }

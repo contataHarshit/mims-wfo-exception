@@ -23,6 +23,13 @@
         <input type="date" class="date-input" [(ngModel)]="filters.toDate" [min]="minToDate"
           (change)="onDateChange()" />
       </div>
+
+      <!-- WFH status -->
+      <div class="form-row">
+        <label>WFH Status</label>
+        <app-common-select [options]="wfhStatusOptions" [value]="filters.wfhStatus" placeholder="Select WFH Status"
+          [searchKey]="'label'" (valueChange)="onWfhStatusChange($event)"></app-common-select>
+      </div>
     </div>
 
     <!-- Filter Actions -->
@@ -105,7 +112,12 @@
               </div>
             </th>
 
-
+<th style="min-width:120px">
+              <div class="sort-icon-container">
+                WFH Status
+                <p-sortIcon field="wfhStatus" (click)="onSortClick('wfhStatus')" class="sortable-icon"></p-sortIcon>
+              </div>
+            </th>
 
             <th style="min-width:120px">
               <div class="sort-icon-container">
@@ -135,12 +147,7 @@
               </div>
             </th>
             
-            <th style="min-width:120px">
-              <div class="sort-icon-container">
-                WFH Status
-                <p-sortIcon field="wfhStatus" (click)="onSortClick('wfhStatus')" class="sortable-icon"></p-sortIcon>
-              </div>
-            </th>
+            
 
 
             <th style="min-width:150px">
@@ -188,11 +195,12 @@
             <td>{{rec.employeeName}}</td>
             <td>{{ rec.designation }}</td>
             <td>{{ rec.managerName }}</td>
+            <td style="text-align:center">{{ rec.wfhStatus }}</td>
             <td style="text-align:center">{{ rec.workingDays }}</td>
             <td style="text-align:center">{{ rec.presentDays }}</td>
             <td style="text-align:center">{{ rec.leaveDays }}</td>
             <td style="text-align:center">{{ rec.odDays }}</td>
-            <td style="text-align:center">{{ rec.wfhStatus }}</td>
+            
             <td style="text-align:center">{{ rec.TOTAL }}</td>
             <td style="text-align:center">{{ rec.APPROVED }}</td>
             <td style="text-align:center">{{ rec.REJECTED }}</td>

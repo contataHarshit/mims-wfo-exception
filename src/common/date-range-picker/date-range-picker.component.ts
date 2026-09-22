@@ -8,6 +8,7 @@ import {
   SimpleChanges,
   ViewChild,
   ChangeDetectorRef,
+  HostListener,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { CalendarModule } from "primeng/calendar";
@@ -49,6 +50,7 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   tempSelection: Date[] = [];
   lastApplied: Date[] = [];
   internalDisabledDates: Date[] = [];
+  private handledClose = false;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -92,7 +94,23 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   }
 
   onCalendarHide() {
+    console.log("ccccccccc");
     this.tempSelection = [...this.lastApplied];
+    this.handledClose = false;
+  }
+
+  @HostListener("document:click", ["$event"])
+  onDocumentClick(event: Event) {
+    if (!this.calendar?.overlayVisible) return;
+
+    const target = event.target as HTMLElement;
+    const clickedInsideCalendar =
+      !!target.closest(".p-calendar") || !!target.closest(".p-datepicker");
+
+    if (!clickedInsideCalendar) {
+      console.log("Calendar closed by outside click");
+      this.cancelSelection();
+    }
   }
 
   confirmSelection() {
@@ -103,11 +121,13 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
     this.tempSelection = [...this.range];
     this.rangeChange.emit(this.range);
     this.okClick.emit(this.range);
+    this.handledClose = true;
     this.hideCalendar();
   }
 
-  cancelSelection(manual: boolean = false) {
+  cancelSelection() {
     this.tempSelection = [...this.lastApplied];
+    this.handledClose = true;
     this.hideCalendar();
   }
 
