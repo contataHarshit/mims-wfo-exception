@@ -93,6 +93,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     fromDate: null as string | null,
     toDate: null as string | null,
     reason: null,
+    wfhStatus: null as string | null, // New filter for WFH status
   };
 
   minFromDate: string = "";
@@ -107,7 +108,10 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   totalRecords = 0;
   currentPage = 1;
   pageSize = 20;
-
+  wfhStatusOptions = [
+    { label: "Permanent WFH", value: "PERMANENT_WFH" },
+    { label: "Date Range WFH", value: "DATE_RANGE" },
+  ];
   ngOnInit(): void {
     this.setDefaultDateRange();
     this.loadEmployeeListFromCache();
@@ -395,6 +399,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       fromDate: null,
       toDate: null,
       reason: null,
+      wfhStatus: null, // Reset WFH status filter
     };
 
     // 2️⃣ Reset date range properly
@@ -445,4 +450,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       dateFields.includes(field as string),
     );
   }
+  onWfhStatusChange(value: string | null): void {
+    this.filters.wfhStatus = value;
+  } 
 }

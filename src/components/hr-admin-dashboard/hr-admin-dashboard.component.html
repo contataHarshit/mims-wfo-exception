@@ -23,6 +23,13 @@
         <input type="date" class="date-input" [(ngModel)]="filters.toDate" [min]="minToDate"
           (change)="onDateChange()" />
       </div>
+
+      <!-- WFH status -->
+      <div class="form-row">
+        <label>WFH Status</label>
+        <app-common-select [options]="wfhStatusOptions" [value]="filters.wfhStatus" placeholder="Select WFH Status"
+          [searchKey]="'label'" (valueChange)="onWfhStatusChange($event)"></app-common-select>
+      </div>
     </div>
 
     <!-- Filter Actions -->

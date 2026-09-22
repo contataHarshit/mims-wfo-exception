@@ -83,6 +83,11 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
   apiDisabledDates: Date[] = [];
   private resourceDisabledDateCache = new WeakMap<object, Date[]>();
   projectList: any[] = [];
+  private resourceEmployeeOptionsCache = new WeakMap<
+    object,
+    { signature: string; options: any[] }
+  >();
+  private employeeListVersion = 0;
 
   reasonList: any = [];
   employeeList: any[] = [];
@@ -624,7 +629,15 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     if (!permanentlyAssignedEmployees.size) return this.employeeList;
 
-    return this.employeeList.filter((employee) => {
+    const signature = [
+      this.employeeListVersion,
+      currentEmployeeNumber || "",
+      ...Array.from(permanentlyAssignedEmployees).sort(),
+    ].join("|");
+    const cached = this.resourceEmployeeOptionsCache.get(row);
+    if (cached?.signature === signature) return cached.options;
+
+    const options = this.employeeList.filter((employee) => {
       const employeeNumber = employee?.value ?? employee?.EmployeeNumber;
       // Keep the current row's value available so its selection remains visible.
       return (
@@ -632,6 +645,9 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
         !permanentlyAssignedEmployees.has(employeeNumber)
       );
     });
+
+    this.resourceEmployeeOptionsCache.set(row, { signature, options });
+    return options;
   }
 
   private getEmployeeNumber(row: any): string | null {
@@ -1050,6 +1066,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
       value: employee.EmployeeNumber || employee.employeeNumber,
       designation: employee.designation || employee.Designation || "",
     }));
+    this.employeeListVersion++;
     this.cdr.detectChanges();
   }
 
