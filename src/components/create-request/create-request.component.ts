@@ -945,7 +945,7 @@ export class CreateRequestComponent implements OnInit, OnDestroy {
 
     if (this.isResourceView) {
       return {
-        minDate: new Date(today.getFullYear(), today.getMonth(), 1),
+        minDate: addDays(today, -199),
         maxDate: null,
       };
     }
