@@ -11,6 +11,9 @@ import { ConstantService } from "../../service/constant.service";
 import { ToastrService } from "ngx-toastr";
 import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-filter/manager-employee-filter.component";
 import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
+import { MatDialog } from "@angular/material/dialog";
+import { DuplicateResponsePopupComponent } from "../../popup/duplicate-response-popup/duplicate-response-popup.component";
+import { Environment } from "../../environments/environment";
 
 @Component({
   selector: "app-attendance-view",
@@ -49,8 +52,8 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     managerId: ["ALL"],
   });
 
-  selectedEmployee: string | null = null;
-  selectedManager: string | null = null;
+  selectedEmployee: any = null;
+  selectedManager: any = null;
 
   weekOffset = 0;
   page: number = 1;
@@ -64,6 +67,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     private http: HttpService,
     private constants: ConstantService,
     private toastr: ToastrService,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -74,7 +78,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   editedMap = new Map<
     string,
-    { employeeNumber: string; date: string; value: string | undefined }
+    { employeeNumber: string; date: string; value: any }
   >();
 
   ngOnDestroy(): void {
@@ -105,8 +109,8 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
   get rangeLabel(): string {
     const start = this.weekOffset + 1;
-    const end = Math.min(this.weekOffset + 7, 35);
-    return `Days ${start}–${end} of 35`;
+    const end = Math.min(this.weekOffset + 7, Environment.attendanceVariable);
+    return `Days ${start}–${end} of ${Environment.attendanceVariable}`;
   }
 
   canGoPrevious(): boolean {
@@ -211,7 +215,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   /* ---------------- GET LAST WEEK API ---------------- */
-  private extractValue(val: any): string | null {
+  private extractValue(val: any): any {
     if (!val) return null;
     if (typeof val === "string") return val;
     if (typeof val === "object" && val.value) return val.value;
@@ -251,10 +255,12 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
           this.totalRecords = res.data.total;
 
           this.tableData = res.data.data.map((emp: any) => {
-            const attendance: Record<string, string | undefined> = {};
+            const attendance: any = {};
+            const originalAttendance: any = {};
 
             (emp.dates || []).forEach((d: any) => {
               attendance[d.OfficeAttendanceDate] = d.AttendanceValue;
+              originalAttendance[d.OfficeAttendanceDate] = d.AttendanceValue;
             });
 
             return {
@@ -263,6 +269,7 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
               managerName: emp.ManagerName,
               email: emp.EmployeeEmail,
               attendance,
+              originalAttendance,
             };
           });
         },
@@ -276,7 +283,9 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   /* ---------------- CELL EDIT ---------------- */
 
   isEditable(colKey: string): boolean {
-    return !["employeeName", "managerName", "email", "employeeNumber"].includes(colKey);
+    return !["employeeName", "managerName", "email", "employeeNumber"].includes(
+      colKey,
+    );
   }
 
   storeOriginalValue(event: Event): void {
@@ -357,21 +366,23 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   markEdited(row: any, date: string) {
-    const rawValue = row.attendance[date];
-    const normalizedValue = this.normalizeValue(rawValue);
+    const currentValue = this.normalizeValue(row.attendance[date]);
+    const originalValue = this.normalizeValue(row.originalAttendance?.[date]);
 
-    if (normalizedValue === null) {
-      this.editedMap.delete(`${row.email}-${date}`);
+    const key = `${row.email}-${date}`;
+
+    // Remove edit if value is same as original
+    if (currentValue === originalValue) {
+      this.editedMap.delete(key);
       this.editedCells.delete(`${row.employeeNumber}-${date}`);
       return;
     }
 
-    const key = `${row.email}-${date}`;
-
+    // Store edit (including null when cleared)
     this.editedMap.set(key, {
       employeeNumber: row.employeeNumber,
       date,
-      value: normalizedValue,
+      value: currentValue,
     });
 
     this.editedCells.add(`${row.employeeNumber}-${date}`);
@@ -394,34 +405,58 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
 
       payloadMap[employeeNumber].dates.push({
         date,
-        value: !value?.replaceAll(" ", "").length
-          ? null
-          : value.replaceAll(" ", ""),
+        value: value && value.length ? value.replaceAll(" ", "") : "",
       });
     });
 
     const payload = Object.values(payloadMap);
 
     this.commonService.setLoading(true);
+    const invalids = this.validateAttendanceCellLength();
 
-    this.http.postData(payload, this.constants.officeAttendance + "/employee-number").subscribe({
-      next: (res) => {
-        if (res?.success) {
-          this.toastr.success(res?.data?.message || "Attendance updated");
+    if (invalids.length) {
+      this.commonService.setLoading(false);
+
+      this.dialog.open(DuplicateResponsePopupComponent, {
+        width: "620px",
+        disableClose: true,
+        data: {
+          totalRecords: this.tableData.length,
+          savedRecords: 0,
+          invalidValues: invalids,
+        },
+      });
+
+      return;
+    }
+
+    if (!this.editedMap.size) {
+      this.commonService.setLoading(false);
+      this.toastr.info("No changes to submit");
+      return;
+    }
+
+    this.http
+      .postData(payload, this.constants.officeAttendance + "/employee-number")
+      .subscribe({
+        next: (res) => {
+          if (res?.success) {
+            this.toastr.success(res?.data?.message || "Attendance updated");
+            this.commonService.setLoading(false);
+            this.editedMap.clear();
+            this.fetchAttendance()
+          } else {
+            this.toastr.error("Update failed");
+          }
+        },
+        error: (e) => {
+          this.toastr.error(e.message || "Update failed");
           this.commonService.setLoading(false);
-          this.editedMap.clear();
-        } else {
-          this.toastr.error("Update failed");
-        }
-      },
-      error: (e) => {
-        this.toastr.error(e.message || "Update failed");
-        this.commonService.setLoading(false);
-      },
-      complete: () => {
-        this.commonService.setLoading(false);
-      },
-    });
+        },
+        complete: () => {
+          this.commonService.setLoading(false);
+        },
+      });
   }
 
   onStartDateChange(event: Event) {
@@ -467,10 +502,10 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
   }
 
   get weekRangeLabel(): string {
-    if (this.tableColumns.length === 10) {
-      // tableColumns has 3 static + 7 date columns
-      // Date columns are at indices 3-9
-      return `${this.tableColumns[3].label} – ${this.tableColumns[9].label}`;
+    if (this.tableColumns.length >= 5) {
+      const firstDateCol = this.tableColumns[4];
+      const lastDateCol = this.tableColumns[this.tableColumns.length - 1];
+      return `${firstDateCol.label} – ${lastDateCol.label}`;
     }
     return "";
   }
@@ -499,10 +534,29 @@ export class AttendanceViewComponent implements OnInit, OnDestroy {
     this.fetchAttendance();
   }
 
-  private normalizeValue(value: string | undefined | null): string | null {
+  private normalizeValue(value: any): any {
     if (!value) return null;
 
     const trimmed = value.replaceAll(" ", "");
     return trimmed.length ? trimmed : null;
+  }
+  private validateAttendanceCellLength(): {
+    employeeNumber: string;
+    value: string;
+  }[] {
+    const invalids: { employeeNumber: string; value: any }[] = [];
+
+    this.tableData.forEach((row) => {
+      Object.entries(row.attendance || {}).forEach(([date, value]) => {
+        if (value && value.toString().trim().length > 3) {
+          invalids.push({
+            employeeNumber: row.employeeNumber,
+            value: value,
+          });
+        }
+      });
+    });
+
+    return invalids;
   }
 }

@@ -1,11 +1,11 @@
 <div class="form-actions">
   <button pButton type="button" class="p-button-secondary action-btn reset-btn" icon="pi pi-refresh" (click)="onReset()"
-    *ngIf="resetBtn">
+    style="gap: 8px;" *ngIf="resetBtn">
     Reset
   </button>
 
   <button pButton type="button" class="p-button-success action-btn submit-btn" icon="pi pi-check" (click)="onSubmit()"
-    *ngIf="showSubmit">
+    style="gap:8px" *ngIf="showSubmit">
     {{ submitLabel }}
   </button>
 </div>

@@ -1,4 +1,4 @@
-// FILE: wfo-dashboard.component.ts - COMPLETE CODE WITH SORTING RESET
+// FILE: employee-dashboard.component.ts - COMPLETE CODE WITH SORTING RESET
 import { CommonModule } from "@angular/common";
 import { Component, OnInit, NgZone, OnDestroy, ViewChild } from "@angular/core";
 import { MatDialog, MatDialogModule } from "@angular/material/dialog";
@@ -19,27 +19,10 @@ import { ConfirmPopupComponent } from "../../popup/confirm-popup/confirm-popup.c
 import { Subject, takeUntil } from "rxjs";
 import { ManagerEmployeeFilterComponent } from "../../common/manager-employee-filter/manager-employee-filter.component";
 import { CommonFormActionComponent } from "../../common/common-form-action/common-form-action.component";
-interface ExceptionRequest {
-  exceptionId: string;
-  employeeId: string;
-  employeeName: string;
-  designation: string;
-  projectName?: string;
-  exceptionDate: string;
-  primaryReason: string;
-  submissionDate: string | null;
-  exceptionRequestedDays: number | null;
-  exceptionApprovedDays: number | null;
-  status: string;
-  managerRemarks: string | null;
-  managerName: string | null;
-  approvedBy: string | null;
-  rejectedBy: string | null;
-  checked?: boolean;
-}
+import { Router } from "@angular/router";
 
 @Component({
-  selector: "app-wfo-dashboard",
+  selector: "app-employee-dashboard",
   standalone: true,
   imports: [
     CommonModule,
@@ -55,10 +38,10 @@ interface ExceptionRequest {
     ManagerEmployeeFilterComponent,
     CommonFormActionComponent,
   ],
-  templateUrl: "./wfo-dashboard.component.html",
+  templateUrl: "./employee-dashboard.component.html",
   styleUrl: "../../shared/dashboard-common.scss",
 })
-export class WfoDashboardComponent implements OnInit, OnDestroy {
+export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   // ViewChild to reference the p-table for sorting reset
   @ViewChild("dt") table!: Table;
 
@@ -73,11 +56,11 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     private constants: ConstantService,
     private toastr: ToastrService,
     private ngZone: NgZone,
+    public router: Router,
   ) {}
 
-  private allExceptionRequests: ExceptionRequest[] = [];
-  exceptionRequests: ExceptionRequest[] = [];
-  selectedRequests: ExceptionRequest[] = [];
+  allRequests: any[] = [];
+  selectedRequests: any[] = [];
   employeeList: any[] = [];
 
   statusList = [
@@ -112,23 +95,42 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
   remarks: string = "";
   department: string = "";
   allSelected: boolean = false;
+  wfhTypeList = [
+    { label: "Permanent ", value: "permanent" },
+    { label: "Date Range", value: "dateRange" },
+  ];
+  get isResourceView(): boolean {
+    return this.selectedView === "resource";
+  }
+  get isDownlineView(): boolean {
+    return this.selectedView === "downline";
+  }
+  get isAllLikeView(): boolean {
+    return this.selectedView === "all" || this.isDownlineView;
+  }
+  get isOdDashboard(): boolean {
+    return this.router.url.split("?")[0].split("/").includes("od-dashboard");
+  }
+  get isOdDownlineView(): boolean {
+    return this.isOdDashboard && this.isDownlineView;
+  }
 
+  /**
+   * The WFH downline API has a different response contract from the
+   * exception and OD dashboard APIs. Keep its mapping isolated so the
+   * existing dashboard views continue to consume their current contracts.
+   */
+  get isWfhDownlineView(): boolean {
+    return !this.isOdDashboard && this.isDownlineView;
+  }
   ngOnInit(): void {
     this.commonService.setLoading(true);
 
-    this.role = localStorage.getItem("role") || "";
+    this.role = (this.commonService.role || localStorage.getItem("role") || "")
+      .trim()
+      .toUpperCase();
     this.department = localStorage.getItem("department") || "";
-    if (this.role == "ADMIN") {
-      this.selectedView = "all";
-      this.commonService.selectedView = "all";
-      this.commonService.viewChange$.next("all");
-      localStorage.setItem("selectedView", "all");
-    } else {
-      this.selectedView = "self";
-      this.commonService.selectedView = "self";
-      this.commonService.viewChange$.next("self");
-      localStorage.setItem("selectedView", "self");
-    }
+    this.selectedView = this.commonService.selectedView || "self";
     // Load employee list from localStorage FIRST
     this.loadEmployeeListFromCache();
 
@@ -153,11 +155,16 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         const previousView = this.selectedView;
         this.filters.status = "PENDING";
         this.allSelected = false;
-        this.selectedView = localStorage.getItem("selectedView") || "self";
+        const emittedView = newView || "self";
+        this.selectedView = ["self", "resource", "downline", "all"].includes(
+          emittedView,
+        )
+          ? emittedView
+          : "self";
         if (this.selectedView === "self") {
           this.setManagerForSelfView();
         }
-        if (this.selectedView === "resource") {
+        if (this.isResourceView) {
           let temp = JSON.parse(localStorage.getItem("employeeData") || "null");
           this.filters.employeeName = null;
           this.filters.managerName = {
@@ -165,7 +172,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             value: temp?.employeeNumber,
           };
         }
-        if (this.selectedView === "all") {
+        if (this.isAllLikeView) {
           this.filters.managerName = null;
           this.filters.employeeName = null;
         }
@@ -175,7 +182,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           if (this.selectedView === "self") {
             this.setManagerForSelfView();
           }
-          if (this.selectedView === "resource") {
+          if (this.isResourceView) {
             let temp = JSON.parse(
               localStorage.getItem("employeeData") || "null",
             );
@@ -187,7 +194,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
           // Reset page and reload
           this.page = 1;
-          this.getExceptionRequest();
+          this.getAllRequest();
           this.getEmployeDropdownList();
         }
       });
@@ -196,7 +203,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.getEmployeDropdownList();
     // Initial data load - only if not already loading
     if (!this.isLoadingData) {
-      this.getExceptionRequest();
+      this.getAllRequest();
     }
   }
 
@@ -204,7 +211,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.commonService.allEmployeeData$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: any[]) => {
-        if (data && data.length > 0 && this.selectedView === "all") {
+        if (data && data.length > 0 && this.isAllLikeView) {
           this.employeeList = data.map((item: any) => ({
             label: `${item.FullName}(${item.EmployeeNumber})`,
             value: item.EmployeeNumber,
@@ -215,8 +222,10 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.commonService.managerEmployeeData$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: any[]) => {
-        this.reasonList = this.commonService.config?.reasonList || [];
-        if (data && data.length > 0 && this.selectedView === "resource") {
+        this.reasonList = this.isOdDashboard
+          ? this.commonService.config?.OdReasonList
+          : this.commonService.config?.reasonList || [];
+        if (data && data.length > 0 && this.isResourceView) {
           this.employeeList = data.map((item: any) => ({
             label: `${item.FullName}(${item.EmployeeNumber})`,
             value: item.EmployeeNumber,
@@ -227,6 +236,8 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     // Cleanup subscriptions
+    this.filters.managerName = null;
+    this.filters.employeeName = null;
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -306,7 +317,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
     return (
       s === "APPROVED" ||
-      this.exceptionRequests.some(
+      this.allRequests.some(
         (r) =>
           r.status === "APPROVED" || (r.approvedBy && r.approvedBy !== "-"),
       )
@@ -317,14 +328,14 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     const s = this.getStatusValue(this.filters.status);
     return (
       s === "REJECTED" ||
-      this.exceptionRequests.some(
+      this.allRequests.some(
         (r) =>
           r.status === "REJECTED" || (r.rejectedBy && r.rejectedBy !== "-"),
       )
     );
   }
 
-  getExceptionRequest(exporting: boolean = false) {
+  getAllRequest(exporting: boolean = false) {
     // Prevent multiple simultaneous calls
     if (this.isLoadingData) {
       return;
@@ -395,21 +406,45 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
-    const url = `${
-      this.constants.exceptionRequest
-    }/paginated?${params.toString()}`;
+    if(this.filters.wfhType) {
+      params.set("wfhType", this.filters.wfhType);
+    }
+    const url =
+      this.isOdDashboard && !this.isDownlineView
+        ? `${this.constants.onDutyRequests}/?${params.toString()}`
+        : this.isOdDashboard && this.isDownlineView
+          ? `${this.constants.odRequests}/?${params.toString()}`
+          : !this.isOdDashboard && !this.isDownlineView
+            ? `${this.constants.exceptionRequest}/paginated?${params.toString()}`
+            : `${this.constants.wfhRequest}?${params.toString()}`;
 
     this.http
       .getData(url)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: async (res: any) => {
+          console.log("res--------->", res);
+
           if (res.success) {
-            const exceptions = res.data.exceptions || [];
+            // Each dashboard endpoint uses a different collection name, and some
+            // paginated endpoints wrap that collection in a `data` property.
+            // Always normalize it to an array before consuming it below.
+            const requestCollection =
+              res?.data?.exceptions ??
+              res?.data?.onDutyRequests ??
+              res?.data?.odRequests ??
+              res?.data?.wfhRequests ??
+              res?.data?.requests ??
+              res?.data?.data;
+            const rows = Array.isArray(requestCollection)
+              ? requestCollection
+              : Array.isArray(requestCollection?.data)
+                ? requestCollection.data
+                : [];
 
             // If exporting, just download CSV and return early
             if (exporting) {
-              await this.commonService.downloadCSV(exceptions);
+              await this.commonService.downloadCSV(rows);
               this.commonService.setLoading(false);
               this.isLoadingData = false;
               return;
@@ -418,51 +453,106 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
             // Only update UI state when NOT exporting
             this.disableSelectAll = false;
             this.allSelected = false;
-            this.exceptionRequests = exceptions.map((item: any) => {
-              return {
-                exceptionId: item.id,
-                employeeId: item.employeeNumber,
-                employeeName: item.employee,
-                designation: item.designation || "-",
-                exceptionDate: this.formatDate(item.selectedDate),
-                primaryReason: item.primaryReason || "-",
-                submissionDate: item.submissionDate
-                  ? this.formatDate(item.submissionDate)
-                  : null,
-                exceptionRequestedDays: item.requestedDays || null,
-                exceptionApprovedDays: item.approvedDays || null,
-                status: item.currentStatus || "PENDING",
-                approvedBy: item.approvedBy || "-",
-                rejectedBy: item.rejectedBy || "-",
-                managerName: item?.manager || "-",
-                managerRemarks: item.managerRemarks || null,
-                remarks: item.remarks || "-",
-                checked: false,
-              } as ExceptionRequest;
-            });
+            this.allRequests = rows.map((item: any) => ({
+              id: item.id,
+
+              employeeId:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? item.employee?.EmployeeNumber ||
+                    item.EmployeeNumber ||
+                    "-N/A-"
+                  : item.employeeNumber || "-N/A-",
+
+              employeeName:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.employee)
+                  : item.employee || "-N/A-",
+
+              designation: item.designation || "-N/A-",
+
+              exceptionDate:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getRequestDate(item)
+                  : res?.data?.exceptions
+                    ? this.formatDate(item.selectedDate)
+                    : this.formatDate(item.odRequestDate),
+
+              primaryReason: this.isWfhDownlineView
+                ? item.isPermanent
+                  ? "Permanent WFH"
+                  : item.reason || item.wfhReason || "WFH"
+                : this.isOdDownlineView
+                  ? item.odReason || item.reason || "-"
+                  : res?.data?.exceptions
+                    ? item.primaryReason
+                    : item.odReason,
+
+              submissionDate: item.submissionDate
+                ? this.formatDate(item.submissionDate)
+                : null,
+
+              exceptionRequestedDays: res?.data?.exceptions
+                ? item.requestedDays
+                : null,
+
+              exceptionApprovedDays: res?.data?.exceptions
+                ? item.approvedDays
+                : null,
+
+              status: item.currentStatus || "PENDING",
+
+              approvedBy:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.approvedBy)
+                  : item.approvedBy || "-",
+              rejectedBy:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.rejectedBy)
+                  : item.rejectedBy || "-",
+
+              managerName:
+                this.isWfhDownlineView || this.isOdDownlineView
+                  ? this.getEmployeeName(item.manager)
+                  : item.manager || "-N/A-",
+
+              managerRemarks: res?.data?.exceptions
+                ? item.managerRemarks
+                : item.reviewRemarks,
+
+              remarks: item.remarks || "-",
+
+              checked: false,
+            }));
 
             let tempHash: any = {};
-            for (let i = 0; i < this.exceptionRequests.length; i++) {
-              if (!tempHash[this.exceptionRequests[i].status]) {
-                tempHash[this.exceptionRequests[i].status] = true;
+            for (let i = 0; i < this.allRequests.length; i++) {
+              if (!tempHash[this.allRequests[i].status]) {
+                tempHash[this.allRequests[i].status] = true;
               }
             }
-
-            if (Object.keys(tempHash).length == 1) {
+            if (this.isDownlineView) {
+              // Downline supports bulk selection regardless of the standard
+              // resource/role restrictions applied to other views.
+              this.disableSelectAll = false;
+            } else if (Object.keys(tempHash).length == 1) {
               if (
                 Object.keys(tempHash)[0] == "REJECTED" ||
-                (Object.keys(tempHash)[0] == "APPROVED" &&
-                  this.selectedView === "resource")
+                (Object.keys(tempHash)[0] == "APPROVED" && this.isResourceView)
               ) {
                 this.disableSelectAll = true;
               }
             }
 
-            this.totalRecords = res.data.pagination?.total || exceptions.length;
+            this.totalRecords =
+              res?.data?.pagination?.total ??
+              res?.data?.total ??
+              requestCollection?.pagination?.total ??
+              requestCollection?.total ??
+              rows.length;
             this.selectedRequests = [];
           } else {
             if (!exporting) {
-              this.exceptionRequests = [];
+              this.allRequests = [];
               this.totalRecords = 0;
               this.toastr.warning("No records found");
             }
@@ -475,7 +565,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         error: (err: any) => {
           console.error("Error fetching exception requests:", err);
           if (!exporting) {
-            this.exceptionRequests = [];
+            this.allRequests = [];
             this.totalRecords = 0;
           }
           this.commonService.setLoading(false);
@@ -493,7 +583,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.page = event.first / event.rows + 1;
     this.limit = event.rows;
 
-    this.getExceptionRequest();
+    this.getAllRequest();
   }
 
   formatDate(date: string): string {
@@ -505,14 +595,47 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private getEmployeeName(employee: any): string {
+    if (!employee) return "-";
+    if (typeof employee === "string") return employee;
+
+    return (
+      [employee.FirstName, employee.MiddleName, employee.LastName]
+        .filter((name) => !!name && name.trim())
+        .join(" ") || "-"
+    );
+  }
+
+  private getWfhDate(request: any): string {
+    if (request.isPermanent) return "Permanent";
+
+    const fromDate = this.formatDate(request.fromDate);
+    const toDate = this.formatDate(request.toDate);
+    if (fromDate === "-" && toDate === "-") return "-";
+    return fromDate === toDate || toDate === "-"
+      ? fromDate
+      : `${fromDate} - ${toDate}`;
+  }
+
+  private getRequestDate(request: any): string {
+    if (this.isWfhDownlineView) return this.getWfhDate(request);
+
+    const fromDate = this.formatDate(request.fromDate);
+    const toDate = this.formatDate(request.toDate);
+    if (fromDate === "-" && toDate === "-") return "-";
+    return fromDate === toDate || toDate === "-"
+      ? fromDate
+      : `${fromDate} - ${toDate}`;
+  }
+
   onDateChange() {}
 
   applyFilter() {
     this.page = 1;
     this.resetTableSorting();
-    this.getExceptionRequest();
+    this.getAllRequest();
     setTimeout(() => {
-      const count = this.exceptionRequests.length;
+      const count = this.allRequests.length;
       this.toastr.success(
         `Filter applied. Found ${count} record${count !== 1 ? "s" : ""}`,
       );
@@ -536,37 +659,37 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
 
     this.page = 1;
     this.resetTableSorting();
-    this.getExceptionRequest();
+    this.getAllRequest();
     this.toastr.info("Filters reset successfully");
   }
 
   export() {
-    if (!this.exceptionRequests.length) {
+    if (!this.allRequests.length) {
       this.toastr.warning("No data available to export");
       return;
     }
     this.toastr.info("Exporting...");
-    this.getExceptionRequest(true);
+    this.getAllRequest(true);
   }
 
   toggleSelection(req: any, event: any): void {
     req.checked = event.target.checked;
-    
+
     if (req.checked) {
       // Add to selected requests if not already present
-      if (!this.selectedRequests.find((r: any) => r.exceptionId === req.exceptionId)) {
+      if (!this.selectedRequests.find((r: any) => r.id === req.id)) {
         this.selectedRequests.push(req);
       }
     } else {
       // Remove from selected requests
       this.selectedRequests = this.selectedRequests.filter(
-        (r: any) => r.exceptionId !== req.exceptionId,
+        (r: any) => r.id !== req.id,
       );
       this.allSelected = false;
     }
 
     // Check if all are selected
-    const selectableRows = this.exceptionRequests.filter(
+    const selectableRows = this.allRequests.filter(
       (r) => r.status !== "REJECTED" && !this.isRowDisabled(r),
     );
     this.allSelected =
@@ -579,13 +702,30 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const ids = this.selectedRequests.map((r) => r.exceptionId);
+    const selectableRequests = this.selectedRequests.filter(
+      (request) =>
+        request.status !== "REJECTED" && !this.isRowDisabled(request),
+    );
+    if (selectableRequests.length === 0) {
+      this.toastr.warning("Please select at least one enabled request.");
+      return;
+    }
+
+    const ids = selectableRequests.map((r) => r.id);
     const payload: any = { ids, status };
     if (this.remarks) {
       payload.remarks = this.remarks;
     }
+    const url =
+      this.isOdDashboard && !this.isDownlineView
+        ? `${this.constants.onDutyRequests}`
+        : this.isOdDashboard && this.isDownlineView
+          ? `${this.constants.odRequests}/status`
+          : !this.isOdDashboard && !this.isDownlineView
+            ? `${this.constants.exceptionRequest}`
+            : `${this.constants.wfhRequestStatus}`;
 
-    this.http.putData(this.constants.exceptionRequest, payload).subscribe({
+    this.http.putData(url, payload).subscribe({
       next: (res: any) => {
         if (res.success) {
           this.toastr.success(
@@ -596,7 +736,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
           this.selectedRequests = [];
           this.remarks = "";
           this.resetTableSorting();
-          this.getExceptionRequest();
+          this.getAllRequest();
         } else {
           this.toastr.error("Bulk update failed");
         }
@@ -610,7 +750,7 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  openActionDialog(request: ExceptionRequest) {
+  openActionDialog(request: any) {
     const modalRef = this.dialog.open(WfoActionPopupComponent, {
       width: "500px",
       data: request,
@@ -634,28 +774,35 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         }
 
         const payload = {
-          updateDateRangeId: request.exceptionId,
+          updateDateRangeId: request.id,
           currentStatus: currentStatus,
           managerRemarks: result.remarks,
           exceptionApprovedDays:
             result.approvedDays || request.exceptionApprovedDays || 1,
         };
 
-        this.http.putData(this.constants.exceptionRequest, payload).subscribe({
-          next: (res: any) => {
-            if (res.success) {
-              this.toastr.success("Request updated successfully");
-              this.resetTableSorting();
-              this.getExceptionRequest();
-            } else {
+        this.http
+          .putData(
+            this.isOdDashboard
+              ? `${this.constants.onDutyRequests}`
+              : `${this.constants.exceptionRequest}`,
+            payload,
+          )
+          .subscribe({
+            next: (res: any) => {
+              if (res.success) {
+                this.toastr.success("Request updated successfully");
+                this.resetTableSorting();
+                this.getAllRequest();
+              } else {
+                this.toastr.error("Error updating request. Please try again.");
+              }
+            },
+            error: (err: any) => {
               this.toastr.error("Error updating request. Please try again.");
-            }
-          },
-          error: (err: any) => {
-            this.toastr.error("Error updating request. Please try again.");
-            console.error("PUT API Error:", err);
-          },
-        });
+              console.error("PUT API Error:", err);
+            },
+          });
       }
     });
   }
@@ -668,28 +815,34 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
         title: "Confirm Delete",
       },
     });
+    const url =
+      this.isOdDashboard && !this.isDownlineView
+        ? `${this.constants.onDutyRequests}/${req.id}`
+        : this.isOdDashboard && this.isDownlineView
+          ? `${this.constants.odRequests}/${req.id}`
+          : !this.isOdDashboard && !this.isDownlineView
+            ? `${this.constants.exceptionRequest}/${req.id}`
+            : `${this.constants.wfhRequest}/${req.id}`;
 
     dialogRef.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        this.http
-          .deleteData(`${this.constants.exceptionRequest}/${req.exceptionId}`)
-          .subscribe({
-            next: (res: any) => {
-              if (res.success) {
-                this.toastr.success("Record deleted successfully");
-                this.resetTableSorting();
-                this.getExceptionRequest();
-              }
-            },
-            error: (err: any) => {
-              this.toastr.error(
-                err?.error?.error ||
-                  err?.error?.errors ||
-                  "Error deleting record. Please try again.",
-              );
-              console.error("DELETE API Error:", err);
-            },
-          });
+        this.http.deleteData(url).subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              this.toastr.success("Record deleted successfully");
+              this.resetTableSorting();
+              this.getAllRequest();
+            }
+          },
+          error: (err: any) => {
+            this.toastr.error(
+              err?.error?.error ||
+                err?.error?.errors ||
+                "Error deleting record. Please try again.",
+            );
+            console.error("DELETE API Error:", err);
+          },
+        });
       }
     });
   }
@@ -698,38 +851,41 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     const checked = event.target.checked;
     this.allSelected = checked;
 
-    this.exceptionRequests.forEach((req) => {
+    this.allRequests.forEach((req) => {
       if (req.status !== "REJECTED" && !this.isRowDisabled(req)) {
         req.checked = checked;
       }
     });
-    
+
     // Update selected requests array
     if (checked) {
-      this.selectedRequests = this.exceptionRequests.filter(
+      this.selectedRequests = this.allRequests.filter(
         (r) => r.checked && r.status !== "REJECTED" && !this.isRowDisabled(r),
       );
     }
 
-    let allunSelected=true
-    for(let i=0;i<this.selectedRequests.length;i++){
-      if(this.selectedRequests[i].checked){
-        allunSelected=false;
+    let allunSelected = true;
+    for (let i = 0; i < this.selectedRequests.length; i++) {
+      if (this.selectedRequests[i].checked) {
+        allunSelected = false;
       }
     }
-    if(allunSelected){
-      this.selectedRequests=[];
+    if (allunSelected) {
+      this.selectedRequests = [];
     }
   }
-  private isRowDisabled(req: any): boolean {
+  isRowDisabled(req: any): boolean {
+    if (req.status === "REJECTED" || req.status === "APPROVED") return true;
+    if (this.isDownlineView) return req.status !== "PENDING";
+
     const isApproved = req.status === "APPROVED";
     const isNotAdmin = this.role !== "ADMIN" && this.role !== "MANAGER";
     const isNotHR = this.department !== "HR";
-    const isResourceView = this.selectedView === "resource";
+    const isResourceView = this.isResourceView;
 
     return (
       (isApproved && isNotAdmin && isNotHR) ||
-      (isNotHR && this.role !== "ADMIN" && this.selectedView !== "resource") ||
+      (isNotHR && this.role !== "ADMIN" && !isResourceView) ||
       (isResourceView && req.status === "APPROVED")
     );
   }
@@ -737,9 +893,35 @@ export class WfoDashboardComponent implements OnInit, OnDestroy {
     this.filters.status = value;
     this.page = 1;
     this.resetTableSorting();
-    this.getExceptionRequest();
+    this.getAllRequest();
   }
   getRowClass(req: any): string {
     return req.checked ? "row-checked" : "";
+  }
+  currentSortField: string = "";
+  currentSortOrder: 1 | -1 = 1;
+
+  sortTableValues(field: any) {
+    // Toggle order if same field
+    if (this.currentSortField === field) {
+      this.currentSortOrder = this.currentSortOrder === 1 ? -1 : 1;
+    } else {
+      this.currentSortField = field;
+      this.currentSortOrder = 1;
+    }
+
+    const dateFields = ["exceptionDate", "submissionDate"];
+
+    this.allRequests = this.commonService.sortData(
+      this.allRequests,
+      field,
+      this.currentSortOrder,
+      dateFields.includes(field as string),
+    );
+  }
+  isAllRowDisabled(): any {
+    return this.allRequests.every(
+      (x: any) => this.isRowDisabled(x) || x.status === "REJECTED",
+    );
   }
 }

@@ -26,9 +26,11 @@ interface HrAdminRecord {
   TOTAL: number;
   workingDays?: number;
   presentDays?: number;
+  odDays?: number;
   holidaysDays?: number;
   leaveDays?: number;
   deficiencyDays?: number;
+  wfhStatus?: string;
 }
 
 @Component({
@@ -57,7 +59,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     private http: HttpService,
     private constants: ConstantService,
     public commonService: CommonService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   // Table data
@@ -91,6 +93,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     fromDate: null as string | null,
     toDate: null as string | null,
     reason: null,
+    wfhStatus: null as string | null, // New filter for WFH status
   };
 
   minFromDate: string = "";
@@ -105,7 +108,10 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   totalRecords = 0;
   currentPage = 1;
   pageSize = 20;
-
+  wfhStatusOptions = [
+    { label: "Permanent WFH", value: "PERMANENT_WFH" },
+    { label: "Date Range WFH", value: "DATE_RANGE" },
+  ];
   ngOnInit(): void {
     this.setDefaultDateRange();
     this.loadEmployeeListFromCache();
@@ -194,6 +200,10 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       this.table.multiSortMeta = [];
       this.table.reset();
     }
+
+    // Reset custom sorting state
+    this.currentSortField = "";
+    this.currentSortOrder = 1;
   }
 
   private loadEmployeeListFromCache() {
@@ -260,7 +270,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
         params[key] !== ""
       ) {
         queryParams.push(
-          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
         );
       }
     }
@@ -330,6 +340,8 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
               holidaysDays: item.holidaysDays || 0,
               leaveDays: item.leaveDays || 0,
               deficiencyDays: item.deficiencyDays || 0,
+              odDays: item.odDays || 0,
+              wfhStatus: item.wfhStatus || "N/A",
             }));
 
             this.buildDeficiencyDaysOptions(this.allHrData);
@@ -364,7 +376,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     } else {
       const filterValue = Number(this.deficiencyDays);
       this.hrData = this.allHrData.filter(
-        (rec) => rec.deficiencyDays === filterValue
+        (rec) => rec.deficiencyDays === filterValue,
       );
     }
 
@@ -387,6 +399,7 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
       fromDate: null,
       toDate: null,
       reason: null,
+      wfhStatus: null, // Reset WFH status filter
     };
 
     // 2️⃣ Reset date range properly
@@ -416,4 +429,28 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     this.toastr.info("Exporting...");
     this.getHrAdminData(true, true);
   }
+  currentSortField: string = "";
+  currentSortOrder: 1 | -1 = 1;
+  onSortClick(field: keyof HrAdminRecord): void {
+    // Toggle sorting order if same column
+    if (this.currentSortField === field) {
+      this.currentSortOrder = this.currentSortOrder === 1 ? -1 : 1;
+    } else {
+      this.currentSortField = field;
+      this.currentSortOrder = 1;
+    }
+
+    // No date fields here currently, but keeping future-safe
+    const dateFields: string[] = [];
+
+    this.hrData = this.commonService.sortData(
+      this.hrData,
+      field,
+      this.currentSortOrder,
+      dateFields.includes(field as string),
+    );
+  }
+  onWfhStatusChange(value: string | null): void {
+    this.filters.wfhStatus = value;
+  } 
 }

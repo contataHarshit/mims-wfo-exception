@@ -1,0 +1,195 @@
+.page-container {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  /* reduced */
+  background: #f2f3f7;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-form-card {
+  width: 100%;
+  /* slightly reduced */
+  max-width: 100%;
+  /* prevents over-stretch */
+  padding: 1.5rem;
+  /* reduced */
+  background-color: #ffffff !important;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  height: 78vh;
+  min-height: 60vh;
+  max-height: 78vh;
+
+  overflow: auto;
+}
+
+/* SECTION TITLE */
+.section-title {
+  color: #e65100;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid #ffe0b2;
+  padding-bottom: 0.4rem;
+  font-size: 1rem;
+  /* reduced */
+}
+
+/* TOP FIELDS */
+.flex-container {
+  display: flex;
+  gap: 1rem;
+  /* spacing instead of space-between */
+}
+
+.form-row {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 12px;
+    /* reduced */
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    color: #555;
+  }
+
+  input,
+  textarea,
+  app-common-select {
+    font-size: 13px;
+    /* reduced */
+    padding: 0.45rem 0.6rem;
+    /* reduced */
+    border-radius: 5px;
+    background-color: #fafafa;
+  }
+}
+
+/* TABLE */
+.p-datatable {
+  font-size: 13px;
+  /* reduced */
+}
+
+.p-datatable .p-datatable-thead>tr>th {
+  font-size: 12.5px;
+  padding: 0.5rem;
+}
+
+.p-datatable .p-datatable-tbody>tr>td {
+  padding: 0.45rem;
+}
+
+.resource-table th,
+.resource-table td {
+  width: 33.33%;
+}
+
+.resource-table th:last-child,
+.resource-table td:last-child {
+  width: 110px;
+}
+
+.resource-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.not-applicable {
+  color: #777;
+  font-size: 0.75rem;
+}
+
+/* TEXTAREA */
+textarea {
+  min-height: 34px;
+  /* reduced */
+  font-size: 0.7rem;
+  margin-top: 3px;
+
+}
+
+/* INPUT + DROPDOWN WIDTH FIX */
+.stable-width {
+  width: 240px;
+  /* reduced from 320px */
+}
+
+/* INPUT WITH ICON */
+.input-with-icons {
+  padding-right: 45px;
+  height: 34px;
+}
+
+/* ICONS */
+.inside-icon {
+  font-size: 0.9rem;
+}
+
+.inside-icon.tick {
+  left: 200px;
+}
+
+.inside-icon.cross {
+  left: 225px;
+}
+
+/* BUTTONS */
+.p-button {
+  font-size: 0.7rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.p-button-rounded.p-button-sm {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-self: center;
+}
+
+/* ACTION BUTTONS */
+.form-actions {
+  margin-top: 1.5rem;
+}
+
+/* DATE PICKER FIX */
+::ng-deep .p-datepicker table td>span {
+  font-size: 0.7rem !important;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .flex-container {
+    flex-direction: column;
+  }
+
+  .stable-width {
+    width: 100%;
+  }
+}
+
+th {
+  font-size: 0.85rem;
+}
+
+td {
+  font-size: 0.7rem;
+}
+
+::ng-deep .p-calendar .p-inputtext {
+  flex: unset;
+  text-overflow: unset;
+  width: 12vw;
+  font-size: 0.7rem;
+}
+
+::ng-deep .p-calendar {
+  height: 37px;
+  font-size: 0.7rem;
+}

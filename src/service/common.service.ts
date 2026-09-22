@@ -13,7 +13,7 @@ import { ToastrService } from "ngx-toastr";
   providedIn: "root",
 })
 export class CommonService {
-  header: string = "WFH Request";
+  header: string = "WFH/OD Request";
   public config: any;
   private configLoaded = false; // Track if config is already loaded
 
@@ -73,6 +73,7 @@ export class CommonService {
   private managerEmployeeDataSubject = new BehaviorSubject<any[]>([]);
   managerEmployeeData$ = this.managerEmployeeDataSubject.asObservable();
   selectedView = "self";
+  viewOptions :any= [];
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private http: HttpClient,
@@ -87,12 +88,13 @@ export class CommonService {
   // ============================================
 
   /** Set loading state */
-  setLoading(value: boolean) {
-    // Only log in development
-    if (!value || this.loadingSubject.value !== value) {
+setLoading(value: boolean) {
+  Promise.resolve().then(() => {
+    if (this.loadingSubject.value !== value) {
       this.loadingSubject.next(value);
     }
-  }
+  });
+}
 
   /** Get loading state */
   get loading() {
@@ -398,8 +400,6 @@ export class CommonService {
     employeeCount: number = 0,
     managerEmailCount = 0,
   ): void {
-    console.log("deffffffffff", deficiencyEmployeeCount, employeeCount);
-
     this.dialog.open(ConfirmPopupComponent, {
       width: "400px",
       disableClose: true,
@@ -412,6 +412,48 @@ export class CommonService {
           : `No employees found deficient, no mail sent`,
         managerEmailCount,
       },
+    });
+  }
+  // ============================================
+  // COMMON SORT FUNCTION (GENERIC)
+  // ============================================
+
+  sortData<T>(
+    data: T[],
+    field: keyof T,
+    order: 1 | -1,
+    isDate: boolean = false,
+  ): T[] {
+    if (!data || !field) return data;
+
+    return [...data].sort((a: any, b: any) => {
+      let value1 = a[field];
+      let value2 = b[field];
+
+      // Handle null / undefined
+      if (value1 == null) return 1;
+      if (value2 == null) return -1;
+
+      // DATE SORT
+      if (isDate) {
+        const d1 = new Date(value1).getTime();
+        const d2 = new Date(value2).getTime();
+        return (d1 - d2) * order;
+      }
+
+      // NUMBER SORT
+      if (!isNaN(value1) && !isNaN(value2)) {
+        return (Number(value1) - Number(value2)) * order;
+      }
+
+      // STRING SORT (case insensitive)
+      value1 = value1.toString().toLowerCase();
+      value2 = value2.toString().toLowerCase();
+
+      if (value1 < value2) return -1 * order;
+      if (value1 > value2) return 1 * order;
+
+      return 0;
     });
   }
 }

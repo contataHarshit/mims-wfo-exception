@@ -8,6 +8,7 @@ import {
   SimpleChanges,
   ViewChild,
   ChangeDetectorRef,
+  HostListener,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { CalendarModule } from "primeng/calendar";
@@ -37,6 +38,9 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   @Input() disabledDates: Date[] = [];
   @Input() minDate: Date | null = null;
   @Input() maxDate: Date | null = null;
+  @Input() selectionMode: "multiple" | "range" = "multiple";
+  @Input() disabled = false;
+  @Input() disabledDays: number[] = [];
 
   @Output() rangeChange = new EventEmitter<Date[]>();
   @Output() okClick = new EventEmitter<Date[]>();
@@ -46,6 +50,8 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   tempSelection: Date[] = [];
   lastApplied: Date[] = [];
   internalDisabledDates: Date[] = [];
+  private handledClose = false;
+  private navigatingCalendar = false;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -89,19 +95,40 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   }
 
   onCalendarHide() {
-    this.cancelSelection(false);
+    console.log("ccccccccc");
+    this.tempSelection = [...this.lastApplied];
+    this.handledClose = false;
+  }
+
+  @HostListener("document:click", ["$event"])
+  onDocumentClick(event: Event) {
+    if (!this.calendar?.overlayVisible || this.navigatingCalendar) return;
+
+    const target = event.target as HTMLElement;
+    const clickedInsideCalendar =
+      !!target.closest(".p-calendar") || !!target.closest(".p-datepicker");
+
+    if (!clickedInsideCalendar) {
+      console.log("Calendar closed by outside click");
+      this.cancelSelection();
+    }
   }
 
   confirmSelection() {
-    this.range = [...this.tempSelection];
-    this.lastApplied = [...this.tempSelection];
+    const selected = this.tempSelection.filter((date): date is Date => !!date);
+    this.range =
+      this.selectionMode === "range" ? selected.slice(0, 2) : selected;
+    this.lastApplied = [...this.range];
+    this.tempSelection = [...this.range];
     this.rangeChange.emit(this.range);
     this.okClick.emit(this.range);
+    this.handledClose = true;
     this.hideCalendar();
   }
 
-  cancelSelection(manual: boolean = false) {
-    this.tempSelection = [];
+  cancelSelection() {
+    this.tempSelection = [...this.lastApplied];
+    this.handledClose = true;
     this.hideCalendar();
   }
 
@@ -116,14 +143,18 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   get displayText(): string {
     if (!this.range?.length) return "";
 
-    return this.range
-      .map((d) => {
-        const day = d.getDate();
-        const month = d.toLocaleDateString("en-GB", { month: "short" }); // Use "short" for abbreviated month
-        const year = d.getFullYear();
-        return `${day} ${month} ${year}`;
-      })
-      .join(", ");
+    if (this.selectionMode === "range" && this.range.length > 1) {
+      return `${this.formatDate(this.range[0])} - ${this.formatDate(this.range[1])}`;
+    }
+
+    return this.range.map((date) => this.formatDate(date)).join(", ");
+  }
+
+  private formatDate(date: Date): string {
+    const day = date.getDate();
+    const month = date.toLocaleDateString("en-GB", { month: "short" });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
   }
 
   openCalendar() {
@@ -139,8 +170,13 @@ export class DateRangePickerComponent implements OnInit, OnChanges {
   }>();
 
   onMonthOrYearChange(
-    event: CalendarMonthChangeEvent | CalendarYearChangeEvent
+    event: CalendarMonthChangeEvent | CalendarYearChangeEvent,
   ) {
+    this.navigatingCalendar = true;
+    setTimeout(() => {
+      this.navigatingCalendar = false;
+    });
+
     // Safely extract values (PrimeNG marks them as optional)
     const month = event.month ?? new Date().getMonth();
     const year = event.year ?? new Date().getFullYear();

@@ -5,26 +5,33 @@ export const routes: Routes = [
     path: "",
     loadComponent: () =>
       import(
-        "../components/create-wfo-exeption-request/create-wfo-exeption-request.component"
+        "../components/create-request/create-request.component"
       ).then(
-        (m) => m.CreateWfoExeptionRequestComponent // ✅ corrected spelling
+        (m) => m.CreateRequestComponent
       ),
     pathMatch: "full",
   },
   {
     path: "dashboard",
     loadComponent: () =>
-      import("../components/wfo-dashboard/wfo-dashboard.component").then(
-        (m) => m.WfoDashboardComponent
+      import("../components/employee-dashboard/employee-dashboard.component").then(
+        (m) => m.EmployeeDashboardComponent
       ),
   },
   {
-    path: "create-wfo-exeption-request", // ✅ keep same folder spelling
+    path: "od-dashboard",
+    loadComponent: () =>
+      import("../components/employee-dashboard/employee-dashboard.component").then(
+        (m) => m.EmployeeDashboardComponent
+      ),
+  },
+  {
+    path: "create-request", // ✅ keep same folder spelling
     loadComponent: () =>
       import(
-        "../components/create-wfo-exeption-request/create-wfo-exeption-request.component"
+        "../components/create-request/create-request.component"
       ).then(
-        (m) => m.CreateWfoExeptionRequestComponent // ✅ corrected
+        (m) => m.CreateRequestComponent
       ),
   },
   {
@@ -54,5 +61,12 @@ export const routes: Routes = [
       import(
         "../components/add-manual-attendance/add-manual-attendance.component"
       ).then((m) => m.AddManualAttendanceComponent),
+  },
+  {
+    path: "on-duty-request",
+    loadComponent: () =>
+      import(
+        "../components/create-request/create-request.component"
+      ).then((m) => m.CreateRequestComponent),
   }
 ];

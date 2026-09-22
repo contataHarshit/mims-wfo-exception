@@ -18,6 +18,7 @@ import { ToastrService } from "ngx-toastr";
 import { AddManualAttendanceComponent } from "../add-manual-attendance/add-manual-attendance.component";
 import { CommonMailSubmitComponent } from "../../common/common-mail-submit/common-mail-submit.component";
 import { DuplicateResponsePopupComponent } from "../../popup/duplicate-response-popup/duplicate-response-popup.component";
+import { Environment } from "../../environments/environment";
 @Component({
   selector: "app-attendance-dashboard",
   standalone: true,
@@ -87,7 +88,7 @@ export class CsvUploadComponent {
     const fromDate = this.form.get("fromDate")?.value;
     const toDate = this.form.get("toDate")?.value;
 
-    this.resetPreviewState();
+    // this.resetPreviewState();
 
     if (!fromDate || !toDate) {
       this.dayCount = 0;
@@ -105,14 +106,17 @@ export class CsvUploadComponent {
     const diff =
       Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    if (diff > 35) {
-      this.toastr.error("Maximum allowed date range is 35 days.");
+    if (diff > Environment.attendanceVariable) {
+      this.toastr.error(`Maximum allowed date range is ${Environment.attendanceVariable} days.`);
       this.form.patchValue({ toDate: null });
       this.dayCount = 0;
       return;
     }
 
     this.dayCount = diff;
+    if (fromDate && toDate && this.rawCsvText) {
+      this.processCsv(this.rawCsvText);
+    }
   }
   private resetPreviewState(): void {
     this.previewHeader = [];
@@ -207,10 +211,9 @@ export class CsvUploadComponent {
     this.previewRows = rows.slice(1).map((row) => {
       const fixedValues = row.slice(0, fixedHeaders.length);
 
-      // Take only required number of day values
-      const dayValues = row.slice(
-        firstDayIndex,
-        firstDayIndex + dateHeaders.length,
+      const dayValues = Array.from(
+        { length: dateHeaders.length },
+        (_, i) => row[firstDayIndex + i] ?? null,
       );
 
       return [...fixedValues, ...dayValues];
@@ -258,12 +261,13 @@ export class CsvUploadComponent {
       return;
     }
 
-    const emailIndex = this.previewHeader.findIndex((h) =>
-      h.toLowerCase().includes("email"),
+    const employeeNumberIndex = this.previewHeader.findIndex((h) =>
+      h.toLowerCase().includes("employee no"),
     );
 
-    if (emailIndex === -1) {
-      this.toastr.error("Email column not found");
+    if (employeeNumberIndex === -1) {
+      this.toastr.error("Employee No column not found");
+      this.commonService.setLoading(false);
       return;
     }
 
@@ -272,56 +276,63 @@ export class CsvUploadComponent {
 
     const result = this.previewRows
       .map((row) => {
-        const email = (row[emailIndex] ?? "").trim();
-        if (!email || !email.includes("@")) return null;
+        const employeeNumber = (row[employeeNumberIndex] ?? "").trim();
+        if (!employeeNumber) return null;
 
         const dates = row
-          .slice(this.fixedHeadersCount) // ONLY date columns
+          .slice(this.fixedHeadersCount)
           .map((value, i) => {
-            if (!value || !value.replaceAll(" ", "").length) return null;
-
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + i);
 
             return {
               date: date.toISOString().split("T")[0],
-              value: value.replaceAll(" ", ""),
+              value:
+                value && value.toString().trim().length
+                  ? value.toString().trim()
+                  : null,
             };
           })
+
           .filter(Boolean);
 
-        if (!dates.length) return null;
-
-        return { email, dates };
+        return { employeeNumber, dates };
       })
       .filter(Boolean);
 
-    this.http.postData(result, this.constants.officeAttendance).subscribe({
-      next: (res) => {
-        res?.success
-          ? this.toastr.success(res?.data?.message || "Attendance submitted")
-          : this.toastr.error("Submission failed");
-        this.commonService.setLoading(false);
-        if (res?.data?.duplicateEmails?.length || res?.data?.errors?.length) {
-          this.dialog.open(DuplicateResponsePopupComponent, {
-            width: "900px",
-            disableClose: true,
-            data: {
-              totalRecords: res.data.totalRecords,
-              savedRecords: res.data.affectedRows,
-              totalRows: res.data.totalRows,
-              errors: res.data.errors,
-              duplicateEmails: res.data.duplicateEmails,
-            },
-          });
-        }
-      },
-      error: (err) => {
-        this.commonService.setLoading(false);
-        this.toastr.error(err?.error?.message || "Submission failed");
-      },
-    });
-
+    this.http
+      .postData(result, this.constants.officeAttendance + "/employee-number")
+      .subscribe({
+        next: (res) => {
+          res?.success && !res?.data?.errors?.length
+            ? this.toastr.success(res?.data?.message || "Attendance submitted")
+            : res?.data?.errors?.length
+              ? this.toastr.error(
+                  res?.data?.message || "Submission completed with errors",
+                )
+              : this.toastr.error("Submission failed");
+          this.commonService.setLoading(false);
+          if (
+            res?.data?.errors?.length
+          ) {
+            this.dialog.open(DuplicateResponsePopupComponent, {
+              width: "900px",
+              disableClose: true,
+              data: {
+                totalRecords: res.data.totalRecords,
+                savedRecords: res.data.affectedRows,
+                totalRows: res.data.totalRows,
+                errors: res.data.errors,
+                duplicateEmployeeNumbers: res.data.duplicateEmployeeNumbers,
+              },
+            });
+          }
+        },
+        error: (err) => {
+          this.commonService.setLoading(false);
+          this.toastr.error(err?.error?.message || "Submission failed");
+        },
+      });
   }
 
   private toIsoDate(ddmmyyyy: string): string {
@@ -393,6 +404,9 @@ export class CsvUploadComponent {
       if (this.currentPage > this.totalPages) {
         this.currentPage = this.totalPages || 1;
       }
+      if (!this.previewRows.length) {
+        this.reset();
+      }
     });
   }
   storeOriginalValue(event: Event): void {
@@ -419,11 +433,21 @@ export class CsvUploadComponent {
   }
   downloadCsvFormat(): void {
     // ---------- FIXED HEADERS ----------
-    const headers = ["NAME", "Manager", "EMAIL", "Day1", "Day2", "Day3"];
+    const headers = [
+      "EMPLOYEE NO",
+      "NAME",
+      "Manager",
+      "EMAIL",
+      "Day1",
+      "Day2",
+      "Day3",
+    ];
 
     const sampleRow = [
+      "Employee_Number",
       "Employee_Name",
       "Manager_Name",
+
       "Employee_Email",
       "FD",
       "FD",
@@ -454,20 +478,20 @@ export class CsvUploadComponent {
   private extractDayNumber(header: string): number {
     return Number(header.replace(/[^0-9]/g, ""));
   }
-  private validateCellLength(): { email: string; value: string }[] {
-    const emailIndex = this.previewHeader.findIndex((h) =>
-      h.toLowerCase().includes("email"),
+  private validateCellLength(): { employeeNumber: string; value: string }[] {
+    const employeeNumberIndex = this.previewHeader.findIndex((h) =>
+      h.toLowerCase().includes("employee no"),
     );
 
-    if (emailIndex === -1) return [];
+    if (employeeNumberIndex === -1) return [];
 
-    const invalids: { email: string; value: string }[] = [];
+    const invalids: { employeeNumber: string; value: string }[] = [];
 
     this.previewRows.forEach((row) => {
-      const email = row[emailIndex];
+      const employeeNumber = row[employeeNumberIndex];
       row.slice(this.fixedHeadersCount).forEach((val) => {
         if (val && val.toString().trim().length > 3) {
-          invalids.push({ email, value: val });
+          invalids.push({ employeeNumber: employeeNumber, value: val });
         }
       });
     });

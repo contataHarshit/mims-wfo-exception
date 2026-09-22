@@ -30,6 +30,6 @@ export class CommonSelectComponent {
   @Input() reset: boolean = true;
   onChange(event: any) {
     this.value = event;
-    this.valueChange.emit(event);
+    this.valueChange.emit(this.value);
   }
 }

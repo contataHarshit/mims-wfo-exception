@@ -1,6 +1,7 @@
 
 export const Environment = {
-  production: false,
-  baseUrl: "http://192.168.2.25:3000/",
-  redirectURL: "http://mimsqa/"
-};
+  production: true,
+  baseUrl: "http://192.168.2.37:3000/",
+  redirectURL: "http://mims/",
+  attendanceVariable:199
+} as const;

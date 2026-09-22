@@ -1,21 +1,18 @@
 import {
   Component,
   EventEmitter,
-  Inject,
   Input,
   OnDestroy,
   OnInit,
   Output,
-  PLATFORM_ID,
   OnChanges,
   SimpleChanges,
 } from "@angular/core";
-import { CommonModule, isPlatformBrowser } from "@angular/common";
+import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { CommonSelectComponent } from "../common-select/common-select.component";
 import { CommonService } from "../../service/common.service";
 import { Subject, takeUntil } from "rxjs";
-import { log } from "util";
 
 @Component({
   selector: "app-manager-employee-filter",
@@ -35,16 +32,12 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
   @Output() managerValueChange = new EventEmitter<any>();
   @Output() employeeValueChange = new EventEmitter<any>();
-  @Input() gap: string = "10vw"; // ✅ DEFAULT
-
+  @Input() gap: string = "1vw"; // ✅ DEFAULT
   managerList: any[] = [];
   employeeList: any[] = [];
   private allEmployees: any[] = [];
 
-  constructor(
-    private commonService: CommonService,
-    @Inject(PLATFORM_ID) private platformId: Object,
-  ) {}
+  constructor(private commonService: CommonService) {}
   currentView: string = "";
   ngOnInit(): void {
     // MANAGERS (already formatted from service)
@@ -71,9 +64,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   }
   ngOnChanges(changes: SimpleChanges): void {
     // ✅ When employee filter is disabled (SELF VIEW)
-    if (isPlatformBrowser(this.platformId)) {
-      this.currentView = localStorage.getItem("selectedView") || "self";
-    }
+    this.currentView = this.commonService.selectedView || "self";
     if (
       changes["employeeDisabled"]?.currentValue === true &&
       !this.employeeValue
@@ -82,25 +73,33 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     }
     if (
       changes["managerValue"]?.currentValue !==
-      changes["managerValue"]?.previousValue
+        changes["managerValue"]?.previousValue &&
+      this.currentView !== "resource"
     ) {
       this.filterEmployeesByManager(this.managerValue);
+      return;
     }
-    if (this.currentView === "all" && !this.managerValue) {
+    if (
+      (this.currentView === "all" || this.currentView === "downline") &&
+      !this.managerValue
+    ) {
       this.employeeList = this.mapEmployees(this.allEmployees);
     }
-    if (this.currentView === "resource" ) {
-      
+    if (this.currentView === "resource") {
       let temp = JSON.parse(
         localStorage.getItem("managerEmployeeData") || "[]",
       );
-      let tempManagerVal= localStorage.getItem("employeeData") || null;
-      this.managerValue=tempManagerVal? {value:JSON.parse(tempManagerVal).EmployeeNumber,label:JSON.parse(tempManagerVal).employeeName} : null;
+      let tempManagerVal = localStorage.getItem("employeeData") || null;
+      this.managerValue = tempManagerVal
+        ? {
+            value: JSON.parse(tempManagerVal).EmployeeNumber,
+            label: JSON.parse(tempManagerVal).employeeName,
+          }
+        : null;
       this.employeeList = this.mapEmployees(temp);
     }
     if (
-      this.currentView == "all" &&
-      !this.managerValue &&
+      (this.currentView === "all" || this.currentView === "downline") &&
       changes["employeeValue"]?.currentValue !==
         changes["employeeValue"]?.previousValue
     ) {
@@ -108,7 +107,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
     }
   }
   private setSelfEmployee() {
-    if (localStorage.getItem("selectedView") == "self") {
+    if (this.currentView === "self") {
       const storedEmployee = localStorage.getItem("employeeData");
       if (!storedEmployee) return;
 
@@ -157,9 +156,11 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.managerValue = this.allEmployees.find(
-      (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode,
-    );
+    if (employeeEmpNo) {
+      this.managerValue = this.allEmployees.find(
+        (e: any) => e.EmployeeNumber == employeeEmpNo.ManagerCode,
+      );
+    }
     if (this.managerValue) {
       this.managerValue.value = this.managerValue.EmployeeNumber;
       this.managerValue.label = `${this.managerValue.FullName} (${this.managerValue.EmployeeNumber})`;
@@ -173,45 +174,20 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
     this.employeeValue = employeeEmpNo;
     this.employeeValueChange.emit(employeeEmpNo);
-
-    // const emp = this.allEmployees.find(
-    //   e => e.EmployeeNumber === employeeEmpNo
-    // );
-
-    // if (!emp) {
-    //   console.warn('Employee not found:', employeeEmpNo);
-    //   return;
-    // }
-
-    // if (!emp.ManagerCode) {
-    //   console.warn('Employee has no ManagerCode:', emp);
-    //   return;
-    // }
-
-    // console.log('Employee:', emp.FullName, '| ManagerCode:', emp.ManagerCode);
-
-    // // Verify manager exists in managerList
-    // const managerExists = this.managerList.find(m => m.value === emp.ManagerCode);
-    // console.log('Manager found in list:', managerExists);
-
-    // // ✅ Auto-select the employee's manager
-    // this.managerValue = emp.ManagerCode;
-    // this.managerValueChange.emit(emp.ManagerCode);
-
-    // // Filter employees by this manager
-    // this.filterEmployeesByManager(emp.ManagerCode);
-
-    // console.log('Manager value set to:', this.managerValue);
   }
 
   /* ================= HELPERS ================= */
 
   private filterEmployeesByManager(managerEmpNo: any) {
     this.employeeList = [];
-    const filtered = this.allEmployees.filter(
-      (e) => e.ManagerCode === managerEmpNo?.value,
-    );
-    this.employeeList = this.mapEmployees(filtered);
+    if (managerEmpNo) {
+      const filtered = this.allEmployees.filter(
+        (e) => e.ManagerCode === managerEmpNo?.value,
+      );
+      this.employeeList = this.mapEmployees(filtered);
+      return;
+    }
+    this.employeeList = this.mapEmployees(this.allEmployees);
   }
 
   private mapEmployees(list: any[]) {
