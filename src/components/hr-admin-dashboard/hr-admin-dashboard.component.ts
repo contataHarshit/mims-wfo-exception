@@ -109,8 +109,8 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
   currentPage = 1;
   pageSize = 20;
   wfhStatusOptions = [
-    { label: "Permanent ", value: "PERMANENT" },
-    { label: "Short-Term ", value: "SHORT_TERM" },
+    { label: "Permanent ", value: "permanent" },
+    { label: "Short-Term ", value: "short-term" },
   ];
   ngOnInit(): void {
     this.setDefaultDateRange();

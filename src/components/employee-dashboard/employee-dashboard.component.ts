@@ -96,8 +96,8 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   department: string = "";
   allSelected: boolean = false;
   wfhTypeList = [
-    { label: "Permanent ", value: "permanent" },
-    { label: "Date Range", value: "dateRange" },
+    { label: "Permanent ", value: "PERMANENT" },
+    { label: "Short-term", value: "SHORT_TERM" },
   ];
   get isResourceView(): boolean {
     return this.selectedView === "resource";
@@ -406,9 +406,14 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
-    if(this.filters.wfhType) {
+    if(this.filters.wfhType && this.filters.wfhType == "PERMANENT") {
       
-      params.set("wfhType", this.filters.wfhType);
+      params.set("isPermanent", "true");
+    }
+
+    if(this.filters.wfhType && this.filters.wfhType == "SHORT_TERM") {
+      
+      params.set("isPermanent", "false");
     }
     const url =
       this.isOdDashboard && !this.isDownlineView
