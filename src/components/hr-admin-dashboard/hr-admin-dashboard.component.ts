@@ -237,6 +237,16 @@ export class HrAdminDashboardComponent implements OnInit, OnDestroy {
     if (this.filters.employeeName) {
       params.employeeNumber = this.filters.employeeName["value"];
     }
+    if (this.filters.wfhStatus) {
+      const wfhStatus =
+        typeof this.filters.wfhStatus === "object"
+          ? this.filters.wfhStatus["value"]
+          : this.filters.wfhStatus;
+
+      if (wfhStatus) {
+        params.wfhType = wfhStatus;
+      }
+    }
 
     // ✅ ADD PAGINATION
     params.page = this.currentPage;

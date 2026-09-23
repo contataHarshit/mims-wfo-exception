@@ -83,6 +83,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
     fromDate: null as Date | null,
     toDate: null as Date | null,
     reason: null,
+    wfhType: null,
   };
 
   showSubmit = false;
@@ -406,13 +407,14 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       params.set("exportAll", "true");
     }
 
-    if(this.filters.wfhType && this.filters.wfhType == "PERMANENT") {
-      
-      params.set("isPermanent", "true");
-    }
+    const wfhType =
+      typeof this.filters.wfhType === "object"
+        ? this.filters.wfhType?.value
+        : this.filters.wfhType;
 
-    if(this.filters.wfhType && this.filters.wfhType == "SHORT_TERM") {
-      
+    if (wfhType === "PERMANENT") {
+      params.set("isPermanent", "true");
+    } else if (wfhType === "SHORT_TERM") {
       params.set("isPermanent", "false");
     }
     const url =
@@ -656,6 +658,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       fromDate: null,
       toDate: null,
       reason: null,
+      wfhType: null,
     };
 
     // Restore manager name for self view after reset
