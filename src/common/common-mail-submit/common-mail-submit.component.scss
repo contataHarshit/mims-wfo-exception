@@ -1,13 +1,22 @@
+:host {
+  display: block;
+  flex: 0 0 auto;
+  min-width: max-content;
+}
+
 .mail-submit-actions {
     display: flex;
     justify-content: space-between;
     align-items: end;
     gap: 16px;
+  flex-wrap: nowrap;
+  min-width: max-content;
 }
 
 .mail-buttons {
     display: flex;
     gap: 12px;
+  flex: 0 0 auto;
 }
 
 .small-span {
@@ -16,12 +25,16 @@
 
 button {
   font-weight: 600 !important;
-  max-width: 100px;
+  width: 100px;
   min-width: 100px;
+  flex: 0 0 100px;
   height: 37px;
   font-size: 0.5rem;
   display: flex;
-    flex-direction: column;
+  flex-direction: column;
+  justify-content: center;
+  white-space: nowrap;
+  line-height: 1.1;
   span:first-child{
     font-size: 0.6rem;
   }
