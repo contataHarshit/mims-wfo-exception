@@ -19,6 +19,7 @@ export class AddManualAttendanceComponent implements OnInit {
   selectedDate: string = "";
   allEmployees: any[] = [];
   selectedEmployees: any[] = [];
+  totalEmployeeCount = 0;
   employeeSearch: string = "";
   maxDate: string = "";
   attendanceType: "FD" | "SF" | "HF" = "FD";
@@ -55,6 +56,7 @@ export class AddManualAttendanceComponent implements OnInit {
       ...e,
       checked: false,
     }));
+    this.totalEmployeeCount = this.allEmployees.length + this.selectedEmployees.length;
   }
 
   // ✅ Filter employees in component instead of pipe
@@ -69,6 +71,10 @@ export class AddManualAttendanceComponent implements OnInit {
       const email = (emp.email || emp.Email || "").toLowerCase();
       return name.includes(search) || email.includes(search);
     });
+  }
+
+  get selectedAvailableCount(): number {
+    return this.allEmployees.filter((employee) => employee.checked).length;
   }
 
   moveSelected(): void {

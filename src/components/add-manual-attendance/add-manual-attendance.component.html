@@ -29,7 +29,7 @@
       <!-- HEADER (WFH STYLE) -->
       <div class="card-header">
         <span>All Employees</span>
-        <span class="count">{{ filteredEmployees.length }}</span>
+        <span class="count">{{ selectedAvailableCount }} of {{ allEmployees.length }}</span>
       </div>
 
       <!-- SEARCH -->
@@ -67,7 +67,7 @@
 
       <div class="card-header">
         <span>Selected Employees</span>
-        <span class="count">{{ selectedEmployees.length }}</span>
+        <span class="count">{{ selectedEmployees.length }} of {{ totalEmployeeCount }}</span>
       </div>
 
       <div class="employee-table empty" *ngIf="!selectedEmployees.length">
