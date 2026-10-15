@@ -530,6 +530,9 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
               remarks: item.remarks || "-",
 
               checked: false,
+              fromDate: item.fromDate || null,
+              toDate: item.toDate || null,
+              isPermanent: item.isPermanent || false,
             }));
 
             let tempHash: any = {};
@@ -883,21 +886,57 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       this.selectedRequests = [];
     }
   }
-  isRowDisabled(req: any): boolean {
-    if (req.status === "REJECTED" || req.status === "APPROVED") return true;
-    if (this.isDownlineView) return req.status !== "PENDING";
 
-    const isApproved = req.status === "APPROVED";
+  isRowDisabled(req: any): boolean {
+    if (req.status === "REJECTED") {
+      return true;
+    }
+
+    if (this.isDownlineView) {
+      if (req.status === "PENDING") {
+        return false;
+      }
+      if (req.status === "APPROVED") {
+        if (req.isPermanent) {
+          return false;
+        }
+
+        if (!req.toDate) {
+          console.warn("Missing To Date for request:", req);
+          return false;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const toDate = new Date(req.toDate);
+        toDate.setHours(0, 0, 0, 0);
+
+        if (Number.isNaN(toDate.getTime())) {
+          console.warn("Invalid To Date:", req.toDate);
+          return false;
+        }
+        return toDate <= today;
+      }
+
+      return false;
+    }
+
+    if (req.status === "APPROVED") {
+      return true;
+    }
+
     const isNotAdmin = this.role !== "ADMIN" && this.role !== "MANAGER";
     const isNotHR = this.department !== "HR";
     const isResourceView = this.isResourceView;
 
     return (
-      (isApproved && isNotAdmin && isNotHR) ||
+      (isNotHR && isNotAdmin) ||
       (isNotHR && this.role !== "ADMIN" && !isResourceView) ||
       (isResourceView && req.status === "APPROVED")
     );
   }
+
   onStatusChange(value: any) {
     this.filters.status = value;
     this.page = 1;
