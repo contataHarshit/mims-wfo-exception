@@ -26,6 +26,8 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
   @Input() managerDisabled = false;
   @Input() employeeDisabled = false;
+
+  @Input() filterMode: "self" | "resource" | "all" | null = null;
   // ✅ store ONLY IDs
   @Input() managerValue: any = null;
   @Input() employeeValue: any = null;
@@ -39,6 +41,13 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
 
   constructor(private commonService: CommonService) {}
   currentView: string = "";
+
+  private get effectiveFilterMode(): "self" | "resource" | "all" {
+    if (this.filterMode) return this.filterMode;
+    const view = this.commonService.selectedView || "self";
+    return view === "resource" ? "resource" : view === "self" ? "self" : "all";
+  }
+
   ngOnInit(): void {
     // MANAGERS (already formatted from service)
     this.commonService.managerList$
@@ -64,7 +73,7 @@ export class ManagerEmployeeFilterComponent implements OnInit, OnDestroy {
   }
   ngOnChanges(changes: SimpleChanges): void {
     // ✅ When employee filter is disabled (SELF VIEW)
-    this.currentView = this.commonService.selectedView || "self";
+    this.currentView = this.effectiveFilterMode;
     if (
       changes["employeeDisabled"]?.currentValue === true &&
       !this.employeeValue

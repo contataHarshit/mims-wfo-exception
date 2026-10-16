@@ -8,7 +8,8 @@
       <div class="filter-row ">
         <div class="filter-span-2">
           <app-manager-employee-filter [(managerValue)]="filters.managerName" [(employeeValue)]="filters.employeeName"
-            [managerDisabled]="!isAllLikeView" [employeeDisabled]="selectedView === 'self'">
+            [filterMode]="managerEmployeeFilterMode" [managerDisabled]="!isAllLikeView"
+            [employeeDisabled]="selectedView === 'self'">
           </app-manager-employee-filter>
         </div>
 

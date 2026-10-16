@@ -106,8 +106,27 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   get isDownlineView(): boolean {
     return this.selectedView === "downline";
   }
+
+  get isItManagerDownlineView(): boolean {
+    return (
+      this.isDownlineView &&
+      this.role === "MANAGER" &&
+      this.department.trim().toUpperCase() === "IT"
+    );
+  }
+  get usesResourceManagerEmployeeFilter(): boolean {
+    return this.isResourceView || this.isItManagerDownlineView;
+  }
   get isAllLikeView(): boolean {
-    return this.selectedView === "all" || this.isDownlineView;
+    return (
+      this.selectedView === "all" ||
+      (this.isDownlineView && !this.isItManagerDownlineView)
+    );
+  }
+  get managerEmployeeFilterMode(): "self" | "resource" | "all" {
+    if (this.usesResourceManagerEmployeeFilter) return "resource";
+    if (this.isAllLikeView) return "all";
+    return "self";
   }
   get isOdDashboard(): boolean {
     return this.router.url.split("?")[0].split("/").includes("od-dashboard");
@@ -165,13 +184,8 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         if (this.selectedView === "self") {
           this.setManagerForSelfView();
         }
-        if (this.isResourceView) {
-          let temp = JSON.parse(localStorage.getItem("employeeData") || "null");
-          this.filters.employeeName = null;
-          this.filters.managerName = {
-            label: temp?.employeeName,
-            value: temp?.employeeNumber,
-          };
+        if (this.usesResourceManagerEmployeeFilter) {
+          this.setManagerForResourceFilter();
         }
         if (this.isAllLikeView) {
           this.filters.managerName = null;
@@ -183,14 +197,8 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
           if (this.selectedView === "self") {
             this.setManagerForSelfView();
           }
-          if (this.isResourceView) {
-            let temp = JSON.parse(
-              localStorage.getItem("employeeData") || "null",
-            );
-            this.filters.managerName = {
-              label: temp?.employeeName,
-              value: temp?.employeeNumber,
-            };
+          if (this.usesResourceManagerEmployeeFilter) {
+            this.setManagerForResourceFilter();
           }
 
           // Reset page and reload
@@ -226,7 +234,7 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         this.reasonList = this.isOdDashboard
           ? this.commonService.config?.OdReasonList
           : this.commonService.config?.reasonList || [];
-        if (data && data.length > 0 && this.isResourceView) {
+        if (data && data.length > 0 && this.usesResourceManagerEmployeeFilter) {
           this.employeeList = data.map((item: any) => ({
             label: `${item.FullName}(${item.EmployeeNumber})`,
             value: item.EmployeeNumber,
@@ -282,6 +290,17 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
         };
       });
     }
+  }
+
+  private setManagerForResourceFilter() {
+    const employeeData = JSON.parse(
+      localStorage.getItem("employeeData") || "null",
+    );
+    this.filters.employeeName = null;
+    this.filters.managerName = {
+      label: employeeData?.employeeName || employeeData?.FullName,
+      value: employeeData?.employeeNumber || employeeData?.EmployeeNumber,
+    };
   }
 
   // Method to reset table sorting
@@ -663,10 +682,10 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
       reason: null,
       wfhType: null,
     };
-
-    // Restore manager name for self view after reset
     if (this.selectedView === "self") {
       this.setManagerForSelfView();
+    } else if (this.usesResourceManagerEmployeeFilter) {
+      this.setManagerForResourceFilter();
     }
 
     this.page = 1;
